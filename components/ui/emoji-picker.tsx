@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import data from "@emoji-mart/data";
 
 // Lazy load emoji picker to avoid SSR issues
 const EmojiPicker = dynamic(
-    () => import("@emoji-mart/react").then((mod) => mod.default),
+    () => import("emoji-picker-react"),
     { ssr: false, loading: () => <div className="p-4 text-sm text-zinc-400">Memuat...</div> }
 );
 
@@ -40,17 +39,15 @@ export function EmojiPickerButton({ value, onChange }: Props) {
                 {value}
             </button>
             {open && (
-                <div className="absolute z-50 top-14 left-0 shadow-2xl rounded-xl overflow-hidden border border-zinc-200">
+                <div className="absolute z-50 top-14 left-0 shadow-2xl rounded-xl overflow-hidden border border-zinc-200 bg-white">
                     <EmojiPicker
-                        data={data}
-                        onEmojiSelect={(emoji: { native: string }) => {
-                            onChange(emoji.native);
+                        onEmojiClick={(emojiData) => {
+                            onChange(emojiData.emoji);
                             setOpen(false);
                         }}
-                        theme="light"
-                        locale="id"
-                        previewPosition="none"
-                        skinTonePosition="none"
+                        autoFocusSearch={false}
+                        width={300}
+                        height={400}
                     />
                 </div>
             )}
