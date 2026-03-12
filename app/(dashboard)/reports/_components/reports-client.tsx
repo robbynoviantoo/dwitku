@@ -110,7 +110,7 @@ export function ReportsClient({
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
