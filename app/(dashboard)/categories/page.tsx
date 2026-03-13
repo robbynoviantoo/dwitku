@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getUserWorkspaces } from "@/app/actions/workspace";
-import { CategoriesClient } from "@/components/categories/categories-client";
+import { CategoriesClient } from "@/app/(dashboard)/categories/_components/categories-client";
 import { Suspense } from "react";
 
 export default async function CategoriesPage({

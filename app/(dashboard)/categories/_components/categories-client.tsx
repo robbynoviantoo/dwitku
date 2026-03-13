@@ -12,7 +12,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCategory, getCategories } from "@/app/actions/category";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
-import { CategoryFormDialog } from "@/components/categories/category-form-dialog";
+import { CategoryFormDialog } from "@/app/(dashboard)/categories/_components/category-form-dialog";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -78,7 +78,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

@@ -113,7 +113,7 @@ const [showAmount, setShowAmount] = useState(() => {
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

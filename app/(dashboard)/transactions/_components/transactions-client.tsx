@@ -58,7 +58,7 @@ type Props = {
   canEdit: boolean;
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const col = createColumnHelper<Transaction>();
 
 export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
@@ -265,7 +265,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -280,7 +280,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
         {canEdit && (
           <button
             onClick={() => setDialog({ open: true })}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Tambah

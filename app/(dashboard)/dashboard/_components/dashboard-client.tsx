@@ -76,7 +76,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Greeting */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-900">

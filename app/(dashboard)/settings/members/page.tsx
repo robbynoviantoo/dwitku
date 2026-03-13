@@ -21,7 +21,7 @@ export default async function MembersPage({
   const activeWsId = workspaceId ?? allWorkspaces[0].id;
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-1">
           <Users className="w-5 h-5 text-indigo-500" />
