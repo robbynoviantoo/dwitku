@@ -8,6 +8,8 @@ import { createTransaction, updateTransaction } from "@/app/actions/transaction"
 import { X, Loader2, TrendingUp, TrendingDown } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { broadcastInvalidate } from "@/components/providers/query-provider";
 
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
@@ -35,6 +37,7 @@ export function TransactionFormDialog({
     onClose,
     onSuccess,
 }: Props) {
+    const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
     const isEdit = !!transaction;
@@ -78,6 +81,20 @@ export function TransactionFormDialog({
                 ? await updateTransaction(transaction!.id, workspaceId, values)
                 : await createTransaction(workspaceId, values);
 
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] }),
+                queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] }),
+                queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] }),
+                queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] }),
+                queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
+            ]);
+
+            // Broadcast ke tab lain
+            broadcastInvalidate(["transaction-summary", workspaceId]);
+            broadcastInvalidate(["report-monthly", workspaceId]);
+            broadcastInvalidate(["report-category", workspaceId]);
+            broadcastInvalidate(["report-comparison", workspaceId]);
+            broadcastInvalidate(["transactions", workspaceId]);
             if (result.error) {
                 setError(result.error);
             } else {

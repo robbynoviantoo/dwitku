@@ -60,8 +60,13 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
         prisma.transaction.count({ where }),
     ]);
 
+    const safeItems = items.map((t) => ({
+        ...t,
+        amount: Number(t.amount),
+    }));
+
     return {
-        items,
+        items: safeItems,
         total,
         totalPages: Math.ceil(total / limit),
     };
@@ -142,7 +147,14 @@ export async function createTransaction(
 
     revalidatePath("/transactions");
     revalidatePath("/dashboard");
-    return { success: true, transaction };
+    revalidatePath("/reports");
+    return {
+        success: true,
+        transaction: {
+            ...transaction,
+            amount: Number(transaction.amount),
+        },
+    };
 }
 
 /** Update transaksi */
@@ -178,7 +190,15 @@ export async function updateTransaction(
     });
 
     revalidatePath("/transactions");
-    return { success: true, transaction };
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
+    return {
+        success: true,
+        transaction: {
+            ...transaction,
+            amount: Number(transaction.amount),
+        },
+    };
 }
 
 /** Hapus transaksi */
@@ -197,5 +217,6 @@ export async function deleteTransaction(transactionId: string, workspaceId: stri
 
     revalidatePath("/transactions");
     revalidatePath("/dashboard");
+    revalidatePath("/reports");
     return { success: true };
 }

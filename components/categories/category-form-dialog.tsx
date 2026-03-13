@@ -8,6 +8,8 @@ import { CategorySchema, TransactionType } from "@/lib/validations/transaction";
 import { createCategory, updateCategory } from "@/app/actions/category";
 import { EmojiPickerButton } from "@/components/ui/emoji-picker";
 import { X, Loader2, Palette } from "lucide-react";
+import { broadcastInvalidate } from "@/components/providers/query-provider";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PRESET_COLORS = [
     "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
@@ -32,6 +34,7 @@ type Props = {
 };
 
 export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }: Props) {
+    const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
     const isEdit = !!category;
@@ -64,6 +67,9 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
             if (result.error) {
                 setError(result.error);
             } else {
+                await queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+                // Broadcast ke tab lain
+                broadcastInvalidate(["categories", workspaceId]);
                 onSuccess();
                 onClose();
             }
@@ -115,8 +121,8 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                 <label
                                     key={t.value}
                                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-colors ${form.watch("type") === t.value
-                                            ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                                            : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                                        : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
                                     <input

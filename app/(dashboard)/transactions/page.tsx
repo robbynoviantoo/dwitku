@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getUserWorkspaces } from "@/app/actions/workspace";
-import { TransactionsClient } from "@/components/transactions/transactions-client";
 import { Suspense } from "react";
+import { TransactionsClient } from "./_components/transactions-client";
 
 export default async function TransactionsPage({
   searchParams,

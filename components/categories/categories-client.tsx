@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCategory, getCategories } from "@/app/actions/category";
+import { broadcastInvalidate } from "@/components/providers/query-provider";
 import { CategoryFormDialog } from "@/components/categories/category-form-dialog";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
     mutationFn: (catId: string) => deleteCategory(catId, workspaceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
+      broadcastInvalidate(["categories", workspaceId]);
     },
     onError: (err: any) => setError(err.message || "Gagal menghapus kategori"),
   });
@@ -150,7 +152,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
           className={cn(
             "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3",
             deleteMutation.isPending &&
-              "opacity-50 pointer-events-none transition-opacity",
+            "opacity-50 pointer-events-none transition-opacity",
           )}
         >
           {(filtered as Category[]).map((cat) => (

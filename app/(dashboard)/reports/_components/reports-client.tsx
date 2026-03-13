@@ -65,10 +65,13 @@ export function ReportsClient({
   isPersonal,
   currency,
 }: ReportsClientProps) {
-  const [showAmount, setShowAmount] = useState(() =>{
+const [showAmount, setShowAmount] = useState(() => {
+  if (typeof window !== "undefined") {
     const savedAmount = window.localStorage.getItem("showAmount");
     return savedAmount ? JSON.parse(savedAmount) : true;
-  });
+  }
+  return true;
+});
 
   useEffect(() => {
     window.localStorage.setItem("showAmount", JSON.stringify(showAmount));

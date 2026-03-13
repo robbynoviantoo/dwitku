@@ -276,12 +276,11 @@ export function Sidebar({
                         isActiveWs
                           ? {
                               backgroundColor: "var(--sidebar-item-bg-hover)",
-                              color: "var(--sidebar-text-active)",
                             }
                           : { color: "var(--sidebar-text)" }
                       }
                       className={cn(
-                        "w-full flex items-center gap-2.5 rounded-lg text-sm transition-colors text-left hover:bg-[var(--sidebar-item-bg-hover)]",
+                        "w-full flex items-center gap-2.5 rounded-lg text-sm  transition-colors text-left hover:bg-[var(--sidebar-item-bg-hover)]",
                         collapsed
                           ? "justify-center w-10 h-10 mx-auto"
                           : "px-3 py-2",
@@ -413,7 +412,7 @@ export function Sidebar({
             <div className="flex-1 min-w-0">
               <p
                 className="text-sm font-medium truncate"
-                style={{ color: "var(--sidebar-text-active)" }}
+                style={{ color: "var(--sidebar-text-header)" }}
               >
                 {user.name ?? "Pengguna"}
               </p>

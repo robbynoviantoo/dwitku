@@ -20,7 +20,8 @@ import {
   ArrowLeftRight,
   X,
 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { broadcastInvalidate } from "@/components/providers/query-provider";
 import {
   deleteTransaction,
   getTransactions,
@@ -28,7 +29,7 @@ import {
   type TransactionFilter,
 } from "@/app/actions/transaction";
 import { getCategories } from "@/app/actions/category";
-import { TransactionFormDialog } from "@/components/transactions/transaction-form-dialog";
+import { TransactionFormDialog } from "./transaction-form-dialog";
 import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -85,6 +86,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     queryKey: ["transactions", workspaceId, { ...filter, page }],
     queryFn: () =>
       getTransactions(workspaceId, { ...filter, page, limit: PAGE_SIZE }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
@@ -103,8 +105,17 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     mutationFn: (transactionId: string) =>
       deleteTransaction(transactionId, workspaceId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transaction-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });
+
+      broadcastInvalidate(["transactions", workspaceId]);
+      broadcastInvalidate(["transaction-summary", workspaceId]);
+      broadcastInvalidate(["report-monthly", workspaceId]);
+      broadcastInvalidate(["report-category", workspaceId]);
+      broadcastInvalidate(["report-comparison", workspaceId]);
     },
     onError: (err: any) => setError(err.message || "Gagal menghapus transaksi"),
   });
@@ -277,51 +288,6 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
         )}
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {[
-          {
-            label: "Total Pemasukan",
-            value: currentSummary.income,
-            icon: TrendingUp,
-            color: "text-green-600",
-            bg: "bg-green-50 border-green-100",
-          },
-          {
-            label: "Total Pengeluaran",
-            value: currentSummary.expense,
-            icon: TrendingDown,
-            color: "text-red-500",
-            bg: "bg-red-50 border-red-100",
-          },
-          {
-            label: "Saldo Bersih",
-            value: currentSummary.net,
-            icon: Minus,
-            color: currentSummary.net >= 0 ? "text-indigo-600" : "text-red-500",
-            bg: "bg-indigo-50 border-indigo-100",
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className={`bg-white rounded-xl border shadow-sm p-4 ${card.bg}`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Icon className={`w-4 h-4 ${card.color}`} />
-                <p className="text-xs font-medium text-zinc-500">
-                  {card.label}
-                </p>
-              </div>
-              <p className={`text-xl font-bold ${card.color}`}>
-                {formatCurrency(card.value, currency)}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Filters */}
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4 mb-4 flex flex-wrap gap-3">
         {/* Search */}
@@ -388,18 +354,18 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
           filter.dateFrom ||
           filter.dateTo ||
           search) && (
-          <button
-            onClick={() => {
-              setFilter({});
-              setSearch("");
-              setPage(1);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-zinc-500 hover:text-zinc-700 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-            Reset
-          </button>
-        )}
+            <button
+              onClick={() => {
+                setFilter({});
+                setSearch("");
+                setPage(1);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-zinc-500 hover:text-zinc-700 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Reset
+            </button>
+          )}
       </div>
 
       {/* Error */}
@@ -420,7 +386,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
         className={cn(
           "bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden",
           (isPlaceholderData || deleteMutation.isPending) &&
-            "opacity-50 pointer-events-none transition-opacity",
+          "opacity-50 pointer-events-none transition-opacity",
         )}
       >
         <div className="overflow-x-auto">
@@ -515,10 +481,11 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
           transaction={dialog.transaction as any}
           onClose={() => setDialog({ open: false })}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["transactions"] });
-            queryClient.invalidateQueries({
-              queryKey: ["transaction-summary"],
-            });
+            queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });
           }}
         />
       )}
