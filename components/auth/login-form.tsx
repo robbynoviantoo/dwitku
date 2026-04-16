@@ -9,9 +9,11 @@ import { login } from "@/app/actions/auth";
 import Link from "next/link";
 // signIn imported dari next-auth dipanggil jika ingin google login via client component (untuk google oauth)
 import { signIn } from "next-auth/react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm() {
     const [error, setError] = useState<string | undefined>("");
+    const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
 
     const form = useForm<z.infer<typeof LoginSchema>>({
@@ -31,7 +33,10 @@ export function LoginForm() {
                         setError(data.error);
                     }
                 })
-                .catch(() => setError("Terjadi kesalahan, coba lagi nanti."));
+                .catch((e) => {
+                    if (e?.message?.includes("NEXT_REDIRECT") || e?.digest?.includes("NEXT_REDIRECT")) return;
+                    setError("Terjadi kesalahan, coba lagi nanti.");
+                });
         });
     };
 
@@ -48,7 +53,7 @@ export function LoginForm() {
                     <input
                         {...form.register("email")}
                         disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
                         placeholder="johndoe@example.com"
                         type="email"
                     />
@@ -59,13 +64,23 @@ export function LoginForm() {
 
                 <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Password</label>
-                    <input
-                        {...form.register("password")}
-                        disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
-                        placeholder="••••••••"
-                        type="password"
-                    />
+                    <div className="relative">
+                        <input
+                            {...form.register("password")}
+                            disabled={isPending}
+                            className="w-full pl-4 pr-10 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
+                            placeholder="••••••••"
+                            type={showPassword ? "text" : "password"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            disabled={isPending}
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    </div>
                     {form.formState.errors.password && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</p>
                     )}
@@ -80,7 +95,7 @@ export function LoginForm() {
                 <button
                     disabled={isPending}
                     type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
                 >
                     {isPending ? "Loading..." : "Masuk"}
                 </button>
@@ -122,7 +137,7 @@ export function LoginForm() {
 
             <div className="mt-8 text-center text-sm text-zinc-600">
                 Belum punya akun?{" "}
-                <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                <Link href="/register" className="font-semibold text-green-600 hover:text-green-500">
                     Daftar sekarang
                 </Link>
             </div>

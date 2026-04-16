@@ -7,6 +7,7 @@ import { WorkspaceRole, TransactionType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { getUserPlanLimits } from "./subscription";
+import { sendPushToWorkspace } from "./web-push";
 
 export type TransactionFilter = {
     type?: "INCOME" | "EXPENSE";
@@ -148,6 +149,17 @@ export async function createTransaction(
             createdById: session.user.id,
         },
     });
+
+    const amountStr = Number(amount).toLocaleString('id-ID');
+    sendPushToWorkspace(
+        workspaceId,
+        session.user.id,
+        {
+            title: "Transaksi Baru",
+            body: `${session.user.name || "Seseorang"} menambahkan transaksi ${type === "INCOME" ? "Pemasukan" : "Pengeluaran"} sebesar Rp${amountStr}`,
+            url: `/transactions`
+        }
+    );
 
     revalidatePath("/transactions");
     revalidatePath("/dashboard");

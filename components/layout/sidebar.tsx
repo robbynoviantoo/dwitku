@@ -31,6 +31,7 @@ import { useState, useEffect } from "react";
 import { useSidebar } from "@/components/providers/sidebar-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import { PushSubscriber } from "@/components/push-subscriber";
 
 type Workspace = {
   id: string;
@@ -254,6 +255,7 @@ function DesktopSidebar({
           {showAmount ? <EyeOff className="w-4 h-4 shrink-0" /> : <Eye className="w-4 h-4 shrink-0" />}
           {!collapsed && <span>{showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}</span>}
         </button>
+        <PushSubscriber collapsed={collapsed} className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2", "text-[var(--sidebar-text)]")} />
         <button onClick={toggleTheme} title={theme === "dark" ? "Mode Terang" : "Mode Gelap"} style={{ color: "var(--sidebar-text)" }}
           className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2")}>
           {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
@@ -439,6 +441,7 @@ function MobileSidebar({
             {showAmount ? <EyeOff className="w-4 h-4 shrink-0" /> : <Eye className="w-4 h-4 shrink-0" />}
             {showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
           </button>
+          <PushSubscriber collapsed={false} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-zinc-700 hover:bg-zinc-100" />
           <button onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-zinc-700 hover:bg-zinc-100">
             {theme === "dark" ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-green-500" />}

@@ -9,10 +9,12 @@ import { register } from "@/app/actions/auth";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export function RegisterForm() {
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
+    const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -42,7 +44,10 @@ export function RegisterForm() {
                         setTimeout(() => router.push("/login"), 2000);
                     }
                 })
-                .catch(() => setError("Terjadi kesalahan sistem."));
+                .catch((e) => {
+                    if (e?.message?.includes("NEXT_REDIRECT") || e?.digest?.includes("NEXT_REDIRECT")) return;
+                    setError("Terjadi kesalahan sistem.");
+                });
         });
     };
 
@@ -59,7 +64,7 @@ export function RegisterForm() {
                     <input
                         {...form.register("name")}
                         disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
                         placeholder="John Doe"
                         type="text"
                     />
@@ -73,7 +78,7 @@ export function RegisterForm() {
                     <input
                         {...form.register("email")}
                         disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
+                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
                         placeholder="johndoe@example.com"
                         type="email"
                     />
@@ -84,13 +89,23 @@ export function RegisterForm() {
 
                 <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Password</label>
-                    <input
-                        {...form.register("password")}
-                        disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors"
-                        placeholder="Min. 6 karakter"
-                        type="password"
-                    />
+                    <div className="relative">
+                        <input
+                            {...form.register("password")}
+                            disabled={isPending}
+                            className="w-full pl-4 pr-10 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
+                            placeholder="Min. 6 karakter"
+                            type={showPassword ? "text" : "password"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            disabled={isPending}
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    </div>
                     {form.formState.errors.password && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</p>
                     )}
@@ -111,7 +126,7 @@ export function RegisterForm() {
                 <button
                     disabled={isPending}
                     type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
                 >
                     {isPending ? "Loading..." : "Daftar"}
                 </button>
@@ -153,7 +168,7 @@ export function RegisterForm() {
 
             <div className="mt-8 text-center text-sm text-zinc-600">
                 Sudah punya akun?{" "}
-                <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                <Link href="/login" className="font-semibold text-green-600 hover:text-green-500">
                     Masuk di sini
                 </Link>
             </div>

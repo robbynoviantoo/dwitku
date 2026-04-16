@@ -81,3 +81,28 @@ self.addEventListener("fetch", (event) => {
   // Everything else (pages, navigation): pure network, no caching
   // This prevents the "Response body already used" error with Next.js RSC/HMR
 });
+
+// ─── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+
+self.addEventListener("push", (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || "/icon-192.png",
+      badge: "/icon-192.png",
+      vibrate: [100, 50, 100],
+      data: {
+        url: data.url || "/",
+      },
+    };
+    event.waitUntil(self.registration.showNotification(data.title || "Notifikasi", options));
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  if (event.notification.data && event.notification.data.url) {
+    event.waitUntil(self.clients.openWindow(event.notification.data.url));
+  }
+});
