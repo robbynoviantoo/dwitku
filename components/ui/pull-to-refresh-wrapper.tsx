@@ -60,12 +60,21 @@ export function PullToRefreshWrapper({
     return false;
   }, []);
 
-  // ── FIX 3: Check if ANY modal/overlay is currently rendered in the DOM ──
+  // ── FIX 3: Check if ANY modal/overlay is currently VISIBLE in the DOM ──
   // Catches the race condition: touchstart fires before modal renders,
   // but modal has rendered by the time touchend fires.
+  // Important: check computed style, not just class — sidebar backdrop is always
+  // in DOM with opacity-0 pointer-events-none (invisible/inactive).
   const hasActiveModal = useCallback((): boolean => {
     if (typeof document === "undefined") return false;
-    return !!document.querySelector(".fixed.inset-0");
+    const elements = document.querySelectorAll(".fixed.inset-0");
+    for (const el of elements) {
+      const style = window.getComputedStyle(el);
+      if (style.pointerEvents !== "none" && parseFloat(style.opacity) > 0) {
+        return true;
+      }
+    }
+    return false;
   }, []);
 
   const RESISTANCE = 2.8;
