@@ -245,6 +245,39 @@ export async function cancelInvite(inviteId: string) {
     return { success: true };
 }
 
+/** Cari user berdasarkan nama/email untuk autocomplete undang anggota */
+export async function searchUsers(query: string, workspaceId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+    if (!query || query.trim().length < 2) return [];
+
+    // Ambil daftar user yang sudah jadi anggota workspace (untuk exclude)
+    const existingMembers = await prisma.workspaceMember.findMany({
+        where: { workspaceId },
+        select: { userId: true },
+    });
+    const existingIds = existingMembers.map((m) => m.userId);
+
+    const users = await prisma.user.findMany({
+        where: {
+            AND: [
+                { id: { notIn: existingIds } }, // exclude yang sudah jadi member
+                { id: { not: session.user.id } }, // exclude diri sendiri
+                {
+                    OR: [
+                        { name: { contains: query, mode: "insensitive" } },
+                        { email: { contains: query, mode: "insensitive" } },
+                    ],
+                },
+            ],
+        },
+        select: { id: true, name: true, email: true, image: true },
+        take: 8,
+    });
+
+    return users;
+}
+
 /** Preview invite (untuk halaman /invite/[token]) — public, tidak butuh auth */
 export async function getInvitePreview(token: string) {
     const invite = await prisma.invite.findUnique({

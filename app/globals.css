@@ -103,8 +103,21 @@ html.dark {
 body {
   background: var(--bg-main);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  font-family: var(--font-inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* Inter stylistic sets */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Tabular numbers for financial data */
+.font-mono,
+.tabular-nums,
+[class*="amount"],
+[class*="currency"] {
+  font-family: var(--font-dm-mono, "DM Mono", "Roboto Mono", monospace);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* ─── Scrollbar ──────────────────────────────── */

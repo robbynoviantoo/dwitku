@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,13 +9,13 @@ import {
   WorkspaceRole,
   WorkspaceRoleType,
 } from "@/lib/validations/workspace";
-import { sendInvite, cancelInvite } from "@/app/actions/invite";
+import { sendInvite, cancelInvite, searchUsers } from "@/app/actions/invite";
 import {
   removeMember,
   updateMemberRole,
   getWorkspace,
 } from "@/app/actions/workspace";
-import { Mail, X, UserMinus, Loader2, Send, Shield, Eye } from "lucide-react";
+import { Mail, X, UserMinus, Loader2, Send, Shield, Eye, User } from "lucide-react";
 import { formatDateShort } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,13 @@ type Invite = {
   role: WorkspaceRoleType;
   expiresAt: Date;
   sender: { name: string | null; image: string | null };
+};
+
+type UserSuggestion = {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
 };
 
 const ROLE_LABELS: Record<WorkspaceRoleType, string> = {
@@ -73,6 +80,14 @@ export function MembersClient({
   >();
   const [copied, setCopied] = useState(false);
 
+  // User search autocomplete state
+  const [emailInput, setEmailInput] = useState("");
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   // Query
   const { data: workspace, isLoading } = useQuery({
     queryKey: ["workspace", workspaceId],
@@ -90,6 +105,51 @@ export function MembersClient({
     defaultValues: { email: "", role: WorkspaceRole.EDITOR },
   });
 
+  // Handle search with debounce
+  const handleEmailInputChange = (value: string) => {
+    setEmailInput(value);
+    form.setValue("email", value);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (value.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const results = await searchUsers(value, workspaceId);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+  };
+
+  const handleSelectSuggestion = (user: UserSuggestion) => {
+    setEmailInput(user.email);
+    form.setValue("email", user.email);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   // Mutations
   const inviteMutation = useMutation({
     mutationFn: (values: z.infer<typeof InviteMemberSchema>) =>
@@ -100,10 +160,12 @@ export function MembersClient({
       } else if (result.warning && result.inviteLink) {
         setWarning({ message: result.warning, link: result.inviteLink });
         form.reset();
+        setEmailInput("");
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
       } else {
         setSuccess(`✅ Email undangan berhasil dikirim ke ${variables.email}`);
         form.reset();
+        setEmailInput("");
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
       }
     },
@@ -200,13 +262,63 @@ export function MembersClient({
             onSubmit={form.handleSubmit(onInvite)}
             className="flex flex-col sm:flex-row gap-3"
           >
-            <input
-              {...form.register("email")}
-              type="email"
-              disabled={isPending}
-              placeholder="Email anggota baru..."
-              className="flex-1 px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 focus:bg-white transition-colors"
-            />
+            {/* Email input with autocomplete */}
+            <div className="relative flex-1" ref={suggestionsRef}>
+              <input
+                value={emailInput}
+                onChange={(e) => handleEmailInputChange(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                type="text"
+                disabled={isPending}
+                placeholder="Cari nama atau email anggota baru..."
+                autoComplete="off"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 focus:bg-white transition-colors"
+              />
+
+              {/* Search spinner inside input */}
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />
+                </div>
+              )}
+
+              {/* Suggestions dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                  <p className="text-xs text-zinc-400 px-3 pt-2 pb-1 font-medium">
+                    Pengguna di platform
+                  </p>
+                  {suggestions.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(user)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50 transition-colors text-left"
+                    >
+                      {user.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={user.image}
+                          alt={user.name ?? ""}
+                          className="w-7 h-7 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                          <User className="w-3.5 h-3.5 text-indigo-600" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-zinc-900 truncate">
+                          {user.name ?? "—"}
+                        </p>
+                        <p className="text-xs text-zinc-400 truncate">{user.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <select
               {...form.register("role")}
               disabled={isPending || !isOwner}
