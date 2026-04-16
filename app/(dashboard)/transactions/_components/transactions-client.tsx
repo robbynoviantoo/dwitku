@@ -319,8 +319,10 @@ function FilterPanel({
       {/* Collapsible filter panel */}
       <div
         className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          open ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0",
+          "transition-all duration-300 ease-in-out",
+          open
+            ? "max-h-[600px] opacity-100 mt-2 overflow-visible"
+            : "max-h-0 opacity-0 overflow-hidden",
         )}
       >
         <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-4 space-y-4">
