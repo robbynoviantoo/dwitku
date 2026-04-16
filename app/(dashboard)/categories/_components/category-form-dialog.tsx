@@ -49,7 +49,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
         defaultValues: {
             name: category?.name ?? "",
             emoji: category?.emoji ?? "📁",
-            color: category?.color ?? "#6366f1",
+            color: category?.color ?? "#22c55e",
             type: (category?.type as "INCOME" | "EXPENSE") ?? "EXPENSE",
         },
     });
@@ -121,7 +121,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                 <label
                                     key={t.value}
                                     className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-colors ${form.watch("type") === t.value
-                                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                                        ? "border-green-500 bg-green-50 text-green-700"
                                         : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
                                 >
@@ -151,7 +151,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                 <input
                                     {...form.register("name")}
                                     placeholder="Nama kategori..."
-                                    className="w-full h-12 px-4 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-indigo-400 bg-zinc-50 focus:bg-white transition-colors text-zinc-900"
+                                    className="w-full h-12 px-4 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-green-400 bg-zinc-50 focus:bg-white transition-colors text-zinc-900"
                                 />
                                 {form.formState.errors.name && (
                                     <p className="text-xs text-red-500 mt-1">
@@ -215,7 +215,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
                         >
                             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                             {isEdit ? "Simpan" : "Buat Kategori"}

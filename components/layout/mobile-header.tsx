@@ -19,9 +19,12 @@ export function MobileHeader() {
 
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs text-white">
-          D
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          src="/icon-192.png" 
+          alt="Logo" 
+          className="w-7 h-7 rounded-lg shadow-sm"
+        />
         <span className="font-bold text-base text-zinc-900 tracking-tight">Dwitku</span>
       </div>
 

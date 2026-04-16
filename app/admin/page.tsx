@@ -49,7 +49,7 @@ export default async function AdminPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Pengguna", value: totalUsers, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
+          { label: "Total Pengguna", value: totalUsers, icon: Users, color: "text-green-600", bg: "bg-green-50" },
           { label: "Total Workspace", value: totalWorkspaces, icon: Building2, color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Total Transaksi", value: totalTx.toLocaleString("id-ID"), icon: BarChart2, color: "text-green-600", bg: "bg-green-50" },
           { label: "Subscriber Aktif", value: activeSubs, icon: CreditCard, color: "text-amber-600", bg: "bg-amber-50" },

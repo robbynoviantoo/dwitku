@@ -110,7 +110,7 @@ function MiniCalendar({
         onClick={() => setOpen(v => !v)}
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all truncate",
-          open ? "border-indigo-400 bg-white ring-1 ring-indigo-100" : "border-zinc-200 bg-white hover:border-indigo-300",
+          open ? "border-green-400 bg-white ring-1 ring-green-100" : "border-zinc-200 bg-white hover:border-green-300",
           value ? "text-zinc-800 font-medium" : "text-zinc-400",
         )}
       >
@@ -151,7 +151,7 @@ function MiniCalendar({
                   onClick={() => selectDay(day)}
                   className={cn(
                     "mx-auto flex items-center justify-center w-7 h-7 rounded-full text-xs transition-all",
-                    isSelected(day) ? "bg-indigo-600 text-white font-bold" : isToday(day) ? "bg-indigo-50 text-indigo-600 font-semibold ring-1 ring-indigo-200" : "text-zinc-700 hover:bg-zinc-100",
+                    isSelected(day) ? "bg-green-600 text-white font-bold" : isToday(day) ? "bg-green-50 text-green-600 font-semibold ring-1 ring-green-200" : "text-zinc-700 hover:bg-zinc-100",
                   )}
                 >{day}</button>
               )
@@ -167,7 +167,7 @@ function MiniCalendar({
                 onChange(`${t.getFullYear()}-${mm}-${dd}`);
                 setOpen(false);
               }}
-              className="w-full py-1 text-[10px] font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-100"
+              className="w-full py-1 text-[10px] font-medium text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-100"
             >Hari ini</button>
           </div>
         </div>
@@ -256,9 +256,9 @@ function CategorySelect({
         onClick={open ? () => { setOpen(false); setSearch(""); } : handleOpen}
         className={cn(
           "flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm transition-all",
-          "bg-white border-zinc-200 text-zinc-700 hover:border-indigo-300 hover:bg-indigo-50/30",
-          open && "border-indigo-400 ring-2 ring-indigo-100",
-          value && "border-indigo-300 bg-indigo-50/40 text-indigo-800",
+          "bg-white border-zinc-200 text-zinc-700 hover:border-green-300 hover:bg-green-50/30",
+          open && "border-green-400 ring-2 ring-green-100",
+          value && "border-green-300 bg-green-50/40 text-green-800",
         )}
       >
         <Tag className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
@@ -284,7 +284,7 @@ function CategorySelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari kategori..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-zinc-50 focus:bg-white"
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300 bg-zinc-50 focus:bg-white"
               />
             </div>
           </div>
@@ -295,13 +295,13 @@ function CategorySelect({
               type="button"
               onClick={() => { onChange(""); setOpen(false); setSearch(""); }}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-indigo-50 transition-colors text-left",
-                !value && "bg-indigo-50 text-indigo-700 font-medium",
+                "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-green-50 transition-colors text-left",
+                !value && "bg-green-50 text-green-700 font-medium",
               )}
             >
               <span className="w-5 text-center text-base">🗂️</span>
               <span className="flex-1">Semua Kategori</span>
-              {!value && <Check className="w-3.5 h-3.5 text-indigo-500" />}
+              {!value && <Check className="w-3.5 h-3.5 text-green-500" />}
             </button>
 
             {filtered.length === 0 ? (
@@ -321,7 +321,7 @@ function CategorySelect({
                 >
                   <span className="w-5 text-center text-base">{c.emoji}</span>
                   <span className="flex-1 truncate">{c.name}</span>
-                  {value === c.id && <Check className="w-3.5 h-3.5 shrink-0 text-indigo-500" />}
+                  {value === c.id && <Check className="w-3.5 h-3.5 shrink-0 text-green-500" />}
                 </button>
               ))
             )}
@@ -408,7 +408,7 @@ function FilterPanel({
             value={search}
             onChange={(e) => onSearch(e.target.value)}
             placeholder="Cari catatan transaksi..."
-            className="w-full pl-9 pr-4 py-2.5 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white shadow-sm transition-all placeholder:text-zinc-400"
+            className="w-full pl-9 pr-4 py-2.5 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-300 bg-white shadow-sm transition-all placeholder:text-zinc-400"
           />
           {search && (
             <button
@@ -426,8 +426,8 @@ function FilterPanel({
           className={cn(
             "relative flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shadow-sm",
             open
-              ? "bg-indigo-600 border-indigo-600 text-white"
-              : "bg-white border-zinc-200 text-zinc-700 hover:border-indigo-300 hover:bg-indigo-50/40",
+              ? "bg-green-600 border-green-600 text-white"
+              : "bg-white border-zinc-200 text-zinc-700 hover:border-green-300 hover:bg-green-50/40",
           )}
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -436,7 +436,7 @@ function FilterPanel({
             <span
               className={cn(
                 "absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold",
-                open ? "bg-white text-indigo-600" : "bg-indigo-600 text-white",
+                open ? "bg-white text-green-600" : "bg-green-600 text-white",
               )}
             >
               {activeCount}
@@ -515,7 +515,7 @@ function FilterPanel({
           {activeCount > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-100">
               {filter.type && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700 font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">
                   {filter.type === "INCOME" ? "↑ Pemasukan" : "↓ Pengeluaran"}
                   <button onClick={() => onFilterChange({ type: undefined })}>
                     <X className="w-3 h-3" />
@@ -523,7 +523,7 @@ function FilterPanel({
                 </span>
               )}
               {filter.categoryId && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700 font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">
                   {categories.find((c) => c.id === filter.categoryId)?.emoji}{" "}
                   {categories.find((c) => c.id === filter.categoryId)?.name}
                   <button onClick={() => onFilterChange({ categoryId: undefined })}>
@@ -532,7 +532,7 @@ function FilterPanel({
                 </span>
               )}
               {filter.dateFrom && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700 font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">
                   Dari {filter.dateFrom}
                   <button onClick={() => onFilterChange({ dateFrom: undefined })}>
                     <X className="w-3 h-3" />
@@ -540,7 +540,7 @@ function FilterPanel({
                 </span>
               )}
               {filter.dateTo && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700 font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">
                   S/d {filter.dateTo}
                   <button onClick={() => onFilterChange({ dateTo: undefined })}>
                     <X className="w-3 h-3" />
@@ -753,7 +753,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
           <div className="flex gap-1 justify-end">
             <button
               onClick={() => setDialog({ open: true, transaction: tx })}
-              className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -913,7 +913,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
             {canEdit && (
               <button
                 onClick={() => setDialog({ open: true })}
-                className="mt-3 text-indigo-600 text-sm font-medium underline underline-offset-2"
+                className="mt-3 text-green-600 text-sm font-medium underline underline-offset-2"
               >
                 Tambah sekarang
               </button>
@@ -993,7 +993,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                       <div className="flex gap-0.5">
                         <button
                           onClick={() => setDialog({ open: true, transaction: tx as any })}
-                          className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -1075,7 +1075,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                     {canEdit && (
                       <button
                         onClick={() => setDialog({ open: true })}
-                        className="mt-2 text-indigo-600 underline underline-offset-2 text-sm hover:text-indigo-700"
+                        className="mt-2 text-green-600 underline underline-offset-2 text-sm hover:text-green-700"
                       >
                         Tambah sekarang
                       </button>
@@ -1161,7 +1161,7 @@ function TransactionsSkeleton({ canEdit }: { canEdit: boolean }) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2 tracking-tight">
-            <ArrowLeftRight className="w-6 h-6 text-indigo-500" />
+            <ArrowLeftRight className="w-6 h-6 text-green-500" />
             Transaksi
           </h1>
           <Skeleton className="h-4 w-32 mt-2" />

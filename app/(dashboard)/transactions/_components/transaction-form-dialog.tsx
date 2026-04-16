@@ -86,7 +86,7 @@ function AmountInput({
                     value={display}
                     onChange={handleChange}
                     placeholder="0"
-                    className="w-full pl-10 pr-4 py-2.5 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-indigo-400 bg-zinc-50 focus:bg-white transition-colors text-zinc-900 text-right font-semibold text-lg tabular-nums tracking-tight"
+                    className="w-full pl-10 pr-4 py-2.5 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-green-400 bg-zinc-50 focus:bg-white transition-colors text-zinc-900 text-right font-semibold text-lg tabular-nums tracking-tight"
                 />
             </div>
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -186,7 +186,7 @@ function CalendarPicker({
                 className={cn(
                     "w-full flex items-center gap-3 px-4 py-2.5 border-2 rounded-xl text-sm transition-all text-left",
                     open
-                        ? "border-indigo-400 bg-white"
+                        ? "border-green-400 bg-white"
                         : "border-zinc-200 bg-zinc-50 hover:border-zinc-300",
                     !value && "text-zinc-400",
                     value && "text-zinc-900 font-medium",
@@ -244,9 +244,9 @@ function CalendarPicker({
                                     className={cn(
                                         "mx-auto flex items-center justify-center w-8 h-8 rounded-full text-sm transition-all",
                                         isSelected(day)
-                                            ? "bg-indigo-600 text-white font-bold shadow-sm"
+                                            ? "bg-green-600 text-white font-bold shadow-sm"
                                             : isToday(day)
-                                                ? "bg-indigo-50 text-indigo-600 font-semibold ring-1 ring-indigo-200"
+                                                ? "bg-green-50 text-green-600 font-semibold ring-1 ring-green-200"
                                                 : "text-zinc-700 hover:bg-zinc-100",
                                     )}
                                 >
@@ -267,7 +267,7 @@ function CalendarPicker({
                                 onChange(`${t.getFullYear()}-${mm}-${dd}`);
                                 setOpen(false);
                             }}
-                            className="w-full py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-100"
+                            className="w-full py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-100"
                         >
                             Hari ini
                         </button>
@@ -446,7 +446,7 @@ export function TransactionFormDialog({
                                             className={cn(
                                                 "flex flex-col items-center gap-1 p-2 rounded-xl border-2 cursor-pointer transition-colors text-center",
                                                 selected
-                                                    ? "border-indigo-500 bg-indigo-50"
+                                                    ? "border-green-500 bg-green-50"
                                                     : "border-zinc-200 hover:border-zinc-300"
                                             )}
                                         >
@@ -479,7 +479,7 @@ export function TransactionFormDialog({
                             {...form.register("note")}
                             rows={2}
                             placeholder="Keterangan transaksi..."
-                            className="w-full px-4 py-2.5 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-indigo-400 bg-zinc-50 focus:bg-white transition-colors resize-none text-sm"
+                            className="w-full px-4 py-2.5 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-green-400 bg-zinc-50 focus:bg-white transition-colors resize-none text-sm"
                         />
                     </div>
 

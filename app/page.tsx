@@ -109,11 +109,11 @@ const PLANS = [
     price: "Rp 49.000",
     period: "/ bulan",
     tagline: "Untuk power user yang niat banget",
-    color: "border-purple-400",
+    color: "border-green-700 shadow-xl shadow-green-100",
     badge: null,
     cta: "Coba 7 Hari Gratis",
     ctaHref: "/register?plan=pro",
-    ctaStyle: "bg-purple-600 hover:bg-purple-700 text-white",
+    ctaStyle: "bg-green-800 hover:bg-green-900 text-white",
     features: [
       "Semua fitur Basic",
       "Unlimited workspace",
@@ -149,7 +149,7 @@ const TESTIMONIALS = [
     name: "Komunitas UKM Batik",
     role: "Pengelola Kas",
     avatar: "K",
-    color: "bg-purple-500",
+    color: "bg-green-800",
     text: "Kami pakai Dwitku untuk kas komunitas. Export Excel-nya membantu banget saat laporan bulanan ke anggota.",
     rating: 5,
   },
@@ -251,8 +251,8 @@ export default function LandingPage() {
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {[
                     { label: "Pemasukan", val: "Rp 8.500.000", color: "text-green-600" },
-                    { label: "Pengeluaran", val: "Rp 3.200.000", color: "text-red-500" },
-                    { label: "Saldo", val: "+ Rp 5.300.000", color: "text-blue-600" },
+                    { label: "Trial", status: "text-emerald-600 bg-emerald-50", val: "Rp 3.200.000", color: "text-red-500" },
+                    { label: "Saldo", val: "+ Rp 5.300.000", color: "text-emerald-600" },
                   ].map((c) => (
                     <div key={c.label} className="bg-white rounded-xl p-3 shadow-sm border border-zinc-100">
                       <p className="text-[9px] text-zinc-400 mb-1">{c.label}</p>

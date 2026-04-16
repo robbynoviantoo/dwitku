@@ -87,7 +87,7 @@ export function UserActions({ userId, isAdmin, isMe, hasActiveSubscription }: Us
 
           <button
             onClick={() => handleAction(() => grantPremium(userId, "pro"), "Berikan paket premium PRO secara gratis selama 1 tahun ke user ini?")}
-            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-indigo-50 transition-colors text-indigo-600"
+            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-emerald-50 transition-colors text-emerald-600"
           >
             <Crown className="w-4 h-4" /> Beri Premium (Pro)
           </button>

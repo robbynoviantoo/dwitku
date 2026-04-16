@@ -235,7 +235,7 @@ export function ReportsClient({
                     prev: comparison.previous.net,
                     colorClass:
                       comparison.current.net >= 0
-                        ? "text-indigo-600"
+                        ? "text-green-600"
                         : "text-red-500",
                   },
                 ].map((row) => {

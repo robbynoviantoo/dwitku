@@ -43,18 +43,18 @@ const ROLE_LABEL: Record<string, string> = {
 
 const ROLE_COLOR: Record<string, string> = {
   OWNER: "text-amber-600 bg-amber-50 border-amber-200",
-  ADMIN: "text-indigo-600 bg-indigo-50 border-indigo-200",
+  ADMIN: "text-green-600 bg-green-50 border-green-200",
   MEMBER: "text-zinc-600 bg-zinc-50 border-zinc-200",
   VIEWER: "text-zinc-500 bg-zinc-50 border-zinc-200",
 };
 
 const WORKSPACE_COLORS = [
-  "from-indigo-500 to-violet-600",
-  "from-emerald-500 to-teal-600",
+  "from-emerald-500 to-green-600",
+  "from-green-500 to-emerald-600",
   "from-orange-500 to-amber-600",
   "from-rose-500 to-pink-600",
   "from-cyan-500 to-blue-600",
-  "from-purple-500 to-indigo-600",
+  "from-emerald-400 to-teal-500",
 ];
 
 function colorForWorkspace(id: string) {
@@ -141,7 +141,7 @@ export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClient
                 className={cn(
                   "group text-left bg-white rounded-2xl border border-zinc-100 shadow-sm",
                   "hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200",
-                  "focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2",
+                  "focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2",
                   "overflow-hidden flex flex-col w-full",
                 )}
               >
@@ -187,7 +187,7 @@ export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClient
                 {/* Footer */}
                 <div className="px-4 pb-3 flex items-center justify-between">
                   <span className="text-[11px] text-zinc-400">Klik untuk masuk</span>
-                  <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-green-500 group-hover:translate-x-0.5 transition-all" />
                 </div>
               </button>
             ))}

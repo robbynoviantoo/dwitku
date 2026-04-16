@@ -29,7 +29,7 @@ const PLAN_CARDS: { key: PlanKey; badge?: string; color: string; highlight?: boo
 ];
 
 const STATUS_CONFIG: Record<SubStatus, { label: string; color: string; icon: any }> = {
-  TRIAL: { label: "Trial Aktif", color: "text-blue-600 bg-blue-50 border-blue-200", icon: Clock },
+  TRIAL: { label: "Trial Aktif", color: "text-emerald-600 bg-emerald-50 border-emerald-200", icon: Clock },
   ACTIVE: { label: "Aktif", color: "text-green-600 bg-green-50 border-green-200", icon: CheckCircle2 },
   EXPIRED: { label: "Kadaluarsa", color: "text-red-600 bg-red-50 border-red-200", icon: AlertCircle },
   CANCELLED: { label: "Dibatalkan", color: "text-zinc-600 bg-zinc-50 border-zinc-200", icon: AlertCircle },
@@ -143,7 +143,7 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                {subStatus === "ACTIVE" ? <Star className="w-5 h-5 text-amber-500" /> : <Clock className="w-5 h-5 text-blue-500" />}
+                {subStatus === "ACTIVE" ? <Star className="w-5 h-5 text-amber-500" /> : <Clock className="w-5 h-5 text-emerald-500" />}
               </div>
               <div>
                 <p className="font-bold text-zinc-900">{subscription.plan.name}</p>
@@ -209,7 +209,6 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
                   ...(limits.canExport ? ["Export Excel & CSV"] : []),
                   ...(limits.canReport ? ["Laporan & grafik lanjutan"] : []),
                   ...(limits.canBudget ? ["Budgeting & notifikasi"] : []),
-                  ...(limits.trialDays > 0 ? [`Trial ${limits.trialDays} hari gratis`] : []),
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-zinc-600">
                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />

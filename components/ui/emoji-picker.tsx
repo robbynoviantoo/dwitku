@@ -33,7 +33,7 @@ export function EmojiPickerButton({ value, onChange }: Props) {
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="w-12 h-12 text-2xl rounded-xl border-2 border-zinc-200 hover:border-indigo-400 bg-zinc-50 hover:bg-indigo-50 flex items-center justify-center transition-colors"
+                className="w-12 h-12 text-2xl rounded-xl border-2 border-zinc-200 hover:border-green-400 bg-zinc-50 hover:bg-green-50 flex items-center justify-center transition-colors"
                 title="Pilih emoji"
             >
                 {value}

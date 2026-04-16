@@ -37,18 +37,26 @@ export default function OnboardingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white mb-4 shadow-lg shadow-indigo-200">
-                        <Building2 className="w-8 h-8" />
+                {/* Header with Logo */}
+                <div className="flex flex-col items-center mb-8">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/icon-192.png"
+                        alt="Logo"
+                        className="w-12 h-12 rounded-2xl shadow-lg shadow-green-100 mb-6"
+                    />
+                    <div className="text-center">
+                        <p className="text-sm font-semibold text-green-600 uppercase tracking-wider mb-1">
+                            Langkah Awal
+                        </p>
+                        <h1 className="text-3xl font-bold text-zinc-900">Buat Workspace</h1>
+                        <p className="text-zinc-500 mt-3 text-sm max-w-sm mx-auto">
+                            Workspace adalah &quot;buku kas bersama&quot; — cocok untuk mencatat keuangan bareng
+                            keluarga, komunitas, atau tim.
+                        </p>
                     </div>
-                    <h1 className="text-3xl font-bold text-zinc-900">Buat Workspace Bersama</h1>
-                    <p className="text-zinc-500 mt-2 text-sm">
-                        Workspace adalah &quot;buku kas bersama&quot; — cocok untuk mencatat keuangan bareng
-                        keluarga, komunitas, atau tim.
-                    </p>
                 </div>
 
                 {/* Form */}
@@ -62,7 +70,7 @@ export default function OnboardingPage() {
                                 {...form.register("name")}
                                 disabled={isPending}
                                 placeholder="Contoh: Keuangan Keluarga, Kas RT, Kas Komunitas..."
-                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400"
+                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400"
                             />
                             {form.formState.errors.name && (
                                 <p className="text-sm text-red-500 mt-1">
@@ -81,7 +89,7 @@ export default function OnboardingPage() {
                                 disabled={isPending}
                                 rows={3}
                                 placeholder="Catatan singkat tentang workspace ini..."
-                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400 resize-none"
+                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400 resize-none"
                             />
                         </div>
 
@@ -92,7 +100,7 @@ export default function OnboardingPage() {
                             <select
                                 {...form.register("currency")}
                                 disabled={isPending}
-                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors text-zinc-900 appearance-none"
+                                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors text-zinc-900 appearance-none"
                             >
                                 <option value="IDR">IDR — Rupiah Indonesia</option>
                                 <option value="USD">USD — US Dollar</option>
@@ -110,7 +118,7 @@ export default function OnboardingPage() {
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-60"
+                            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-60 shadow-lg shadow-green-100"
                         >
                             {isPending ? (
                                 <>

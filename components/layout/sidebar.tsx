@@ -371,20 +371,20 @@ function MobileSidebar({
         style={{ backgroundColor: "var(--sidebar-bg)" }}
       >
         {/* Header with user info */}
-        <div className="shrink-0 px-5 pt-12 pb-5 relative" style={{ background: "linear-gradient(135deg, var(--accent) 0%, #059669 100%)" }}>
+        <div className="shrink-0 px-5 pt-8 pb-3.5 relative" style={{ background: "linear-gradient(135deg, var(--accent) 0%, #059669 100%)" }}>
           <button onClick={close} className="absolute top-4 right-4 p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {user.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.image} alt="" className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/30 shrink-0" />
+              <img src={user.image} alt="" className="w-10 h-10 rounded-xl object-cover ring-2 ring-white/30 shrink-0" />
             ) : (
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white bg-white/20 ring-2 ring-white/30 shrink-0">{getInitials(user.name)}</div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white bg-white/20 ring-2 ring-white/30 shrink-0">{getInitials(user.name)}</div>
             )}
             <div className="min-w-0">
-              <p className="text-base font-bold text-white truncate">{user.name ?? "Pengguna"}</p>
-              <p className="text-xs text-white/60 truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-white truncate">{user.name ?? "Pengguna"}</p>
+              <p className="text-[10px] text-white/60 truncate">{user.email}</p>
             </div>
           </div>
         </div>
@@ -403,7 +403,7 @@ function MobileSidebar({
 
           <div className="flex items-center justify-between px-3 mb-2">
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--sidebar-section-label)" }}>Workspace</p>
-            <Link href="/onboarding" onClick={close} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+            <Link href="/onboarding" onClick={close} className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700">
               <Plus className="w-3.5 h-3.5" />Buat
             </Link>
           </div>
@@ -411,7 +411,7 @@ function MobileSidebar({
           {workspaces.length === 0 ? (
             <div className="px-3 py-3 rounded-xl bg-zinc-50 text-center">
               <p className="text-xs text-zinc-500">Belum ada workspace</p>
-              <Link href="/onboarding" onClick={close} className="text-xs mt-1 inline-block text-indigo-600 font-medium">+ Buat sekarang</Link>
+              <Link href="/onboarding" onClick={close} className="text-xs mt-1 inline-block text-green-600 font-medium">+ Buat sekarang</Link>
             </div>
           ) : (
             <div className="space-y-1">
@@ -424,7 +424,7 @@ function MobileSidebar({
                       onClick={() => setExpandedWs(isOpen ? null : ws.id)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
-                        isActiveWs ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100",
+                        isActiveWs ? "bg-green-50 text-green-700 dark:bg-green-900/40" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100",
                       )}
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"

@@ -61,8 +61,8 @@ const ROLE_ICONS: Record<WorkspaceRoleType, React.ReactNode> = {
 };
 
 const ROLE_COLORS: Record<WorkspaceRoleType, string> = {
-  OWNER: "bg-purple-100 text-purple-700",
-  EDITOR: "bg-blue-100 text-blue-700",
+  OWNER: "bg-green-100 text-green-700",
+  EDITOR: "bg-emerald-50 text-emerald-700 border border-emerald-100",
   VIEWER: "bg-zinc-100 text-zinc-600",
 };
 
