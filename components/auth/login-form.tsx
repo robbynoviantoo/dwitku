@@ -7,11 +7,14 @@ import { LoginSchema } from "@/lib/validations/auth";
 import { useState, useTransition } from "react";
 import { login } from "@/app/actions/auth";
 import Link from "next/link";
-// signIn imported dari next-auth dipanggil jika ingin google login via client component (untuk google oauth)
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm() {
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl");
+
     const [error, setError] = useState<string | undefined>("");
     const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -27,7 +30,7 @@ export function LoginForm() {
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
         setError("");
         startTransition(() => {
-            login(values)
+            login(values, callbackUrl)
                 .then((data) => {
                     if (data?.error) {
                         setError(data.error);
@@ -111,7 +114,7 @@ export function LoginForm() {
                 type="button"
                 disabled={isPending}
                 // Gunakan fungsi client signIn untuk OAuth provider
-                onClick={() => signIn("google", { callbackUrl: "/workspaces" })}
+                onClick={() => signIn("google", { callbackUrl: callbackUrl || "/workspaces" })}
                 className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">

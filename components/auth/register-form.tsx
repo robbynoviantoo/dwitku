@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 import { register } from "@/app/actions/auth";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 export function RegisterForm() {
@@ -17,6 +17,8 @@ export function RegisterForm() {
     const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl");
 
     const form = useForm<z.infer<typeof RegisterSchema>>({
         resolver: zodResolver(RegisterSchema),
@@ -41,7 +43,8 @@ export function RegisterForm() {
                         setSuccess(data.success);
                         form.reset();
                         // Pindahkan ke login page setelah beberapa detik (sebagai bonus UX)
-                        setTimeout(() => router.push("/login"), 2000);
+                        const loginUrl = callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login";
+                        setTimeout(() => router.push(loginUrl), 2000);
                     }
                 })
                 .catch((e) => {
@@ -142,7 +145,7 @@ export function RegisterForm() {
                 type="button"
                 disabled={isPending}
                 // Gunakan client action NextAuth untuk provider
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: callbackUrl || "/dashboard" })}
                 className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">

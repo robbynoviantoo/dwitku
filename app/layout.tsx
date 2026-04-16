@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, DM_Mono } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "@/components/providers/session-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -56,7 +57,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${dmMono.variable} antialiased`}
       >
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

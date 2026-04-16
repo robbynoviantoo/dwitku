@@ -23,13 +23,11 @@ export default async function SettingsPage({
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <Settings className="w-5 h-5 text-indigo-500" />
-          <h1 className="text-2xl font-bold text-zinc-900">
-            Pengaturan Workspace
-          </h1>
-        </div>
-        <p className="text-zinc-500 text-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Konfigurasi</p>
+        <h1 className="text-2xl font-bold text-zinc-900">
+          Pengaturan Workspace
+        </h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Konfigurasi pengaturan workspace Anda secara menyeluruh.
         </p>
       </div>

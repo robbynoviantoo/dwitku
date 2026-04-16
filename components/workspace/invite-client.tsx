@@ -89,8 +89,8 @@ export function InviteClient({
     return (
         <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-8 text-center">
             {/* Workspace icon */}
-            <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-indigo-600" />
+            <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-8 h-8 text-green-600" />
             </div>
 
             <h2 className="text-2xl font-bold text-zinc-900 mb-1">{invite.workspace.name}</h2>
@@ -104,7 +104,7 @@ export function InviteClient({
                     Kamu diundang oleh{" "}
                     <span className="font-medium text-zinc-800">{invite.sender.name ?? "seseorang"}</span>{" "}
                     sebagai{" "}
-                    <span className="font-medium text-indigo-600">
+                    <span className="font-medium text-green-600">
                         {ROLE_LABELS[invite.role] ?? invite.role}
                     </span>
                 </p>
@@ -142,7 +142,7 @@ export function InviteClient({
                     <button
                         onClick={handleAccept}
                         disabled={isPending}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
                     >
                         {isPending ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

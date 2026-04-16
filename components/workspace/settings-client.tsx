@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -106,18 +107,51 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
     updateMutation.mutate(values);
   };
 
-  const handleDelete = () => {
-    if (
-      !confirm(
-        "Yakin ingin menghapus workspace ini? Semua data akan ikut terhapus.",
-      )
-    )
-      return;
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: "Hapus Workspace?",
+      html: "Apakah Anda yakin ingin menghapus workspace ini? Semua data transaksi dan anggota akan ikut <b>terhapus secara permanen</b>.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+      customClass: {
+        popup: "!rounded-2xl !font-[Inter,sans-serif]",
+        title: "!text-zinc-900 !text-lg !font-bold",
+        htmlContainer: "!text-zinc-500 !text-sm",
+        confirmButton: "!rounded-xl !text-sm !font-semibold !px-5 !py-2.5",
+        cancelButton: "!rounded-xl !text-sm !font-medium !px-5 !py-2.5",
+      },
+    });
+
+    if (!result.isConfirmed) return;
     deleteMutation.mutate();
   };
 
-  const handleLeave = () => {
-    if (!confirm("Yakin ingin keluar dari workspace ini?")) return;
+  const handleLeave = async () => {
+    const result = await Swal.fire({
+      title: "Keluar Workspace?",
+      html: "Apakah Anda yakin ingin keluar dari workspace ini? Anda tidak akan bisa mengakses data di dalamnya lagi.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Keluar",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+      customClass: {
+        popup: "!rounded-2xl !font-[Inter,sans-serif]",
+        title: "!text-zinc-900 !text-lg !font-bold",
+        htmlContainer: "!text-zinc-500 !text-sm",
+        confirmButton: "!rounded-xl !text-sm !font-semibold !px-5 !py-2.5",
+        cancelButton: "!rounded-xl !text-sm !font-medium !px-5 !py-2.5",
+      },
+    });
+
+    if (!result.isConfirmed) return;
     leaveMutation.mutate();
   };
 
@@ -153,7 +187,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
             <input
               {...form.register("name")}
               disabled={!isOwner || isPending}
-              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 focus:bg-white transition-colors disabled:text-zinc-400"
+              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 focus:bg-white transition-colors disabled:text-zinc-400"
             />
             {form.formState.errors.name && (
               <p className="text-xs text-red-500 mt-1">
@@ -169,7 +203,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
               {...form.register("description")}
               disabled={!isOwner || isPending}
               rows={3}
-              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 focus:bg-white transition-colors resize-none disabled:text-zinc-400"
+              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 focus:bg-white transition-colors resize-none disabled:text-zinc-400"
             />
           </div>
           <div>
@@ -179,7 +213,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
             <select
               {...form.register("currency")}
               disabled={!isOwner || isPending}
-              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 transition-colors disabled:text-zinc-400"
+              className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 transition-colors disabled:text-zinc-400"
             >
               <option value="IDR">IDR — Rupiah Indonesia</option>
               <option value="USD">USD — US Dollar</option>
@@ -203,7 +237,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+              className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
             >
               {updateMutation.isPending && (
                 <Loader2 className="w-4 h-4 animate-spin" />

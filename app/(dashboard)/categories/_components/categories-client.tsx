@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Swal from "sweetalert2";
 import {
   Plus,
   Pencil,
@@ -60,9 +61,27 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
       ? categories
       : (categories as Category[]).filter((c) => c.type === filter);
 
-  const handleDelete = (cat: Category) => {
-    if (!confirm(`Hapus kategori "${cat.name}"? Ini tidak bisa dibatalkan.`))
-      return;
+  const handleDelete = async (cat: Category) => {
+    const result = await Swal.fire({
+      title: "Hapus Kategori?",
+      html: `Apakah Anda yakin ingin menghapus kategori <b>${cat.emoji} ${cat.name}</b>? Tindakan ini tidak bisa dibatalkan.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+      customClass: {
+        popup: "!rounded-2xl !font-[Inter,sans-serif]",
+        title: "!text-zinc-900 !text-lg !font-bold",
+        htmlContainer: "!text-zinc-500 !text-sm",
+        confirmButton: "!rounded-xl !text-sm !font-semibold !px-5 !py-2.5",
+        cancelButton: "!rounded-xl !text-sm !font-medium !px-5 !py-2.5",
+      },
+    });
+
+    if (!result.isConfirmed) return;
     deleteMutation.mutate(cat.id);
   };
 

@@ -50,15 +50,30 @@ export const {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.sub = user.id;
             }
+            
+            // Re-fetch user to check for password (or use trigger to update)
+            if (trigger === "update" && session?.hasPassword !== undefined) {
+                token.hasPassword = session.hasPassword;
+            } else if (!token.hasPassword && token.sub) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.sub },
+                    select: { password: true }
+                });
+                token.hasPassword = !!dbUser?.password;
+            }
+            
             return token;
         },
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
+            }
+            if (token.hasPassword !== undefined) {
+                session.user.hasPassword = token.hasPassword as boolean;
             }
             return session;
         },

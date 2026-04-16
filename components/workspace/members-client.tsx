@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -214,16 +215,30 @@ export function MembersClient({
     inviteMutation.mutate(values);
   };
 
-  const handleRemoveMember = (
+  const handleRemoveMember = async (
     memberUserId: string,
     memberName: string | null,
   ) => {
-    if (
-      !confirm(
-        `Yakin ingin mengeluarkan ${memberName ?? "anggota"} dari workspace?`,
-      )
-    )
-      return;
+    const result = await Swal.fire({
+      title: "Keluarkan Anggota?",
+      html: `Apakah Anda yakin ingin mengeluarkan <b>${memberName ?? "anggota"}</b> dari workspace ini?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Keluarkan",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+      customClass: {
+        popup: "!rounded-2xl !font-[Inter,sans-serif]",
+        title: "!text-zinc-900 !text-lg !font-bold",
+        htmlContainer: "!text-zinc-500 !text-sm",
+        confirmButton: "!rounded-xl !text-sm !font-semibold !px-5 !py-2.5",
+        cancelButton: "!rounded-xl !text-sm !font-medium !px-5 !py-2.5",
+      },
+    });
+
+    if (!result.isConfirmed) return;
     removeMutation.mutate(memberUserId);
   };
 
@@ -254,7 +269,7 @@ export function MembersClient({
       {canInvite && (
         <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
           <h2 className="font-semibold text-zinc-900 mb-4 flex items-center gap-2">
-            <Mail className="w-4 h-4 text-indigo-500" />
+            <Mail className="w-4 h-4 text-green-600" />
             Undang Anggota
           </h2>
 
@@ -272,7 +287,7 @@ export function MembersClient({
                 disabled={isPending}
                 placeholder="Cari nama atau email anggota baru..."
                 autoComplete="off"
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 focus:bg-white transition-colors"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 focus:bg-white transition-colors"
               />
 
               {/* Search spinner inside input */}
@@ -293,7 +308,7 @@ export function MembersClient({
                       key={user.id}
                       type="button"
                       onClick={() => handleSelectSuggestion(user)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-green-50 transition-colors text-left"
                     >
                       {user.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -303,8 +318,8 @@ export function MembersClient({
                           className="w-7 h-7 rounded-full object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                          <User className="w-3.5 h-3.5 text-indigo-600" />
+                        <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <User className="w-3.5 h-3.5 text-green-600" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
@@ -322,7 +337,7 @@ export function MembersClient({
             <select
               {...form.register("role")}
               disabled={isPending || !isOwner}
-              className="px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-zinc-50 text-zinc-700 transition-colors"
+              className="px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 text-zinc-700 transition-colors"
             >
               {isOwner && <option value={WorkspaceRole.EDITOR}>Editor</option>}
               <option value={WorkspaceRole.VIEWER}>Viewer</option>
@@ -330,7 +345,7 @@ export function MembersClient({
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
             >
               {inviteMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -395,7 +410,7 @@ export function MembersClient({
                   className="w-9 h-9 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
+                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">
                   {(member.user.name ?? "?")[0].toUpperCase()}
                 </div>
               )}
@@ -424,7 +439,7 @@ export function MembersClient({
                     )
                   }
                   disabled={isPending}
-                  className="text-xs border border-zinc-200 rounded-md px-2 py-1 bg-zinc-50 text-zinc-700 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  className="text-xs border border-zinc-200 rounded-md px-2 py-1 bg-zinc-50 text-zinc-700 focus:outline-none focus:ring-1 focus:ring-green-500"
                 >
                   <option value={WorkspaceRole.EDITOR}>Editor</option>
                   <option value={WorkspaceRole.VIEWER}>Viewer</option>

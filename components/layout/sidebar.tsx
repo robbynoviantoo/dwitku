@@ -32,6 +32,7 @@ import { useSidebar } from "@/components/providers/sidebar-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { PushSubscriber } from "@/components/push-subscriber";
+import * as Popover from "@radix-ui/react-popover";
 
 type Workspace = {
   id: string;
@@ -98,15 +99,15 @@ function DesktopSidebar({
       <div style={{ borderBottom: "1px solid var(--sidebar-border)" }} className="shrink-0 py-3 px-2">
         {collapsed ? (
           <div className="flex flex-col items-center gap-2">
-            <div style={{ backgroundColor: "var(--sidebar-logo-bg)" }} className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white">D</div>
-            <button onClick={toggleCollapsed} style={{ color: "var(--sidebar-text)" }} className="p-1.5 rounded-lg hover:bg-[var(--sidebar-item-bg-hover)] transition-colors" title="Perluas Sidebar">
+            <img src="/icon-192.png" alt="Dwitku" className="w-9 h-9 rounded-xl shadow-sm object-cover" />
+            <button onClick={toggleCollapsed} style={{ color: "var(--sidebar-text)" }} className="p-1.5 rounded-lg hover:bg-(--sidebar-item-bg-hover) transition-colors" title="Perluas Sidebar">
               <PanelLeftOpen className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <div className="flex items-center justify-between">
             <Link href="/workspaces" className="flex items-center gap-2 min-w-0">
-              <div style={{ backgroundColor: "var(--sidebar-logo-bg)" }} className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white shrink-0">D</div>
+              <img src="/icon-192.png" alt="Dwitku" className="w-8 h-8 rounded-lg shadow-sm object-cover" />
               <span style={{ color: "var(--sidebar-text-header)" }} className="font-bold text-lg tracking-tight">DWITKU</span>
             </Link>
             <button onClick={toggleCollapsed} style={{ color: "var(--sidebar-text)" }} className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--sidebar-item-bg-hover)] transition-colors shrink-0">
@@ -139,28 +140,42 @@ function DesktopSidebar({
             const isActiveWs = activeWsId === ws.id;
             return (
               <div key={ws.id}>
-                <button
-                  onClick={() => { if (!collapsed) setExpandedWs(isOpen ? null : ws.id); }}
-                  title={collapsed ? ws.name : undefined}
-                  style={isActiveWs ? { backgroundColor: "var(--sidebar-item-bg-hover)" } : { color: "var(--sidebar-text)" }}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 rounded-xl text-sm transition-colors text-left hover:bg-[var(--sidebar-item-bg-hover)]",
-                    collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2",
-                  )}
-                >
-                  <div
-                    style={isActiveWs ? { backgroundColor: "var(--accent)", color: "#fff" } : { backgroundColor: "var(--sidebar-icon-ws-bg)", color: "var(--sidebar-icon-ws-text)" }}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
-                  >
-                    {getInitials(ws.name)}
-                  </div>
-                  {!collapsed && (
-                    <>
+                <Popover.Root>
+                  {collapsed ? (
+                    <Popover.Trigger asChild>
+                      <button
+                        title={ws.name}
+                        style={isActiveWs ? { backgroundColor: "var(--sidebar-item-bg-hover)" } : { color: "var(--sidebar-text)" }}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-xl text-sm transition-colors justify-center w-10 h-10 mx-auto hover:bg-[var(--sidebar-item-bg-hover)]",
+                        )}
+                      >
+                        <div
+                          style={isActiveWs ? { backgroundColor: "var(--accent)", color: "#fff" } : { backgroundColor: "var(--sidebar-icon-ws-bg)", color: "var(--sidebar-icon-ws-text)" }}
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
+                        >
+                          {getInitials(ws.name)}
+                        </div>
+                      </button>
+                    </Popover.Trigger>
+                  ) : (
+                    <button
+                      onClick={() => setExpandedWs(isOpen ? null : ws.id)}
+                      style={isActiveWs ? { backgroundColor: "var(--sidebar-item-bg-hover)" } : { color: "var(--sidebar-text)" }}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 rounded-xl text-sm transition-colors text-left hover:bg-[var(--sidebar-item-bg-hover)] px-3 py-2",
+                      )}
+                    >
+                      <div
+                        style={isActiveWs ? { backgroundColor: "var(--accent)", color: "#fff" } : { backgroundColor: "var(--sidebar-icon-ws-bg)", color: "var(--sidebar-icon-ws-text)" }}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0"
+                      >
+                        {getInitials(ws.name)}
+                      </div>
                       <span className="flex-1 truncate font-medium">{ws.name}</span>
                       <ChevronDown style={{ color: "var(--sidebar-section-label)", transform: isOpen ? "rotate(180deg)" : undefined, transition: "transform 0.2s ease" }} className="w-3.5 h-3.5 shrink-0" />
-                    </>
+                    </button>
                   )}
-                </button>
 
                 {isOpen && !collapsed && (
                   <div className="ml-4 pl-3 mt-1 mb-1 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border)" }}>
@@ -180,6 +195,34 @@ function DesktopSidebar({
                     })}
                   </div>
                 )}
+                
+                {/* Popout menu using Radix Portal when clicked */}
+                <Popover.Portal>
+                  <Popover.Content 
+                    side="right" 
+                    sideOffset={14} 
+                    className="w-48 bg-[var(--bg-card)] border border-[var(--sidebar-border)] rounded-xl shadow-xl z-50 py-1.5 will-change-[transform,opacity] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=right]:slide-in-from-left-2"
+                  >
+                    <div className="px-3 py-2 border-b border-[var(--sidebar-border)] mb-1">
+                      <p className="font-bold text-sm truncate" style={{ color: "var(--sidebar-text-header)" }}>{ws.name}</p>
+                    </div>
+                    {WORKSPACE_NAV.map((item) => {
+                      const Icon = item.icon;
+                      const href = `${item.href}?workspaceId=${ws.id}`;
+                      const active = pathname === item.href && activeWsId === ws.id;
+                      return (
+                        <Link key={item.href} href={href} 
+                          style={active ? { backgroundColor: "var(--sidebar-item-bg-active)", color: "var(--sidebar-text-active)" } : { color: "var(--sidebar-text)" }}
+                          className={cn("flex items-center gap-2 px-3 py-2 mx-1 rounded-md text-xs transition-colors hover:bg-[var(--sidebar-item-bg-hover)]")}
+                        >
+                          <Icon className="w-3.5 h-3.5 shrink-0" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </Popover.Content>
+                </Popover.Portal>
+                </Popover.Root>
               </div>
             );
           })}

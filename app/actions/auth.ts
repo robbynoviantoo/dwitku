@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { RegisterSchema, LoginSchema } from "@/lib/validations/auth";
 import bcrypt from "bcryptjs";
-import { signIn } from "@/auth";
+import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { prisma } from "@/lib/prisma";
@@ -41,7 +41,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { success: "Akun berhasil dibuat! Silakan login." };
 };
 
-export const login = async (values: z.infer<typeof LoginSchema>) => {
+export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: string | null) => {
     const validatedFields = LoginSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -54,11 +54,11 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
         await signIn("credentials", {
             email,
             password,
-            redirectTo: "/workspaces",
+            redirectTo: callbackUrl || "/workspaces",
         });
     } catch (error) {
         if (isRedirectError(error)) {
-            throw error; // ini harus di-throw supaya Next.js bisa redirect (isRedirectError berasal dari next import)
+            throw error; 
         }
 
         if (error instanceof AuthError) {
@@ -72,4 +72,39 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 
         throw error;
     }
+};
+
+export const setPassword = async (password: string) => {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { error: "Tidak diizinkan!" };
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+    });
+
+    if (!user) {
+        return { error: "Pengguna tidak ditemukan!" };
+    }
+
+    if (user.password) {
+        return { error: "Password sudah dibuat!" };
+    }
+
+    if (password.length < 6) {
+        return { error: "Password minimal 6 karakter!" };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+            password: hashedPassword,
+        },
+    });
+
+    return { success: "Password berhasil dibuat!" };
 };

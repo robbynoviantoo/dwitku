@@ -23,13 +23,11 @@ export default async function MembersPage({
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <Users className="w-5 h-5 text-indigo-500" />
-          <h1 className="text-2xl font-bold text-zinc-900">
-            Anggota Workspace
-          </h1>
-        </div>
-        <p className="text-zinc-500 text-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Kolaborasi</p>
+        <h1 className="text-2xl font-bold text-zinc-900">
+          Anggota Workspace
+        </h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Kelola anggota dan undangan untuk workspace Anda.
         </p>
       </div>
