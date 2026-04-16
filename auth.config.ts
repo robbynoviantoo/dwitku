@@ -23,7 +23,7 @@ export const authConfig = {
             if (isPublicRoute) return true;
 
             if (isAuthRoute) {
-                if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
+                if (isLoggedIn) return Response.redirect(new URL("/workspaces", nextUrl));
                 return true;
             }
 
@@ -32,9 +32,9 @@ export const authConfig = {
                 return true;
             }
 
-            // Root ("/") redirect to dashboard if logged in
+            // Root ("/") redirect to workspaces if logged in
             if (nextUrl.pathname === "/" && isLoggedIn) {
-                return Response.redirect(new URL("/dashboard", nextUrl));
+                return Response.redirect(new URL("/workspaces", nextUrl));
             }
 
             return true;

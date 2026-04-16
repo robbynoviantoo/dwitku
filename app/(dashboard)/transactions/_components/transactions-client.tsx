@@ -824,14 +824,12 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
     <PullToRefreshWrapper onRefresh={handleRefresh}>
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2 tracking-tight">
-            <ArrowLeftRight className="w-6 h-6 text-indigo-500" />
-            Transaksi
-          </h1>
-          <p className="text-zinc-500 text-sm mt-1 font-normal">
-            {total} transaksi ditemukan
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Keuangan</p>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Transaksi</h1>
+          <p className="text-zinc-400 text-sm mt-1 font-normal">
+            {total.toLocaleString("id-ID")} transaksi ditemukan
           </p>
         </div>
         {/* Right side: Export + Tambah */}
@@ -1053,7 +1051,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
           <table className="w-full">
             <thead>
               {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-slate-50">
+                <tr key={hg.id} className="border-b border-zinc-100 bg-zinc-50">
                   {hg.headers.map((h) => (
                     <th
                       key={h.id}
@@ -1088,7 +1086,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-zinc-50 hover:bg-slate-50/60 transition-colors group"
+                    className="border-b border-zinc-100 hover:bg-zinc-50/60 transition-colors group"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-3.5">

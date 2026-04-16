@@ -22,6 +22,7 @@ import {
   ArrowDownRight,
   Minus,
   BarChart2,
+  FileDown,
 } from "lucide-react";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 
@@ -106,18 +107,15 @@ export function ReportsClient({
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-            <BarChart2 className="w-6 h-6 text-indigo-500" />
-            Laporan Keuangan
-          </h1>
-          <p className="text-zinc-500 text-sm mt-1">
-            Ringkasan dan analisis keuangan{" "}
-            {isPersonal ? "pribadi" : `workspace "${workspaceName}"`}.
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Analitik</p>
+          <h1 className="text-2xl font-bold text-zinc-900">Laporan Keuangan</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            {isPersonal ? "Keuangan pribadi" : `Workspace "${workspaceName}"`}
           </p>
         </div>
       </div>
 
-      {/* Summary + Comparison Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           {
@@ -127,8 +125,8 @@ export function ReportsClient({
             previous: comparison?.previous.income ?? 0,
             icon: TrendingUp,
             color: "text-green-600",
-            bg: "bg-green-50 border-green-100",
-            iconBg: "bg-green-100",
+            iconBg: "bg-green-50",
+            valueBg: "text-green-600",
           },
           {
             label: "Total Pengeluaran",
@@ -137,8 +135,8 @@ export function ReportsClient({
             previous: comparison?.previous.expense ?? 0,
             icon: TrendingDown,
             color: "text-red-500",
-            bg: "bg-red-50 border-red-100",
-            iconBg: "bg-red-100",
+            iconBg: "bg-red-50",
+            valueBg: "text-red-500",
           },
           {
             label: "Saldo Bersih",
@@ -146,42 +144,29 @@ export function ReportsClient({
             current: comparison?.current.net ?? 0,
             previous: comparison?.previous.net ?? 0,
             icon: Wallet,
-            color: currentSummary.net >= 0 ? "text-indigo-600" : "text-red-500",
-            bg: "bg-indigo-50 border-indigo-100",
-            iconBg: "bg-indigo-100",
+            color: currentSummary.net >= 0 ? "text-blue-600" : "text-red-500",
+            iconBg: currentSummary.net >= 0 ? "bg-blue-50" : "bg-red-50",
+            valueBg: currentSummary.net >= 0 ? "text-blue-600" : "text-red-500",
           },
         ].map((card) => {
           const Icon = card.icon;
           return (
-            <div
-              key={card.label}
-              className={`bg-white rounded-xl border shadow-sm p-5 ${card.bg}`}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className={`w-9 h-9 rounded-lg ${card.iconBg} flex items-center justify-center`}
-                >
-                  <Icon className={`w-5 h-5 ${card.color}`} />
+            <div key={card.label} className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-xl ${card.iconBg} flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${card.color}`} />
+                  </div>
+                  <p className="text-xs font-medium text-zinc-500">{card.label}</p>
                 </div>
-                <p className="text-sm font-medium text-zinc-600">
-                  {card.label}
-                </p>
+                <ChangeIndicator current={card.current} previous={card.previous} />
               </div>
-              <p className={`text-2xl font-bold mb-1 ${card.color}`}>
-                {showAmount ? formatCurrency(card.value, currency) : "******"}
+              <p className={`text-2xl font-extrabold mb-1 ${card.valueBg}`}>
+                {showAmount ? formatCurrency(card.value, currency) : "••••••"}
               </p>
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs text-zinc-400">Bulan ini:</p>
-                <p className="text-xs font-medium text-zinc-600">
-                  {showAmount
-                    ? formatCurrency(card.current, currency)
-                    : "******"}
-                </p>
-                <ChangeIndicator
-                  current={card.current}
-                  previous={card.previous}
-                />
-              </div>
+              <p className="text-xs text-zinc-400">
+                Bulan ini: {showAmount ? formatCurrency(card.current, currency) : "••••••"}
+              </p>
             </div>
           );
         })}
@@ -189,23 +174,19 @@ export function ReportsClient({
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <div className="lg:col-span-3 bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
+        <div className="lg:col-span-3 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-semibold text-zinc-900 text-sm">
-                Pemasukan vs Pengeluaran
-              </h2>
+              <h2 className="font-semibold text-zinc-900 text-sm">Pemasukan vs Pengeluaran</h2>
               <p className="text-xs text-zinc-400 mt-0.5">6 bulan terakhir</p>
             </div>
           </div>
           <MonthlyBarChart data={monthlyData} currency={currency} />
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
           <div className="mb-5">
-            <h2 className="font-semibold text-zinc-900 text-sm">
-              Pengeluaran per Kategori
-            </h2>
+            <h2 className="font-semibold text-zinc-900 text-sm">Pengeluaran per Kategori</h2>
             <p className="text-xs text-zinc-400 mt-0.5">Bulan ini</p>
           </div>
           <CategoryDonutChart data={categoryData} currency={currency} />
@@ -214,10 +195,8 @@ export function ReportsClient({
 
       {/* Comparison Table */}
       {comparison && (
-        <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
-          <h2 className="font-semibold text-zinc-900 text-sm mb-5">
-            Perbandingan Bulan Ini vs Bulan Lalu
-          </h2>
+        <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
+          <h2 className="font-semibold text-zinc-900 text-sm mb-5">Perbandingan Bulan Ini vs Bulan Lalu</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -323,30 +302,22 @@ function ReportsSkeleton({
   isPersonal: boolean;
 }) {
   return (
-    <div className="p-8 max-w-7xl lg:max-w-full mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-          <BarChart2 className="w-6 h-6 text-indigo-500" />
-          Laporan Keuangan
-        </h1>
-        <p className="text-zinc-500 text-sm mt-1">
-          Ringkasan dan analisis keuangan{" "}
-          {isPersonal ? "pribadi" : `workspace "${workspaceName}"`}.
-        </p>
+        <Skeleton className="h-3 w-16 mb-2" />
+        <h1 className="text-2xl font-bold text-zinc-900">Laporan Keuangan</h1>
+        <Skeleton className="h-4 w-48 mt-2" />
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32 rounded-xl" />
+          <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <Skeleton className="lg:col-span-3 h-[300px] rounded-xl" />
-        <Skeleton className="lg:col-span-2 h-[300px] rounded-xl" />
+        <Skeleton className="lg:col-span-3 h-[300px] rounded-2xl" />
+        <Skeleton className="lg:col-span-2 h-[300px] rounded-2xl" />
       </div>
-
-      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-64 rounded-2xl" />
     </div>
   );
 }
