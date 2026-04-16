@@ -39,6 +39,7 @@ import { TransactionFormDialog } from "./transaction-form-dialog";
 import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
+import { usePrivacy } from "@/components/providers/privacy-provider";
 
 type Category = {
   id: string;
@@ -432,6 +433,7 @@ function FilterPanel({
 // ── Main Component ──────────────────────────────────────────────────────────
 export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
   const queryClient = useQueryClient();
+  const { showAmount } = usePrivacy();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<TransactionFilter>({});
   const [search, setSearch] = useState("");
@@ -593,7 +595,9 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
             )}
           >
             {tx.type === "INCOME" ? "+" : "-"}
-            {formatCurrency(Number(info.getValue()), currency)}
+            {showAmount
+              ? formatCurrency(Number(info.getValue()), currency)
+              : <span className="tracking-widest text-sm">••••••</span>}
           </span>
         );
       },
@@ -761,7 +765,9 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
                     )}
                   >
                     {isIncome ? "+" : "-"}
-                    {formatCurrency(Number(tx.amount), currency)}
+                    {showAmount
+                      ? formatCurrency(Number(tx.amount), currency)
+                      : <span className="tracking-widest">••••••</span>}
                   </span>
                 </div>
 

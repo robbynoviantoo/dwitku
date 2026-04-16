@@ -22,9 +22,8 @@ import {
   ArrowDownRight,
   Minus,
   BarChart2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
+import { usePrivacy } from "@/components/providers/privacy-provider";
 
 interface ReportsClientProps {
   workspaceId: string;
@@ -65,17 +64,7 @@ export function ReportsClient({
   isPersonal,
   currency,
 }: ReportsClientProps) {
-const [showAmount, setShowAmount] = useState(() => {
-  if (typeof window !== "undefined") {
-    const savedAmount = window.localStorage.getItem("showAmount");
-    return savedAmount ? JSON.parse(savedAmount) : true;
-  }
-  return true;
-});
-
-  useEffect(() => {
-    window.localStorage.setItem("showAmount", JSON.stringify(showAmount));
-  },[showAmount])
+  const { showAmount } = usePrivacy();
 
   // Queries
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
@@ -126,18 +115,6 @@ const [showAmount, setShowAmount] = useState(() => {
             {isPersonal ? "pribadi" : `workspace "${workspaceName}"`}.
           </p>
         </div>
-        <button
-          onClick={() => setShowAmount(!showAmount)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 text-sm font-medium rounded-lg transition-colors shadow-sm"
-          title={showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
-        >
-          {showAmount ? (
-            <EyeOff className="w-4 h-4" />
-          ) : (
-            <Eye className="w-4 h-4" />
-          )}
-          {showAmount ? "Sembunyikan" : "Tampilkan"}
-        </button>
       </div>
 
       {/* Summary + Comparison Cards */}

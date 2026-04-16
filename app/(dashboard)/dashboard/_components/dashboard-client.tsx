@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "next/navigation";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
+import { usePrivacy } from "@/components/providers/privacy-provider";
 
 interface DashboardClientProps {
   initialUser:
@@ -59,6 +60,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
 
   const isLoading = isLoadingWorkspaces || isLoadingSummary;
   const currency = activeWs?.currency ?? "IDR";
+  const { showAmount } = usePrivacy();
 
   // Greeting
   const hour = new Date().getHours();
@@ -137,7 +139,9 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                 </p>
               </div>
               <p className={`text-2xl font-bold ${card.color}`}>
-                {formatCurrency(card.value, currency)}
+                {showAmount
+                  ? formatCurrency(card.value, currency)
+                  : <span className="tracking-widest">••••••</span>}
               </p>
             </div>
           );

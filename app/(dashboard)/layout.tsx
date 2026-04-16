@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
+import { PrivacyProvider } from "@/components/providers/privacy-provider";
 
 export default async function DashboardLayout({
   children,
@@ -35,6 +36,7 @@ export default async function DashboardLayout({
     <QueryProvider>
       <ThemeProvider>
         <SidebarProvider>
+          <PrivacyProvider>
           <WorkspaceProvider defaultWorkspaceId={personalWorkspace.id}>
             <div className="flex min-h-screen">
               {/* Sidebar — needs Suspense for useSearchParams */}
@@ -60,6 +62,7 @@ export default async function DashboardLayout({
               <MainContent>{children}</MainContent>
             </div>
           </WorkspaceProvider>
+          </PrivacyProvider>
         </SidebarProvider>
       </ThemeProvider>
     </QueryProvider>

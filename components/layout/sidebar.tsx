@@ -20,12 +20,15 @@ import {
   PanelLeftOpen,
   ChevronDown,
   BookOpen,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn, getInitials } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useSidebar } from "@/components/providers/sidebar-provider";
 import { useTheme } from "@/components/providers/theme-provider";
+import { usePrivacy } from "@/components/providers/privacy-provider";
 
 type Workspace = {
   id: string;
@@ -110,6 +113,7 @@ function DesktopSidebar({
 }) {
   const { collapsed, toggleCollapsed } = useSidebar();
   const { theme, toggleTheme } = useTheme();
+  const { showAmount, toggleShowAmount } = usePrivacy();
   const isPersonalContext = !activeWsId || activeWsId === personalWorkspace.id;
 
   const [expandedWs, setExpandedWs] = useState<string | null>(() => {
@@ -258,6 +262,19 @@ function DesktopSidebar({
 
       {/* Footer */}
       <div style={{ borderTop: "1px solid var(--sidebar-border)" }} className="shrink-0 py-2 px-2 space-y-1">
+        {/* Privacy toggle */}
+        <button
+          onClick={toggleShowAmount}
+          title={showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
+          style={{ color: "var(--sidebar-text)" }}
+          className={cn(
+            "w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]",
+            collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2",
+          )}
+        >
+          {showAmount ? <EyeOff className="w-4 h-4 shrink-0" /> : <Eye className="w-4 h-4 shrink-0" />}
+          {!collapsed && <span>{showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}</span>}
+        </button>
         <button onClick={toggleTheme} title={theme === "dark" ? "Mode Terang" : "Mode Gelap"} style={{ color: "var(--sidebar-text)" }} className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2")}>
           {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
           {!collapsed && <span>{theme === "dark" ? "Mode Terang" : "Mode Gelap"}</span>}
@@ -301,6 +318,7 @@ function MobileSidebar({
 }) {
   const { mobileOpen, setMobileOpen } = useSidebar();
   const { theme, toggleTheme } = useTheme();
+  const { showAmount, toggleShowAmount } = usePrivacy();
   const isPersonalContext = !activeWsId || activeWsId === personalWorkspace.id;
 
   const [expandedWs, setExpandedWs] = useState<string | null>(() => {
@@ -480,6 +498,21 @@ function MobileSidebar({
 
         {/* Footer — theme toggle + logout */}
         <div className="shrink-0 px-3 py-4 space-y-1 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
+          {/* Privacy toggle */}
+          <button
+            onClick={toggleShowAmount}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+              showAmount
+                ? "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                : "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100",
+            )}
+          >
+            {showAmount
+              ? <EyeOff className="w-4 h-4 shrink-0" />
+              : <Eye className="w-4 h-4 shrink-0" />}
+            {showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
+          </button>
           <button
             onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
