@@ -1,13 +1,11 @@
-const CACHE_NAME = "dwitku-v1";
+const CACHE_NAME = "dwitku-v2";
 const STATIC_ASSETS = [
-  "/",
-  "/dashboard",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
 ];
 
-// Install: cache static assets
+// Install: pre-cache only truly static assets (not pages)
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -29,43 +27,57 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API/navigation, cache-first for assets
+// Fetch: skip everything except static image/font assets
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin requests
+  // Only handle same-origin GET requests
   if (request.method !== "GET" || url.origin !== location.origin) return;
 
-  // API + server actions: network-only (never cache)
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) {
-    return;
-  }
+  // Skip: API routes, Next.js internal chunks, HMR, server actions
+  const skip =
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_next/") ||
+    url.pathname.startsWith("/__nextjs") ||
+    url.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1";
 
-  // Navigation: network-first, fallback to cache
-  if (request.mode === "navigate") {
+  if (skip) return;
+
+  // Only cache-first for static image assets  
+  const isStaticImage =
+    url.pathname.endsWith(".png") ||
+    url.pathname.endsWith(".jpg") ||
+    url.pathname.endsWith(".jpeg") ||
+    url.pathname.endsWith(".svg") ||
+    url.pathname.endsWith(".ico") ||
+    url.pathname.endsWith(".webp");
+
+  if (isStaticImage) {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, resClone));
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
+          if (!res || !res.ok) return res;
+          // Clone BEFORE consuming
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/")))
+        });
+      })
     );
     return;
   }
 
-  // Static assets: stale-while-revalidate
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request).then((res) => {
-        if (res.ok) {
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, res.clone()));
-        }
-        return res;
-      });
-      return cached || fetchPromise;
-    })
-  );
+  // manifest.json: cache-first
+  if (url.pathname === "/manifest.json") {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request))
+    );
+    return;
+  }
+
+  // Everything else (pages, navigation): pure network, no caching
+  // This prevents the "Response body already used" error with Next.js RSC/HMR
 });
