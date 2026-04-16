@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUserWorkspaces } from "@/app/actions/workspace";
 import { getTransactionSummary } from "@/app/actions/transaction";
 import {
@@ -16,6 +16,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "next/navigation";
+import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 
 interface DashboardClientProps {
   initialUser:
@@ -26,6 +27,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialUser }: DashboardClientProps) {
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
 
@@ -75,7 +77,15 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
 
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
+      queryClient.invalidateQueries({ queryKey: ["transaction-summary", activeWsId] }),
+    ]);
+  };
+
   return (
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Greeting */}
       <div className="mb-8">
@@ -240,6 +250,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
         )}
       </div>
     </div>
+    </PullToRefreshWrapper>
   );
 }
 

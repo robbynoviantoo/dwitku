@@ -38,6 +38,7 @@ import { getCategories } from "@/app/actions/category";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 
 type Category = {
   id: string;
@@ -654,7 +655,16 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     return <TransactionsSkeleton canEdit={canEdit} />;
   }
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] }),
+    ]);
+  };
+
   return (
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
@@ -951,6 +961,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
         />
       )}
     </div>
+    </PullToRefreshWrapper>
   );
 }
 
