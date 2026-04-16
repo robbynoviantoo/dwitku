@@ -53,7 +53,10 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
                 category: { select: { id: true, name: true, emoji: true, color: true } },
                 createdBy: { select: { id: true, name: true, image: true } },
             },
-            orderBy: { date: "desc" },
+            orderBy: [
+                { date: "desc" },
+                { createdAt: "desc" },
+            ],
             skip: (page - 1) * limit,
             take: limit,
         }),
