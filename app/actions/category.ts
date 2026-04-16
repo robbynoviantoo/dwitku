@@ -6,6 +6,7 @@ import { CategorySchema } from "@/lib/validations/transaction";
 import { WorkspaceRole, TransactionType } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
+import { getUserPlanLimits } from "./subscription";
 
 /** Seed kategori default untuk workspace baru */
 export async function seedDefaultCategories(workspaceId: string) {
@@ -77,6 +78,20 @@ export async function createCategory(
 
     const validated = CategorySchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
+
+    const limits = await getUserPlanLimits();
+    if (!limits) return { error: "Gagal mengambil data limit" };
+    
+    const maxCategories = limits.maxCategories;
+
+    if (maxCategories !== -1) {
+        const customCategoriesCount = await prisma.category.count({
+            where: { workspaceId, isDefault: false },
+        });
+        if (customCategoriesCount >= maxCategories) {
+            return { error: `Batas paket: Maksimal ${maxCategories} kategori custom di workspace ini.` };
+        }
+    }
 
     const category = await prisma.category.create({
         data: { ...validated.data, workspaceId },

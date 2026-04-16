@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema } from "@/lib/validations/workspace";
 import { WorkspaceRole } from "@/generated/prisma/client";
+import { redirect } from "next/navigation";
+import { getUserPlanLimits } from "./subscription";
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 
@@ -81,6 +83,20 @@ export async function createWorkspace(
 
     const validated = CreateWorkspaceSchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
+
+    const limits = await getUserPlanLimits();
+    if (!limits) return { error: "Gagal mengambil data limit" };
+    
+    const maxWorkspaces = limits.maxWorkspaces;
+
+    if (maxWorkspaces !== -1) {
+        const count = await prisma.workspaceMember.count({
+            where: { userId: session.user.id },
+        });
+        if (count >= maxWorkspaces) {
+            return { error: `Batas paket: Maksimal ${maxWorkspaces} workspace.` };
+        }
+    }
 
     const { name, description, currency } = validated.data;
 

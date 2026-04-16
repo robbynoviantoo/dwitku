@@ -12,23 +12,23 @@
 /* ─── Light Theme (default) ──────────────────── */
 :root {
   /* Background */
-  --bg-main: #f4f6f9;
+  --bg-main: #ffffff;
   --bg-card: #ffffff;
   --bg-card-hover: #f9fafb;
 
   /* Sidebar */
-  --sidebar-bg: #f4f6f9;
-  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-bg: #ffffff;
+  --sidebar-border: rgba(0, 0, 0, 0.07);
   --sidebar-text: #64748b;
   --sidebar-text-header: #0f172a;
-  --sidebar-text-active: #f9fafb;
-  --sidebar-item-bg-active: #4f46e5;
+  --sidebar-text-active: #ffffff;
+  --sidebar-item-bg-active: #16a34a;
   --sidebar-item-bg-hover: rgba(0, 0, 0, 0.04);
   --sidebar-section-label: #94a3b8;
-  --sidebar-logo-bg: #4f46e5;
+  --sidebar-logo-bg: #16a34a;
   --sidebar-user-meta: #94a3b8;
-  --sidebar-icon-ws-bg: #e2e8f0;
-  --sidebar-icon-ws-text: #64748b;
+  --sidebar-icon-ws-bg: #f0fdf4;
+  --sidebar-icon-ws-text: #16a34a;
 
   /* Content */
   --text-primary: #0f172a;
@@ -38,9 +38,11 @@
   /* Border */
   --border-color: #e2e8f0;
 
-  /* Accent */
-  --accent: #4f46e5;
-  --accent-light: #eef2ff;
+  /* Accent — Green */
+  --accent: #16a34a;
+  --accent-hover: #15803d;
+  --accent-light: #f0fdf4;
+  --accent-ring: rgba(22, 163, 74, 0.2);
 
   /* Cards */
   --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
@@ -67,13 +69,13 @@ html.dark {
   --sidebar-text: #6b7280;
   --sidebar-text-header: #f4f6f9;
   --sidebar-text-active: #f9fafb;
-  --sidebar-item-bg-active: #4f46e5;
+  --sidebar-item-bg-active: #16a34a;
   --sidebar-item-bg-hover: rgba(255,255,255,0.05);
   --sidebar-section-label: #374151;
-  --sidebar-logo-bg: #4f46e5;
+  --sidebar-logo-bg: #16a34a;
   --sidebar-user-meta: #4b5563;
-  --sidebar-icon-ws-bg: #1a1f2e;
-  --sidebar-icon-ws-text: #6b7280;
+  --sidebar-icon-ws-bg: #052e16;
+  --sidebar-icon-ws-text: #4ade80;
 
   /* Content */
   --text-primary: #f9fafb;
@@ -83,9 +85,11 @@ html.dark {
   /* Border */
   --border-color: #21262d;
 
-  /* Accent */
-  --accent: #6366f1;
-  --accent-light: #1e1b4b;
+  /* Accent — Green */
+  --accent: #22c55e;
+  --accent-hover: #16a34a;
+  --accent-light: #052e16;
+  --accent-ring: rgba(34, 197, 94, 0.2);
 
   /* Cards */
   --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
@@ -134,12 +138,6 @@ body {
 }
 
 /* ─── Dark Mode: Global Overrides ────────────── */
-/* 
-  These override Tailwind's static classes whenever html.dark is active.
-  This means all pages/components get dark mode automatically without
-  needing to add dark: variants to every element.
-*/
-
 /* Backgrounds */
 html.dark .bg-white   { background-color: var(--bg-card) !important; }
 html.dark .bg-zinc-50 { background-color: var(--bg-main) !important; }
@@ -183,12 +181,13 @@ html.dark textarea::placeholder {
 html.dark .divide-zinc-50 > * + * { border-color: #21262d !important; }
 html.dark .divide-zinc-100 > * + * { border-color: #30363d !important; }
 
-/* Hover states that reference zinc */
+/* Hover states */
 html.dark .hover\:bg-zinc-50:hover { background-color: var(--bg-card-hover) !important; }
 html.dark .hover\:bg-zinc-100:hover { background-color: #1c2333 !important; }
 
-/* Ring / focus outlines */
-html.dark .focus\:ring-indigo-500:focus { --tw-ring-color: #6366f1; }
+/* Ring / focus */
+html.dark .focus\:ring-indigo-500:focus { --tw-ring-color: #22c55e; }
+html.dark .focus\:ring-green-500:focus  { --tw-ring-color: #22c55e; }
 
 /* Tables */
 html.dark tr:hover { background-color: var(--bg-card-hover) !important; }

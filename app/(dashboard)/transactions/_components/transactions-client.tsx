@@ -25,6 +25,9 @@ import {
   Filter,
   ChevronDown,
   Check,
+  FileSpreadsheet,
+  Loader2,
+  Lock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
@@ -40,6 +43,7 @@ import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import * as XLSX from "xlsx";
 
 // ── Shared mini calendar for filter panel ───────────────────────────────────
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -195,6 +199,8 @@ type Props = {
   workspaceId: string;
   currency: string;
   canEdit: boolean;
+  canExport?: boolean;
+  planKey?: string;
 };
 
 const PAGE_SIZE = 10;
@@ -550,7 +556,7 @@ function FilterPanel({
 }
 
 // ── Main Component ──────────────────────────────────────────────────────────
-export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
+export function TransactionsClient({ workspaceId, currency, canEdit, canExport = false, planKey = "free" }: Props) {
   const queryClient = useQueryClient();
   const { showAmount } = usePrivacy();
   const [page, setPage] = useState(1);
@@ -561,6 +567,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     transaction?: Transaction;
   }>({ open: false });
   const [error, setError] = useState<string | undefined>();
+  const [isExporting, setIsExporting] = useState(false);
 
   // Queries
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
@@ -786,6 +793,33 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     ]);
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const allData = await getTransactions(workspaceId, { ...filter, page: 1, limit: 99999 });
+      const rows = allData.items.map((tx) => ({
+        "Tanggal": new Date(tx.date).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }),
+        "Tipe": tx.type === "INCOME" ? "Pemasukan" : "Pengeluaran",
+        "Kategori": `${tx.category.emoji} ${tx.category.name}`,
+        "Catatan": tx.note ?? "-",
+        "Nominal": Number(tx.amount),
+        "Mata Uang": currency,
+        "Dibuat Oleh": tx.createdBy.name ?? "-",
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      // Column widths
+      ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 30 }, { wch: 16 }, { wch: 10 }, { wch: 20 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+      const today = new Date().toISOString().split("T")[0];
+      XLSX.writeFile(wb, `transaksi-${today}.xlsx`);
+    } catch (e) {
+      setError("Gagal mengekspor data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
@@ -800,15 +834,47 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
             {total} transaksi ditemukan
           </p>
         </div>
-        {canEdit && (
-          <button
-            onClick={() => setDialog({ open: true })}
-            className="flex items-center cursor-pointer gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="">Tambah</span>
-          </button>
-        )}
+        {/* Right side: Export + Tambah */}
+        <div className="flex items-center gap-2">
+          {canExport ? (
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-sm font-medium rounded-xl transition-all shadow-sm disabled:opacity-50"
+            >
+              {isExporting
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <FileSpreadsheet className="w-4 h-4 text-emerald-600" />}
+              <span className="hidden sm:inline">{isExporting ? "Mengekspor..." : "Export Excel"}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => Swal.fire({
+                title: "🔒 Fitur Premium",
+                html: `<p class="text-zinc-500 text-sm">Export Excel tersedia mulai paket <b>Basic</b>.</p><p class="text-zinc-400 text-xs mt-1">Upgrade sekarang mulai <b>Rp 25.000/bln</b>.</p>`,
+                icon: "info",
+                confirmButtonText: "Lihat Paket",
+                showCancelButton: true,
+                cancelButtonText: "Nanti",
+                confirmButtonColor: "#16a34a",
+                customClass: { popup: "!rounded-2xl", confirmButton: "!rounded-xl", cancelButton: "!rounded-xl" },
+              }).then((r) => { if (r.isConfirmed) window.location.href = "/billing"; })}
+              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-zinc-200 text-zinc-400 text-sm font-medium rounded-xl transition-all shadow-sm cursor-pointer hover:border-green-300 hover:text-green-600"
+            >
+              <Lock className="w-4 h-4" />
+              <span className="hidden sm:inline">Export Excel</span>
+            </button>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setDialog({ open: true })}
+              className="flex items-center cursor-pointer gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambah</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Panel */}

@@ -3,20 +3,20 @@
 import { createContext, useContext, useState } from "react";
 
 type WorkspaceContextType = {
-    activeWorkspaceId: string;
-    setActiveWorkspaceId: (id: string) => void;
+    activeWorkspaceId: string | null;
+    setActiveWorkspaceId: (id: string | null) => void;
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
 
 export function WorkspaceProvider({
     children,
-    defaultWorkspaceId,
+    defaultWorkspaceId = null,
 }: {
     children: React.ReactNode;
-    defaultWorkspaceId: string;
+    defaultWorkspaceId?: string | null;
 }) {
-    const [activeWorkspaceId, setActiveWorkspaceId] = useState(defaultWorkspaceId);
+    const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(defaultWorkspaceId);
 
     return (
         <WorkspaceContext.Provider value={{ activeWorkspaceId, setActiveWorkspaceId }}>

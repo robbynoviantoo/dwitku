@@ -19,14 +19,16 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  memberships  WorkspaceMember[]
-  invitesSent  Invite[]          @relation("InviteSender")
-  transactions Transaction[]
+  accounts      Account[]
+  sessions      Session[]
+  memberships   WorkspaceMember[]
+  invitesSent   Invite[]          @relation("InviteSender")
+  transactions  Transaction[]
+  subscription  Subscription?
 }
 
 model Account {
@@ -130,7 +132,7 @@ model Category {
   id          String          @id @default(cuid())
   name        String
   emoji       String          @default("📁")
-  color       String          @default("#6366f1")
+  color       String          @default("#16a34a")
   type        TransactionType @default(EXPENSE)
   isDefault   Boolean         @default(false)
   workspaceId String
@@ -162,4 +164,75 @@ model Transaction {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+// ─── PLAN ───────────────────────────────────────────────────────────────────
+
+model Plan {
+  id            String   @id @default(cuid())
+  key           String   @unique  // "free" | "basic" | "pro"
+  name          String
+  priceMonthly  Int      @default(0)  // dalam rupiah
+  maxWorkspaces Int      @default(2)  // -1 = unlimited
+  maxMembers    Int      @default(5)  // -1 = unlimited
+  maxTx         Int      @default(200) // -1 = unlimited
+  maxCategories Int      @default(1)  // custom categories; -1 = unlimited
+  canExport     Boolean  @default(false)
+  canReport     Boolean  @default(false)
+  trialDays     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+// ─── SUBSCRIPTION ───────────────────────────────────────────────────────────
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String             @unique
+  planId           String
+  status           SubscriptionStatus @default(TRIAL)
+  midtransOrderId  String?            @unique
+  midtransToken    String?
+  startedAt        DateTime           @default(now())
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
+
+  payments Payment[]
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// ─── PAYMENT ─────────────────────────────────────────────────────────────────
+
+model Payment {
+  id              String        @id @default(cuid())
+  subscriptionId  String
+  orderId         String        @unique
+  amount          Int
+  status          PaymentStatus @default(PENDING)
+  midtransData    Json?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
 }

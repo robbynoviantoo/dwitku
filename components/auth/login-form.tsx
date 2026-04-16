@@ -96,7 +96,7 @@ export function LoginForm() {
                 type="button"
                 disabled={isPending}
                 // Gunakan fungsi client signIn untuk OAuth provider
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: "/workspaces" })}
                 className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">

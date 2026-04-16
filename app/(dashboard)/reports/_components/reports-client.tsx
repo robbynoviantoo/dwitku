@@ -323,7 +323,7 @@ function ReportsSkeleton({
   isPersonal: boolean;
 }) {
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
           <BarChart2 className="w-6 h-6 text-indigo-500" />

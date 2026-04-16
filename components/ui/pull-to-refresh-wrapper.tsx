@@ -190,13 +190,13 @@ export function PullToRefreshWrapper({
             <div
               className={cn(
                 "w-9 h-9 rounded-full border-2 flex items-center justify-center bg-white shadow-md",
-                triggered || refreshing ? "border-indigo-500" : "border-zinc-200",
+                triggered || refreshing ? "border-green-500" : "border-zinc-200",
               )}
             >
               <RefreshCw
                 className={cn(
                   "w-4 h-4 transition-colors",
-                  triggered || refreshing ? "text-indigo-500" : "text-zinc-400",
+                  triggered || refreshing ? "text-green-500" : "text-zinc-400",
                   refreshing && "animate-spin",
                 )}
                 style={{
@@ -207,7 +207,7 @@ export function PullToRefreshWrapper({
             <span
               className={cn(
                 "text-[10px] font-semibold tracking-tight bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full",
-                triggered || refreshing ? "text-indigo-600" : "text-zinc-400",
+                triggered || refreshing ? "text-green-600" : "text-zinc-400",
               )}
             >
               {refreshing

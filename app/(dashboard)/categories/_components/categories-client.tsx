@@ -239,7 +239,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
 
 function CategoriesSkeleton({ canEdit }: { canEdit: boolean }) {
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">

@@ -54,7 +54,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
         await signIn("credentials", {
             email,
             password,
-            redirectTo: "/dashboard",
+            redirectTo: "/workspaces",
         });
     } catch (error) {
         if (isRedirectError(error)) {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getUserWorkspaces } from "@/app/actions/workspace";
 import { Suspense } from "react";
 import { TransactionsClient } from "./_components/transactions-client";
+import { getUserPlanLimits, getUserPlanKey } from "@/app/actions/subscription";
 
 export default async function TransactionsPage({
   searchParams,
@@ -21,12 +22,18 @@ export default async function TransactionsPage({
     ? allWorkspaces.find((w) => w.id === workspaceId) || allWorkspaces[0]
     : allWorkspaces[0];
 
+  const planKey = await getUserPlanKey();
+  const limits = await getUserPlanLimits();
+  const canExport = limits?.canExport ?? false;
+
   return (
     <Suspense fallback={null}>
       <TransactionsClient
         workspaceId={activeWs.id}
         currency={activeWs.currency}
         canEdit={activeWs.role !== "VIEWER"}
+        canExport={canExport}
+        planKey={planKey}
       />
     </Suspense>
   );
