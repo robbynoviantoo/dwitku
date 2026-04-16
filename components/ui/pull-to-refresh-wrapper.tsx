@@ -13,8 +13,9 @@ interface PullToRefreshWrapperProps {
 
 /**
  * PullToRefreshWrapper
- * Listens to touch events on the nearest scrollable ancestor <main>.
- * Only activates on mobile (touch devices) when scrollTop === 0.
+ *
+ * Fix 1: Indicator rendered as position:fixed at top of viewport (above navbar/modal).
+ * Fix 2: Ignore touches that originate inside a position:fixed ancestor (modals, dialogs).
  */
 export function PullToRefreshWrapper({
   onRefresh,
@@ -30,15 +31,14 @@ export function PullToRefreshWrapper({
   const pulling = useRef(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Find the scrollable parent (the <main> element)
-  const getScrollEl = useCallback((): Element | null => {
+  // Find nearest scrollable ancestor
+  const getScrollEl = useCallback((): HTMLElement | null => {
     if (typeof window === "undefined") return null;
-    // Walk up the DOM to find element with overflow-y scroll/auto
     let el: Element | null = wrapperRef.current?.parentElement ?? null;
-    while (el) {
+    while (el && el !== document.body) {
       const style = window.getComputedStyle(el);
       const overflow = style.overflowY;
-      if (overflow === "auto" || overflow === "scroll") return el;
+      if (overflow === "auto" || overflow === "scroll") return el as HTMLElement;
       el = el.parentElement;
     }
     return null;
@@ -49,29 +49,59 @@ export function PullToRefreshWrapper({
     return !el || el.scrollTop <= 0;
   }, [getScrollEl]);
 
+  // ── FIX 2: Detect if touch started inside a fixed-position overlay (modal) ──
+  const isInsideFixedOverlay = useCallback((target: EventTarget | null): boolean => {
+    if (!target) return false;
+    let el = target as Element | null;
+    while (el && el !== document.body) {
+      if (window.getComputedStyle(el).position === "fixed") return true;
+      el = el.parentElement;
+    }
+    return false;
+  }, []);
+
+  // ── FIX 3: Check if ANY modal/overlay is currently rendered in the DOM ──
+  // Catches the race condition: touchstart fires before modal renders,
+  // but modal has rendered by the time touchend fires.
+  const hasActiveModal = useCallback((): boolean => {
+    if (typeof document === "undefined") return false;
+    return !!document.querySelector(".fixed.inset-0");
+  }, []);
+
   const RESISTANCE = 2.8;
 
   const onTouchStart = useCallback(
     (e: Event) => {
-      const touch = e as TouchEvent;
+      // Ignore touches inside modals/fixed overlays
+      if (isInsideFixedOverlay(e.target)) return;
       if (refreshing) return;
+      const touch = e as TouchEvent;
       if (isAtTop()) {
         startY.current = touch.touches[0].clientY;
         pulling.current = false;
       }
     },
-    [refreshing, isAtTop]
+    [refreshing, isAtTop, isInsideFixedOverlay]
   );
 
   const onTouchMove = useCallback(
     (e: Event) => {
-      const touch = e as TouchEvent;
       if (startY.current === null || refreshing) return;
+
+      // Cancel gesture if finger has moved into a fixed overlay (modal appeared)
+      if (isInsideFixedOverlay(e.target)) {
+        pulling.current = false;
+        setPullY(0);
+        startY.current = null;
+        return;
+      }
+
       if (!isAtTop()) {
         startY.current = null;
         setPullY(0);
         return;
       }
+      const touch = e as TouchEvent;
       const delta = touch.touches[0].clientY - startY.current;
       if (delta <= 0) {
         setPullY(0);
@@ -89,10 +119,19 @@ export function PullToRefreshWrapper({
   const onTouchEnd = useCallback(async () => {
     if (!pulling.current) return;
     pulling.current = false;
+
+    // Cancel if a modal/overlay appeared while the gesture was in progress
+    if (hasActiveModal()) {
+      setTriggered(false);
+      setPullY(0);
+      startY.current = null;
+      return;
+    }
+
     if (triggered && !refreshing) {
       setTriggered(false);
       setRefreshing(true);
-      setPullY(threshold * 0.5); // hold indicator
+      setPullY(threshold * 0.5);
       try {
         await onRefresh();
       } finally {
@@ -124,27 +163,25 @@ export function PullToRefreshWrapper({
 
   return (
     <div ref={wrapperRef} className={cn("relative", className)}>
-      {/* Pull indicator — only rendered on mobile via CSS */}
+
+      {/* ── FIX 1: Fixed indicator — renders above navbar & modal ── */}
       <div
-        className="md:hidden flex justify-center items-end pointer-events-none select-none"
+        className="md:hidden fixed left-0 right-0 flex justify-center items-center pointer-events-none select-none z-[200]"
         style={{
-          height: `${pullY}px`,
-          overflow: "hidden",
-          transition: pullY === 0 ? "height 0.3s ease" : "none",
+          // Mobile header is h-14 (56px) + mt-5 (20px) = ~76px.
+          // We sit just below it during the pull.
+          top: `${56 + Math.min(pullY, threshold)}px`,
+          transition: pullY === 0 ? "top 0.3s ease, opacity 0.3s ease" : "none",
+          opacity: showIndicator ? Math.min(progress * 2, 1) : 0,
         }}
         aria-hidden
       >
         {showIndicator && (
-          <div
-            className="mb-2 flex flex-col items-center gap-1"
-            style={{ opacity: Math.min(progress * 2, 1) }}
-          >
+          <div className="flex flex-col items-center gap-1 drop-shadow-sm">
             <div
               className={cn(
-                "w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-sm",
-                triggered || refreshing
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-zinc-200 bg-white",
+                "w-9 h-9 rounded-full border-2 flex items-center justify-center bg-white shadow-md",
+                triggered || refreshing ? "border-indigo-500" : "border-zinc-200",
               )}
             >
               <RefreshCw
@@ -160,8 +197,8 @@ export function PullToRefreshWrapper({
             </div>
             <span
               className={cn(
-                "text-[10px] font-semibold tracking-tight",
-                triggered || refreshing ? "text-indigo-500" : "text-zinc-400",
+                "text-[10px] font-semibold tracking-tight bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full",
+                triggered || refreshing ? "text-indigo-600" : "text-zinc-400",
               )}
             >
               {refreshing
@@ -174,12 +211,12 @@ export function PullToRefreshWrapper({
         )}
       </div>
 
-      {/* Actual page content */}
+      {/* Actual page content with subtle push-down while pulling */}
       <div
         style={{
           transform:
             pullY > 0 && !refreshing
-              ? `translateY(${Math.min(pullY * 0.25, 16)}px)`
+              ? `translateY(${Math.min(pullY * 0.25, 18)}px)`
               : undefined,
           transition: pullY === 0 ? "transform 0.3s ease" : "none",
         }}
