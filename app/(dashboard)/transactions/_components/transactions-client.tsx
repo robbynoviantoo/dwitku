@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import Swal from "sweetalert2";
 import {
   useReactTable,
   getCoreRowModel,
@@ -507,8 +508,26 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
     setPage(1);
   };
 
-  const handleDelete = (tx: Transaction) => {
-    if (!confirm("Hapus transaksi ini?")) return;
+  const handleDelete = async (tx: Transaction) => {
+    const result = await Swal.fire({
+      title: "Hapus Transaksi?",
+      html: `Transaksi ini akan dihapus permanen dan tidak bisa dikembalikan.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+      customClass: {
+        popup: "!rounded-2xl !font-[Inter,sans-serif]",
+        title: "!text-zinc-900 !text-lg !font-bold",
+        htmlContainer: "!text-zinc-500 !text-sm",
+        confirmButton: "!rounded-xl !text-sm !font-semibold !px-5 !py-2.5",
+        cancelButton: "!rounded-xl !text-sm !font-medium !px-5 !py-2.5",
+      },
+    });
+    if (!result.isConfirmed) return;
     deleteMutation.mutate(tx.id);
   };
 
@@ -654,8 +673,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit }: Props) {
             className="flex items-center cursor-pointer gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Tambah</span>
-            <span className="sm:hidden">+</span>
+            <span className="">Tambah</span>
           </button>
         )}
       </div>
