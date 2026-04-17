@@ -10,6 +10,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
 import { PrivacyProvider } from "@/components/providers/privacy-provider";
+import { EmailVerificationBanner } from "@/components/layout/email-verification-banner";
 
 export default async function DashboardLayout({
   children,
@@ -21,8 +22,14 @@ export default async function DashboardLayout({
 
   const [allWorkspaces, dbUser] = await Promise.all([
     getUserWorkspaces(),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isAdmin: true, emailVerified: true, email: true, password: true },
+    }),
   ]);
+
+  // Tampilkan banner hanya untuk user credential (punya password) yang belum verif email
+  const showVerificationBanner = !!dbUser?.password && !dbUser?.emailVerified;
 
   return (
     <QueryProvider>
@@ -46,11 +53,18 @@ export default async function DashboardLayout({
                   <Sidebar
                     workspaces={allWorkspaces}
                     user={{ ...session.user, isAdmin: dbUser?.isAdmin }}
+                    isEmailVerified={!showVerificationBanner}
                   />
                 </Suspense>
 
                 {/* Main content shifts based on sidebar width */}
-                <MainContent>{children}</MainContent>
+                <MainContent>
+                  {/* Email verification banner — hanya muncul untuk unverified credentials users */}
+                  {showVerificationBanner && dbUser?.email && (
+                    <EmailVerificationBanner userEmail={dbUser.email} />
+                  )}
+                  {children}
+                </MainContent>
               </div>
             </WorkspaceProvider>
           </PrivacyProvider>

@@ -201,6 +201,7 @@ type Props = {
   canEdit: boolean;
   canExport?: boolean;
   planKey?: string;
+  isEmailVerified?: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -556,7 +557,7 @@ function FilterPanel({
 }
 
 // ── Main Component ──────────────────────────────────────────────────────────
-export function TransactionsClient({ workspaceId, currency, canEdit, canExport = false, planKey = "free" }: Props) {
+export function TransactionsClient({ workspaceId, currency, canEdit, canExport = false, planKey = "free", isEmailVerified }: Props) {
   const queryClient = useQueryClient();
   const { showAmount } = usePrivacy();
   const [page, setPage] = useState(1);
@@ -568,6 +569,21 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
   }>({ open: false });
   const [error, setError] = useState<string | undefined>();
   const [isExporting, setIsExporting] = useState(false);
+
+  const handleOpenDialog = (tx?: Transaction) => {
+    if (isEmailVerified === false) {
+      Swal.fire({
+        title: "Perhatian",
+        text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa mencatat transaksi.",
+        icon: "warning",
+        confirmButtonColor: "#f59e0b",
+        confirmButtonText: "Mengerti",
+        customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+      });
+      return;
+    }
+    setDialog({ open: true, transaction: tx });
+  };
 
   // Queries
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
@@ -752,7 +768,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         return (
           <div className="flex gap-1 justify-end">
             <button
-              onClick={() => setDialog({ open: true, transaction: tx })}
+              onClick={() => handleOpenDialog(tx as any)}
               className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -865,7 +881,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
           )}
           {canEdit && (
             <button
-              onClick={() => setDialog({ open: true })}
+              onClick={() => handleOpenDialog()}
               className="flex items-center cursor-pointer gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
             >
               <Plus className="w-4 h-4" />
@@ -912,7 +928,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
             <p className="text-sm text-zinc-400 font-medium">Belum ada transaksi.</p>
             {canEdit && (
               <button
-                onClick={() => setDialog({ open: true })}
+                onClick={() => handleOpenDialog()}
                 className="mt-3 text-green-600 text-sm font-medium underline underline-offset-2"
               >
                 Tambah sekarang
@@ -992,7 +1008,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                     {canEdit && (
                       <div className="flex gap-0.5">
                         <button
-                          onClick={() => setDialog({ open: true, transaction: tx as any })}
+                          onClick={() => handleOpenDialog(tx as any)}
                           className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />

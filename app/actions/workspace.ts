@@ -121,7 +121,7 @@ export async function createWorkspace(
 
     // Jangan panggil revalidatePath saat dipanggil dari server render (layout)
     if (!skipRevalidate) {
-        revalidatePath("/dashboard");
+        revalidatePath("/workspaces");
     }
     return { success: true, workspace };
 }
@@ -160,7 +160,7 @@ export async function updateWorkspace(
         data: validated.data,
     });
 
-    revalidatePath(`/dashboard`);
+    revalidatePath(`/workspaces`);
     revalidatePath(`/settings`);
     return { success: true, workspace };
 }
@@ -180,7 +180,7 @@ export async function deleteWorkspace(workspaceId: string) {
 
     await prisma.workspace.delete({ where: { id: workspaceId } });
 
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     return { success: true };
 }
 
@@ -202,7 +202,7 @@ export async function leaveWorkspace(workspaceId: string) {
         where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     return { success: true };
 }
 

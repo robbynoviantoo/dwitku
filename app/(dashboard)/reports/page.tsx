@@ -14,7 +14,7 @@ export default async function ReportsPage({
 
   const { workspaceId } = await searchParams;
   const allWorkspaces = await getUserWorkspaces();
-  if (allWorkspaces.length === 0) redirect("/dashboard");
+  if (allWorkspaces.length === 0) redirect("/workspaces");
 
   const personalWs =
     allWorkspaces.find((w) => w.isPersonal) ?? allWorkspaces[0];

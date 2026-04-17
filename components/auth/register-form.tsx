@@ -8,15 +8,13 @@ import { useState, useTransition } from "react";
 import { register } from "@/app/actions/auth";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export function RegisterForm() {
     const [error, setError] = useState<string | undefined>("");
-    const [success, setSuccess] = useState<string | undefined>("");
     const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl");
 
@@ -31,18 +29,12 @@ export function RegisterForm() {
 
     const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
         setError("");
-        setSuccess("");
-
         startTransition(() => {
             register(values)
                 .then((data) => {
-                    if (data.error) {
+                    // data bisa undefined jika auto-login berhasil dan terjadi redirect
+                    if (data?.error) {
                         setError(data.error);
-                    }
-                    if (data.success) {
-                        setSuccess(data.success);
-                        form.reset();
-                        // Jangan redirect dulu agar user baca pesan verifikasi email
                     }
                 })
                 .catch((e) => {
@@ -118,18 +110,15 @@ export function RegisterForm() {
                     </div>
                 )}
 
-                {success && (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-lg text-sm">
-                        {success}
-                    </div>
-                )}
-
                 <button
                     disabled={isPending}
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                    {isPending ? "Loading..." : "Daftar"}
+                    {isPending
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Mendaftarkan...</>
+                        : "Daftar Sekarang"
+                    }
                 </button>
             </form>
 
@@ -143,7 +132,7 @@ export function RegisterForm() {
                 type="button"
                 disabled={isPending}
                 // Gunakan client action NextAuth untuk provider
-                onClick={() => signIn("google", { callbackUrl: callbackUrl || "/dashboard" })}
+                onClick={() => signIn("google", { callbackUrl: callbackUrl || "/workspaces" })}
                 className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">

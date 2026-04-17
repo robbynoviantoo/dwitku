@@ -62,12 +62,15 @@ function colorForWorkspace(id: string) {
   return WORKSPACE_COLORS[hash % WORKSPACE_COLORS.length];
 }
 
+import Swal from "sweetalert2";
+
 interface WorkspacesClientProps {
   workspaces: (Workspace & { role: string })[];
   user: UserInfo;
+  isEmailVerified?: boolean;
 }
 
-export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClientProps) {
+export function WorkspacesClient({ workspaces: initial, user, isEmailVerified }: WorkspacesClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -85,6 +88,20 @@ export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClient
   const greeting =
     hour < 12 ? "Pagi" : hour < 15 ? "Siang" : hour < 18 ? "Sore" : "Malam";
 
+  const handleCreateNew = (e: React.MouseEvent) => {
+    if (isEmailVerified === false) {
+      e.preventDefault();
+      Swal.fire({
+        title: "Perhatian",
+        text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru. Silakan cek inbox emailmu atau klik Kirim Ulang pada banner di atas.",
+        icon: "warning",
+        confirmButtonColor: "#f59e0b",
+        confirmButtonText: "Mengerti",
+        customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+      });
+    }
+  };
+
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
       <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
@@ -100,6 +117,7 @@ export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClient
           </div>
           <Link
             href="/onboarding"
+            onClick={handleCreateNew}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
           >
             <Plus className="w-4 h-4" />
@@ -126,6 +144,7 @@ export function WorkspacesClient({ workspaces: initial, user }: WorkspacesClient
             </p>
             <Link
               href="/onboarding"
+              onClick={handleCreateNew}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all shadow-sm text-sm"
             >
               <Plus className="w-4 h-4" />

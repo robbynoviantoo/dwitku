@@ -162,7 +162,7 @@ export async function createTransaction(
     );
 
     revalidatePath("/transactions");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return {
         success: true,
@@ -206,7 +206,7 @@ export async function updateTransaction(
     });
 
     revalidatePath("/transactions");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return {
         success: true,
@@ -232,7 +232,7 @@ export async function deleteTransaction(transactionId: string, workspaceId: stri
     await prisma.transaction.delete({ where: { id: transactionId } });
 
     revalidatePath("/transactions");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return { success: true };
 }

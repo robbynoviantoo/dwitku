@@ -98,7 +98,7 @@ export async function createCategory(
     });
 
     revalidatePath("/categories");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return { success: true, category };
 }
@@ -132,7 +132,7 @@ export async function updateCategory(
     });
 
     revalidatePath("/categories");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return { success: true, category: updated };
 }
@@ -162,7 +162,7 @@ export async function deleteCategory(categoryId: string, workspaceId: string) {
     await prisma.category.delete({ where: { id: categoryId } });
 
     revalidatePath("/categories");
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     revalidatePath("/reports");
     return { success: true };
 }

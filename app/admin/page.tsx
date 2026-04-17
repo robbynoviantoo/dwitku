@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Users, CreditCard, BarChart2, Building2, Crown, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Users, CreditCard, BarChart2, Building2, Crown, CheckCircle2, Clock, AlertCircle, Home } from "lucide-react";
 
 export const metadata = {
   title: "Admin Dashboard — Dwitku",
@@ -38,12 +38,21 @@ export default async function AdminPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-          <Crown className="w-6 h-6 text-amber-500" />
-          Admin Dashboard
-        </h1>
-        <p className="text-zinc-500 text-sm mt-1">Panel admin — hanya bisa diakses oleh super admin.</p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
+            <Crown className="w-6 h-6 text-amber-500" />
+            Admin Dashboard
+          </h1>
+          <p className="text-zinc-500 text-sm mt-1">Panel admin — hanya bisa diakses oleh super admin.</p>
+        </div>
+        <Link
+          href="/workspaces"
+          className="flex items-center gap-2 px-3 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors whitespace-nowrap shrink-0"
+        >
+          <Home className="w-4 h-4" />
+          Kembali ke Aplikasi
+        </Link>
       </div>
 
       {/* Stats */}

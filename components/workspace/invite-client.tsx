@@ -48,7 +48,7 @@ export function InviteClient({
                 setResult({ type: "error", message: res.error });
             } else {
                 setResult({ type: "success", message: "Berhasil bergabung ke workspace!" });
-                setTimeout(() => router.push("/dashboard"), 1500);
+                setTimeout(() => router.push("/workspaces"), 1500);
             }
         });
     };

@@ -123,3 +123,72 @@ export async function revokeSubscription(userId: string) {
     return { error: error.message || "Gagal mencabut langganan." };
   }
 }
+
+export async function renameUser(userId: string, newName: string) {
+  try {
+    await requireAdmin();
+
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed.length < 1) {
+      throw new Error("Nama tidak boleh kosong.");
+    }
+    if (trimmed.length > 80) {
+      throw new Error("Nama terlalu panjang (maks 80 karakter).");
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { name: trimmed },
+    });
+
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Gagal mengubah nama pengguna." };
+  }
+}
+
+export async function adminSendPasswordReset(userId: string) {
+  try {
+    await requireAdmin();
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true, password: true },
+    });
+
+    if (!user) throw new Error("Pengguna tidak ditemukan.");
+    if (!user.password) {
+      throw new Error("User ini login via Google dan tidak punya password.");
+    }
+
+    // Generate token reset password
+    const { generatePasswordResetToken } = await import("@/lib/tokens");
+    const resetToken = await generatePasswordResetToken(user.email);
+
+    const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const resetLink = `${baseUrl}/new-password?token=${resetToken.token}`;
+
+    const { resend } = await import("@/lib/resend");
+    const { buildResetPasswordEmail } = await import("@/lib/email-templates");
+
+    const { error: emailError } = await resend.emails.send({
+      from: "Dwitku <onboarding@resend.dev>",
+      to: user.email,
+      subject: "Atur Ulang Password — Dwitku",
+      html: buildResetPasswordEmail({
+        userName: user.name || "Pengguna Dwitku",
+        resetLink,
+      }),
+    });
+
+    if (emailError) {
+      console.error("[Admin] Reset password email gagal:", emailError);
+      return { success: true, warning: `Email gagal dikirim. Reset link: ${resetLink}`, resetLink };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Gagal mengirim email reset password." };
+  }
+}

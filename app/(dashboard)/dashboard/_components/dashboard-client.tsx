@@ -24,15 +24,18 @@ import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { getUserWorkspaces } from "@/app/actions/workspace";
 
+import Swal from "sweetalert2";
+
 interface DashboardClientProps {
   initialUser:
     | {
         name?: string | null;
       }
     | undefined;
+  isEmailVerified?: boolean;
 }
 
-export function DashboardClient({ initialUser }: DashboardClientProps) {
+export function DashboardClient({ initialUser, isEmailVerified }: DashboardClientProps) {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
@@ -137,6 +140,20 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
   const maxExpense = Math.max(...monthlyChart.map((m) => m.expense), 1);
   const maxVal = Math.max(maxIncome, maxExpense);
 
+  const handleCreateTx = (e: React.MouseEvent) => {
+    if (isEmailVerified === false) {
+      e.preventDefault();
+      Swal.fire({
+        title: "Perhatian",
+        text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa mencatat transaksi baru. Silakan cek inbox emailmu atau klik Kirim Ulang pada banner di atas.",
+        icon: "warning",
+        confirmButtonColor: "#f59e0b",
+        confirmButtonText: "Mengerti",
+        customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+      });
+    }
+  };
+
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
       <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto space-y-6">
@@ -154,6 +171,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
           </div>
           <Link
             href={`/transactions?workspaceId=${workspaceId}`}
+            onClick={handleCreateTx}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
           >
             <ArrowLeftRight className="w-4 h-4" />

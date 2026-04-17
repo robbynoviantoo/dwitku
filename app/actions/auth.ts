@@ -34,7 +34,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Buat user
-    const user = await prisma.user.create({
+    await prisma.user.create({
         data: {
             name,
             email,
@@ -42,31 +42,34 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         },
     });
 
-    // Generate token verifikasi
-    const verificationToken = await generateVerificationToken(email);
-
-    // Kirim email verifikasi via Resend
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
-
+    // Generate & kirim token verifikasi (non-blocking)
     try {
+        const verificationToken = await generateVerificationToken(email);
+        const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+        const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
+
         await resend.emails.send({
-            from: "Dwitku <onboarding@resend.dev>", // Ganti dengan domain produksi saat siap
+            from: "Dwitku <onboarding@resend.dev>",
             to: email,
             subject: "Verifikasi Email Dwitku",
-            html: buildVerificationEmail({
-                userName: name,
-                verificationLink,
-            }),
+            html: buildVerificationEmail({ userName: name, verificationLink }),
         });
     } catch (error) {
         console.error("Gagal mengirim email verifikasi:", error);
-        return { 
-            success: "Akun berhasil dibuat, namun gagal mengirim email verifikasi. Silakan hubungi admin.",
-        };
+        // Tidak blokir — user tetap bisa masuk
     }
 
-    return { success: "Email verifikasi telah dikirim! Silakan cek inbox Anda." };
+    // Auto-login langsung setelah daftar
+    try {
+        await signIn("credentials", {
+            email,
+            password,
+            redirectTo: "/workspaces",
+        });
+    } catch (error) {
+        if (isRedirectError(error)) throw error;
+        return { error: "Akun dibuat, tapi gagal masuk otomatis. Coba login manual." };
+    }
 };
 
 export const newVerification = async (token: string) => {
@@ -207,7 +210,7 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
         return { error: "Kolom tidak valid!" };
     }
 
-    const { email, password, rememberMe } = validatedFields.data;
+    const { email, password } = validatedFields.data;
 
     const existingUser = await prisma.user.findUnique({
         where: { email },
@@ -215,38 +218,6 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
 
     if (!existingUser || !existingUser.email || !existingUser.password) {
         return { error: "Email atau password salah!" };
-    }
-
-    // Blokir login jika belum verifikasi email (Kecuali user Google)
-    if (!existingUser.emailVerified) {
-        // Cek jika ini user Google (punya account record)
-        const googleAccount = await prisma.account.findFirst({
-            where: { userId: existingUser.id, provider: "google" }
-        });
-
-        if (!googleAccount) {
-            // Belum verifikasi email dan bukan user Google
-            const verificationToken = await generateVerificationToken(existingUser.email);
-            
-            const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-            const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
-
-            try {
-                await resend.emails.send({
-                    from: "Dwitku <onboarding@resend.dev>",
-                    to: existingUser.email,
-                    subject: "Verifikasi Email Dwitku",
-                    html: buildVerificationEmail({
-                        userName: existingUser.name || "Pengguna Dwitku",
-                        verificationLink,
-                    }),
-                });
-            } catch (error) {
-                console.error("Gagal kirim ulang verifikasi:", error);
-            }
-
-            return { error: "Email belum diverifikasi. Email verifikasi baru telah dikirim." };
-        }
     }
 
     try {
@@ -270,6 +241,42 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
         }
 
         throw error;
+    }
+};
+
+export const resendVerificationEmail = async () => {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Tidak terautentikasi" };
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true, name: true, emailVerified: true }
+    });
+
+    if (!user?.email) return { error: "User tidak ditemukan" };
+    if (user.emailVerified) return { error: "Email sudah diverifikasi" };
+
+    try {
+        const verificationToken = await generateVerificationToken(user.email);
+        const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+        const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
+
+        const { error: emailError } = await resend.emails.send({
+            from: "Dwitku <onboarding@resend.dev>",
+            to: user.email,
+            subject: "Verifikasi Email Dwitku",
+            html: buildVerificationEmail({ userName: user.name || "Pengguna Dwitku", verificationLink }),
+        });
+
+        if (emailError) {
+            console.error("Resend error:", emailError);
+            return { error: "Gagal mengirim email. Coba lagi nanti." };
+        }
+
+        return { success: "Email verifikasi telah dikirim ulang!" };
+    } catch (e) {
+        console.error("resendVerificationEmail error:", e);
+        return { error: "Gagal mengirim email. Coba lagi nanti." };
     }
 };
 

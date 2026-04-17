@@ -83,6 +83,7 @@ export async function sendInvite(
     const inviteLink = `${getBaseUrl()}/invite/${invite.token}`;
 
     // Kirim email via Resend
+    let emailSent = false;
     try {
         const { error: emailError } = await resend.emails.send({
             from: "Dwitku <onboarding@resend.dev>", // ganti dengan domain kamu saat produksi
@@ -98,17 +99,12 @@ export async function sendInvite(
         });
 
         if (emailError) {
-            console.error("[Invite] Email gagal:", emailError);
-            revalidatePath(`/settings/members`);
-            return {
-                success: true,
-                invite,
-                warning: "Undangan tersimpan tapi email gagal dikirim. Salin link ini secara manual.",
-                inviteLink,
-            };
+            console.error("[Invite] Email gagal (Resend error object):", JSON.stringify(emailError));
+        } else {
+            emailSent = true;
         }
     } catch (err) {
-        console.error("[Invite] Resend error:", err);
+        console.error("[Invite] Resend exception:", err);
     }
 
     if (process.env.NODE_ENV === "development") {
@@ -116,6 +112,16 @@ export async function sendInvite(
     }
 
     revalidatePath(`/settings/members`);
+
+    if (!emailSent) {
+        return {
+            success: true,
+            invite,
+            warning: "Undangan tersimpan tapi email gagal dikirim. Catatan: dengan domain onboarding@resend.dev, Resend hanya bisa kirim ke email pemilik akun Resend. Salin link ini secara manual:",
+            inviteLink,
+        };
+    }
+
     return { success: true, invite, inviteLink };
 }
 
@@ -193,7 +199,7 @@ export async function acceptInvite(token: string) {
         }),
     ]);
 
-    revalidatePath("/dashboard");
+    revalidatePath("/workspaces");
     return { success: true, workspaceId: invite.workspaceId };
 }
 

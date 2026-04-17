@@ -1,15 +1,7 @@
-import { auth } from "@/auth";
-import { DashboardClient } from "./_components/dashboard-client";
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-export default async function DashboardPage() {
-  const session = await auth();
-
-  return (
-    <Suspense fallback={null}>
-      <DashboardClient
-        initialUser={session?.user ? { name: session.user.name } : undefined}
-      />
-    </Suspense>
-  );
+export default function DashboardPage({ searchParams }: { searchParams: Record<string, string> }) {
+  const workspaceId = searchParams?.workspaceId;
+  const target = workspaceId ? `/workspaces?workspaceId=${workspaceId}` : "/workspaces";
+  redirect(target);
 }

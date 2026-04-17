@@ -14,7 +14,7 @@ export const authConfig = {
             const isPublicRoute = nextUrl.pathname.startsWith("/invite");
 
             const isProtected =
-                nextUrl.pathname.startsWith("/dashboard") ||
+                nextUrl.pathname.startsWith("/workspaces") ||
                 nextUrl.pathname.startsWith("/settings") ||
                 nextUrl.pathname.startsWith("/transactions") ||
                 nextUrl.pathname.startsWith("/categories") ||

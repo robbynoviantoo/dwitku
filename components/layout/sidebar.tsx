@@ -51,7 +51,7 @@ type UserInfo = {
 
 // Nav items when inside a workspace
 const WORKSPACE_NAV = [
-  { href: "/dashboard", label: "Ringkasan", icon: LayoutGrid },
+  { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
   { href: "/transactions", label: "Transaksi", icon: ArrowLeftRight },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/reports", label: "Laporan", icon: BarChart2 },
@@ -65,17 +65,21 @@ const GLOBAL_NAV = [
   { href: "/billing/history", label: "Riwayat Order", icon: ReceiptText },
 ];
 
+import Swal from "sweetalert2";
+
 // ── Desktop Sidebar ─────────────────────────────────────────────────────────
 function DesktopSidebar({
   workspaces,
   user,
   pathname,
   activeWsId,
+  isEmailVerified,
 }: {
   workspaces: Workspace[];
   user: UserInfo;
   pathname: string;
   activeWsId: string | null;
+  isEmailVerified?: boolean;
 }) {
   const { collapsed, toggleCollapsed } = useSidebar();
   const { theme, toggleTheme } = useTheme();
@@ -230,14 +234,49 @@ function DesktopSidebar({
           {workspaces.length === 0 && !collapsed && (
             <div className="px-3 py-3 text-center">
               <p className="text-xs italic" style={{ color: "var(--sidebar-section-label)" }}>Belum ada workspace.</p>
-              <Link href="/onboarding" className="text-xs mt-1 inline-block" style={{ color: "var(--accent)" }}>+ Buat sekarang</Link>
+              <Link 
+                href="/onboarding" 
+                className="text-xs mt-1 inline-block" style={{ color: "var(--accent)" }}
+                onClick={(e) => {
+                  if (isEmailVerified === false) {
+                    e.preventDefault();
+                    Swal.fire({
+                      title: "Perhatian",
+                      text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru.",
+                      icon: "warning",
+                      confirmButtonColor: "#f59e0b",
+                      confirmButtonText: "Mengerti",
+                      customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+                    });
+                  }
+                }}
+              >
+                + Buat sekarang
+              </Link>
             </div>
           )}
         </div>
 
         {/* Add new workspace */}
         {!collapsed && (
-          <Link href="/onboarding" style={{ color: "var(--sidebar-text)" }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-[var(--sidebar-item-bg-hover)] mt-1">
+          <Link 
+            href="/onboarding" 
+            style={{ color: "var(--sidebar-text)" }} 
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-[var(--sidebar-item-bg-hover)] mt-1"
+            onClick={(e) => {
+              if (isEmailVerified === false) {
+                e.preventDefault();
+                Swal.fire({
+                  title: "Perhatian",
+                  text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru.",
+                  icon: "warning",
+                  confirmButtonColor: "#f59e0b",
+                  confirmButtonText: "Mengerti",
+                  customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+                });
+              }
+            }}
+          >
             <Plus className="w-3.5 h-3.5" />
             Tambah Workspace
           </Link>
@@ -334,11 +373,13 @@ function MobileSidebar({
   user,
   pathname,
   activeWsId,
+  isEmailVerified,
 }: {
   workspaces: Workspace[];
   user: UserInfo;
   pathname: string;
   activeWsId: string | null;
+  isEmailVerified?: boolean;
 }) {
   const { mobileOpen, setMobileOpen } = useSidebar();
   const { theme, toggleTheme } = useTheme();
@@ -403,7 +444,25 @@ function MobileSidebar({
 
           <div className="flex items-center justify-between px-3 mb-2">
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--sidebar-section-label)" }}>Workspace</p>
-            <Link href="/onboarding" onClick={close} className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700">
+            <Link 
+              href="/onboarding" 
+              onClick={(e) => {
+                if (isEmailVerified === false) {
+                  e.preventDefault();
+                  Swal.fire({
+                    title: "Perhatian",
+                    text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru.",
+                    icon: "warning",
+                    confirmButtonColor: "#f59e0b",
+                    confirmButtonText: "Mengerti",
+                    customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+                  });
+                } else {
+                  close();
+                }
+              }} 
+              className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700"
+            >
               <Plus className="w-3.5 h-3.5" />Buat
             </Link>
           </div>
@@ -411,7 +470,27 @@ function MobileSidebar({
           {workspaces.length === 0 ? (
             <div className="px-3 py-3 rounded-xl bg-zinc-50 text-center">
               <p className="text-xs text-zinc-500">Belum ada workspace</p>
-              <Link href="/onboarding" onClick={close} className="text-xs mt-1 inline-block text-green-600 font-medium">+ Buat sekarang</Link>
+              <Link 
+                href="/onboarding" 
+                onClick={(e) => {
+                  if (isEmailVerified === false) {
+                    e.preventDefault();
+                    Swal.fire({
+                      title: "Perhatian",
+                      text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru.",
+                      icon: "warning",
+                      confirmButtonColor: "#f59e0b",
+                      confirmButtonText: "Mengerti",
+                      customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
+                    });
+                  } else {
+                    close();
+                  }
+                }} 
+                className="text-xs mt-1 inline-block text-green-600 font-medium"
+              >
+                + Buat sekarang
+              </Link>
             </div>
           ) : (
             <div className="space-y-1">
@@ -505,9 +584,11 @@ function MobileSidebar({
 export function Sidebar({
   workspaces,
   user,
+  isEmailVerified,
 }: {
   workspaces: Workspace[];
   user: UserInfo;
+  isEmailVerified?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -518,7 +599,7 @@ export function Sidebar({
     setMobileOpen(false);
   }, [pathname, searchParams, setMobileOpen]);
 
-  const sharedProps = { workspaces, user, pathname, activeWsId };
+  const sharedProps = { workspaces, user, pathname, activeWsId, isEmailVerified };
 
   return (
     <>

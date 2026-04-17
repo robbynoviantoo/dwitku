@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getUserWorkspaces } from "@/app/actions/workspace";
 import { Suspense } from "react";
 import { TransactionsClient } from "./_components/transactions-client";
+import { prisma } from "@/lib/prisma";
 import { getUserPlanLimits, getUserPlanKey } from "@/app/actions/subscription";
 
 export default async function TransactionsPage({
@@ -15,7 +16,14 @@ export default async function TransactionsPage({
 
   const { workspaceId } = await searchParams;
 
-  const allWorkspaces = await getUserWorkspaces();
+  const [allWorkspaces, dbUser] = await Promise.all([
+    getUserWorkspaces(),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { emailVerified: true, password: true },
+    }),
+  ]);
+
   if (allWorkspaces.length === 0) redirect("/onboarding");
 
   const activeWs = workspaceId
@@ -25,6 +33,7 @@ export default async function TransactionsPage({
   const planKey = await getUserPlanKey();
   const limits = await getUserPlanLimits();
   const canExport = limits?.canExport ?? false;
+  const isEmailVerified = !dbUser?.password || !!dbUser?.emailVerified;
 
   return (
     <Suspense fallback={null}>
@@ -34,6 +43,7 @@ export default async function TransactionsPage({
         canEdit={activeWs.role !== "VIEWER"}
         canExport={canExport}
         planKey={planKey}
+        isEmailVerified={isEmailVerified}
       />
     </Suspense>
   );

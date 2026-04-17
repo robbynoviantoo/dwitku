@@ -83,7 +83,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
       if (result.error) setError(result.error);
       else {
         queryClient.invalidateQueries({ queryKey: ["user-workspaces"] });
-        router.push("/dashboard");
+        router.push("/workspaces");
         router.refresh();
       }
     },
@@ -95,7 +95,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
       if (result.error) setError(result.error);
       else {
         queryClient.invalidateQueries({ queryKey: ["user-workspaces"] });
-        router.push("/dashboard");
+        router.push("/workspaces");
         router.refresh();
       }
     },
