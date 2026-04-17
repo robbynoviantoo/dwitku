@@ -50,6 +50,20 @@ export const {
         }),
     ],
     callbacks: {
+        async signIn({ user, account }) {
+            // Jika login menggunakan OAuth (Google), pastikan email direkam sebagai terverifikasi
+            if (account?.provider === "google" && user.email) {
+                try {
+                    await prisma.user.update({
+                        where: { email: user.email },
+                        data: { emailVerified: new Date() },
+                    });
+                } catch (error) {
+                    console.error("Gagal update emailVerified via Google sign in:", error);
+                }
+            }
+            return true;
+        },
         async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.sub = user.id;

@@ -193,7 +193,10 @@ export const resetPassword = async (values: z.infer<typeof NewPasswordSchema>, t
 
     await prisma.user.update({
         where: { id: existingUser.id },
-        data: { password: hashedPassword },
+        data: { 
+            password: hashedPassword,
+            emailVerified: existingUser.emailVerified || new Date()
+        },
     });
 
     await prisma.passwordResetToken.delete({
@@ -309,6 +312,7 @@ export const setPassword = async (password: string) => {
         where: { id: session.user.id },
         data: {
             password: hashedPassword,
+            emailVerified: user.emailVerified || new Date(), // Pastikan selalu terverifikasi untuk mencegah bug banner
         },
     });
 

@@ -13,8 +13,9 @@ export const metadata = {
 export default async function WorkspacesPage({
   searchParams,
 }: {
-  searchParams: Record<string, string>;
+  searchParams: Promise<{ workspaceId?: string }>;
 }) {
+  const { workspaceId } = await searchParams;
   const session = await auth();
   if (!session?.user) redirect("/login");
 
@@ -29,7 +30,7 @@ export default async function WorkspacesPage({
   // Unverified = has password (credentials) and no emailVerified date
   const isEmailVerified = !dbUser?.password || !!dbUser?.emailVerified;
 
-  if (searchParams?.workspaceId) {
+  if (workspaceId) {
     return (
       <DashboardClient
         initialUser={{ name: session.user.name }}
