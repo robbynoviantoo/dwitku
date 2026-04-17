@@ -161,10 +161,13 @@ export default function LandingPage() {
       {/* ── Navbar ── */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center font-bold text-white text-sm">D</div>
-            <span className="font-bold text-lg text-zinc-900 tracking-tight">Dwitku</span>
-          </div>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center font-bold text-white shadow-lg shadow-green-100 group-hover:scale-110 transition-transform duration-300">
+              <span className="relative z-10 text-base">D</span>
+              <div className="absolute inset-0 bg-white/20 blur-[2px] rounded-xl" />
+            </div>
+            <span className="font-bold text-xl text-zinc-900 tracking-tight">Dwitku</span>
+          </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors">Fitur</a>
             <a href="#pricing" className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors">Harga</a>
@@ -387,24 +390,46 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-24 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-700 -z-10" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] -z-10" />
-        <div className="max-w-3xl mx-auto text-center text-white">
-          <h2 className="text-4xl font-extrabold mb-4">Mulai catat keuanganmu hari ini</h2>
-          <p className="text-green-100 mb-8 text-lg">Gratis, tanpa kartu kredit. Upgrade kapanpun kamu siap.</p>
+      <section className="py-24 px-4 relative overflow-hidden bg-zinc-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-600/90 via-emerald-700/90 to-zinc-900 -z-0" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-400/20 blur-[120px] rounded-full -z-0" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full -z-0" />
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.05] -z-0" 
+             style={{ backgroundImage: 'radial-gradient(#fff 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center text-white">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-green-300 mb-6 border border-white/10">
+            <Star className="w-3.5 h-3.5 fill-current" />
+            Gabung bersama 5,000+ pengguna hemat lainnya
+          </div>
+
+          <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 leading-tight">
+            Siap untuk menguasai <br className="hidden sm:block" />
+            <span className="bg-gradient-to-r from-green-300 to-emerald-200 text-transparent bg-clip-text">
+              keuanganmu hari ini?
+            </span>
+          </h2>
+          
+          <p className="text-zinc-300 mb-10 text-lg max-w-2xl mx-auto">
+            Dwitku dirancang untuk kecepatan. Mulai catat transaksimu sekarang, gratis selamanya.
+            Pilih paket sesukamu kapanpun kamu siap.
+          </p>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="px-8 py-4 bg-white text-green-700 font-bold rounded-2xl hover:bg-green-50 transition-all shadow-xl text-base">
+            <Link href="/register" className="w-full sm:w-auto px-8 py-4 bg-white text-green-700 font-bold rounded-2xl hover:bg-green-50 transition-all shadow-2xl hover:-translate-y-1 text-base">
               Daftar Gratis Sekarang
             </Link>
-            <Link href="/login" className="px-8 py-4 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition-all border border-white/30 text-base">
-              Sudah punya akun
+            <Link href="/login" className="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white font-semibold rounded-2xl hover:bg-white/20 transition-all border border-white/20 text-base">
+              Sudah punya akun? Masuk
             </Link>
           </div>
-          <div className="flex items-center justify-center gap-6 mt-8 text-green-100 text-sm">
-            <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> Gratis selamanya</span>
-            <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Trial 7 hari</span>
-            <span className="flex items-center gap-1"><Shield className="w-4 h-4" /> Data aman</span>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 mt-12 text-zinc-400 text-sm">
+            <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-400" /> Gratis selamanya</span>
+            <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-green-400" /> Trial Premium 7 hari</span>
+            <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-green-400" /> Keamanan SSL 256-bit</span>
           </div>
         </div>
       </section>
@@ -414,9 +439,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-green-600 flex items-center justify-center font-bold text-white text-xs">D</div>
-                <span className="font-bold text-white text-lg">Dwitku</span>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center font-bold text-white shadow-lg">D</div>
+                <span className="font-bold text-white text-lg tracking-tight">Dwitku</span>
               </div>
               <p className="text-sm leading-relaxed max-w-xs">Aplikasi pencatatan keuangan personal dan tim yang ringan, cepat, dan mudah dipakai.</p>
             </div>
@@ -433,7 +458,7 @@ export default function LandingPage() {
               <div className="space-y-2 text-sm">
                 <a href="#" className="block hover:text-white transition-colors">Tentang</a>
                 <a href="#" className="block hover:text-white transition-colors">Kontak</a>
-                <a href="#" className="block hover:text-white transition-colors">Kebijakan Privasi</a>
+                <Link href="/privacy" className="block hover:text-white transition-colors">Kebijakan Privasi</Link>
               </div>
             </div>
           </div>

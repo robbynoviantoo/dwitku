@@ -24,8 +24,10 @@ export function usePullToRefresh({
   const canPull = useCallback(() => {
     // Only allow pull when at the very top of the scroll container
     const el = containerRef.current;
-    if (!el) return false;
-    return el.scrollTop <= 0;
+    const isWindowAtTop = typeof window !== "undefined" ? window.scrollY <= 0 : true;
+    
+    if (!el) return isWindowAtTop;
+    return el.scrollTop <= 0 && isWindowAtTop;
   }, []);
 
   const handleTouchStart = useCallback(

@@ -46,7 +46,13 @@ export function PullToRefreshWrapper({
 
   const isAtTop = useCallback(() => {
     const el = getScrollEl();
-    return !el || el.scrollTop <= 0;
+    const isWindowAtTop = typeof window !== "undefined" ? window.scrollY <= 0 : true;
+    
+    // If no scrollable container found, rely on window scroll
+    if (!el) return isWindowAtTop;
+    
+    // If a container is found, it must be at the top AND the window must be at the top
+    return el.scrollTop <= 0 && isWindowAtTop;
   }, [getScrollEl]);
 
   // ── FIX 2: Detect if touch started inside a fixed-position overlay (modal) ──

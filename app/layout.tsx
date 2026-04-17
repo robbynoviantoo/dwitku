@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { LenisProvider } from "@/components/providers/lenis-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -58,7 +59,9 @@ export default function RootLayout({
         className={`${inter.variable} ${dmMono.variable} antialiased`}
       >
         <SessionProvider>
-          {children}
+          <LenisProvider>
+            {children}
+          </LenisProvider>
         </SessionProvider>
         <script
           dangerouslySetInnerHTML={{
