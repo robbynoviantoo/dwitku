@@ -180,12 +180,24 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
         </div>
 
         {/* ── Hero Balance Card ─────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 via-green-700 to-emerald-800 text-white p-6 shadow-lg">
-          {/* Decorative circles */}
-          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/5 rounded-full" />
-          <div className="absolute -bottom-12 -right-4 w-60 h-60 bg-white/5 rounded-full" />
-          <div className="absolute top-2 right-24 w-12 h-12 bg-white/5 rounded-full" />
-
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-200 text-white p-6 shadow-xl border border-white/5">
+          {/* Modern Premium Decoration: Mesh Glow & Subtle Pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-700 to-emerald-900 opacity-90" />
+          
+          {/* Animated Mesh Glow */}
+          <div className="absolute -top-[10%] -right-[10%] w-[50%] h-[80%] bg-emerald-400/30 blur-[80px] rounded-full animate-pulse" />
+          <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[70%] bg-green-500/20 blur-[100px] rounded-full" />
+          
+          {/* Subtle Grid Pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.08]" 
+            style={{ 
+              backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+              backgroundSize: '24px 24px',
+              maskImage: 'radial-gradient(ellipse at center, black, transparent 80%)'
+            }} 
+          />
+          
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-green-200" />
