@@ -72,7 +72,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
       else {
         setSuccess("Pengaturan berhasil disimpan.");
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
-        queryClient.invalidateQueries({ queryKey: ["user-workspaces"] });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       }
     },
   });
@@ -82,7 +82,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
     onSuccess: (result) => {
       if (result.error) setError(result.error);
       else {
-        queryClient.invalidateQueries({ queryKey: ["user-workspaces"] });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         router.push("/workspaces");
         router.refresh();
       }
@@ -94,7 +94,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
     onSuccess: (result) => {
       if (result.error) setError(result.error);
       else {
-        queryClient.invalidateQueries({ queryKey: ["user-workspaces"] });
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         router.push("/workspaces");
         router.refresh();
       }

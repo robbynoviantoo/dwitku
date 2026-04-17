@@ -115,7 +115,7 @@ export function WorkspacesClient({ workspaces: initial, user, isEmailVerified }:
               Pilih workspace untuk mulai mencatat keuangan.
             </p>
           </div>
-          <Link
+          {/* <Link
             href="/onboarding"
             onClick={handleCreateNew}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
@@ -123,7 +123,7 @@ export function WorkspacesClient({ workspaces: initial, user, isEmailVerified }:
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Buat Workspace</span>
             <span className="sm:hidden">Baru</span>
-          </Link>
+          </Link> */}
         </div>
 
         {/* Workspace list */}

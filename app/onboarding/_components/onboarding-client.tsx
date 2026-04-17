@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -7,6 +7,7 @@ import * as z from "zod";
 import { CreateWorkspaceSchema } from "@/lib/validations/workspace";
 import { createWorkspace } from "@/app/actions/workspace";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Building2, ArrowRight, Loader2 } from "lucide-react";
 
 import Swal from "sweetalert2";
@@ -17,6 +18,7 @@ interface OnboardingClientProps {
 
 export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
 
@@ -48,6 +50,7 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
             if (result.error) {
                 setError(result.error);
             } else {
+                queryClient.invalidateQueries({ queryKey: ["workspaces"] });
                 router.push("/workspaces");
                 router.refresh();
             }
