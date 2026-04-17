@@ -15,8 +15,8 @@ export function MainContent({ children, className }: { children: React.ReactNode
         minHeight: "100vh",
       }}
       className={cn(
-        "flex-1", // Removed overflow-y-auto to support global Lenis scroll
-        "ml-0 ", // Default mobile
+        "flex-1 max-w-full overflow-x-hidden",
+        "ml-0 ",
         collapsed
           ? "md:ml-(--sidebar-collapsed-width)"
           : "md:ml-(--sidebar-width)",

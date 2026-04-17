@@ -347,7 +347,7 @@ function TypeSelect({
     { value: "EXPENSE", label: "Pengeluaran", emoji: "↓", color: "text-red-700 bg-red-50 border-red-200" },
   ];
   return (
-    <div className="flex gap-1.5">
+    <div className="flex flex-wrap gap-1.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -401,7 +401,7 @@ function FilterPanel({
   return (
     <div className="mb-4">
       {/* Filter trigger bar + search */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Search always visible */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />

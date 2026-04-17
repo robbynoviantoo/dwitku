@@ -6,7 +6,6 @@ import { WorkspaceProvider } from "@/components/providers/workspace-provider";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MainContent } from "@/components/layout/main-content";
 import { Suspense } from "react";
-import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
 import { PrivacyProvider } from "@/components/providers/privacy-provider";
@@ -32,12 +31,11 @@ export default async function DashboardLayout({
   const showVerificationBanner = !!dbUser?.password && !dbUser?.emailVerified;
 
   return (
-    <QueryProvider>
-      <ThemeProvider>
-        <SidebarProvider>
-          <PrivacyProvider>
-            <WorkspaceProvider>
-              <div className="flex min-h-screen">
+    <ThemeProvider>
+      <SidebarProvider>
+        <PrivacyProvider>
+          <WorkspaceProvider>
+            <div className="flex min-h-screen">
                 {/* Sidebar — needs Suspense for useSearchParams */}
                 <Suspense
                   fallback={
@@ -68,10 +66,9 @@ export default async function DashboardLayout({
                   </div>
                 </MainContent>
               </div>
-            </WorkspaceProvider>
-          </PrivacyProvider>
-        </SidebarProvider>
-      </ThemeProvider>
-    </QueryProvider>
+          </WorkspaceProvider>
+        </PrivacyProvider>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 }

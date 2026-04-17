@@ -3,6 +3,7 @@ import { Inter, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { LenisProvider } from "@/components/providers/lenis-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -37,7 +38,6 @@ export const viewport: Viewport = {
   themeColor: "#16a34a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -58,11 +58,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${dmMono.variable} antialiased`}
       >
-        <SessionProvider>
-          <LenisProvider>
-            {children}
-          </LenisProvider>
-        </SessionProvider>
+        <QueryProvider>
+          <SessionProvider>
+            <LenisProvider>
+              {children}
+            </LenisProvider>
+          </SessionProvider>
+        </QueryProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
