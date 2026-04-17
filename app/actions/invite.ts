@@ -86,7 +86,7 @@ export async function sendInvite(
     let emailSent = false;
     try {
         const { error: emailError } = await resend.emails.send({
-            from: "Dwitku <onboarding@resend.dev>", // ganti dengan domain kamu saat produksi
+            from: "Dwitku <no-reply@dwitku.my.id>", // ganti dengan domain kamu saat produksi
             to: email,
             subject: `${invite.sender.name ?? "Seseorang"} mengundangmu ke "${invite.workspace.name}"`,
             html: buildInviteEmail({
@@ -117,7 +117,7 @@ export async function sendInvite(
         return {
             success: true,
             invite,
-            warning: "Undangan tersimpan tapi email gagal dikirim. Catatan: dengan domain onboarding@resend.dev, Resend hanya bisa kirim ke email pemilik akun Resend. Salin link ini secara manual:",
+            warning: "Undangan tersimpan tapi email gagal dikirim. Catatan: dengan domain no-reply@dwitku.my.id, Resend hanya bisa kirim ke email pemilik akun Resend. Salin link ini secara manual:",
             inviteLink,
         };
     }

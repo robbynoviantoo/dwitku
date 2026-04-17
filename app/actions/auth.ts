@@ -49,7 +49,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
 
         await resend.emails.send({
-            from: "Dwitku <onboarding@resend.dev>",
+            from: "Dwitku <no-reply@dwitku.my.id>",
             to: email,
             subject: "Verifikasi Email Dwitku",
             html: buildVerificationEmail({ userName: name, verificationLink }),
@@ -140,7 +140,7 @@ export const requestPasswordReset = async (values: z.infer<typeof ForgotPassword
 
     try {
         await resend.emails.send({
-            from: "Dwitku <onboarding@resend.dev>",
+            from: "Dwitku <no-reply@dwitku.my.id>",
             to: email,
             subject: "Atur Ulang Password Dwitku",
             html: buildResetPasswordEmail({
@@ -228,7 +228,7 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
         });
     } catch (error) {
         if (isRedirectError(error)) {
-            throw error; 
+            throw error;
         }
 
         if (error instanceof AuthError) {
@@ -262,7 +262,7 @@ export const resendVerificationEmail = async () => {
         const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
 
         const { error: emailError } = await resend.emails.send({
-            from: "Dwitku <onboarding@resend.dev>",
+            from: "Dwitku <no-reply@dwitku.my.id>",
             to: user.email,
             subject: "Verifikasi Email Dwitku",
             html: buildVerificationEmail({ userName: user.name || "Pengguna Dwitku", verificationLink }),

@@ -173,7 +173,7 @@ export async function adminSendPasswordReset(userId: string) {
     const { buildResetPasswordEmail } = await import("@/lib/email-templates");
 
     const { error: emailError } = await resend.emails.send({
-      from: "Dwitku <onboarding@resend.dev>",
+      from: "Dwitku <no-reply@dwitku.my.id>",
       to: user.email,
       subject: "Atur Ulang Password — Dwitku",
       html: buildResetPasswordEmail({
