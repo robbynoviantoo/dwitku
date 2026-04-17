@@ -6,7 +6,9 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { newVerification } from "@/app/actions/auth";
 import Link from "next/link";
 
-export default function NewVerificationPage() {
+import { Suspense } from "react";
+
+function NewVerificationContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
 
@@ -79,5 +81,23 @@ export default function NewVerificationPage() {
                 </Link>
             </div>
         </div>
+    );
+}
+
+export default function NewVerificationPage() {
+    return (
+        <Suspense fallback={
+            <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-zinc-100 text-center">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold text-zinc-900">Verifikasi Email</h1>
+                    <p className="text-sm text-zinc-500 mt-2">Memuat halaman verifikasi...</p>
+                </div>
+                <div className="flex items-center justify-center w-full min-h-[100px]">
+                    <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
+                </div>
+            </div>
+        }>
+            <NewVerificationContent />
+        </Suspense>
     );
 }
