@@ -54,47 +54,54 @@ export async function POST(req: NextRequest) {
     },
   };
 
-  const transaction = await snap.createTransaction(parameter);
+  try {
+    const transaction = await snap.createTransaction(parameter);
 
-  // Simpan pending payment
-  const existingSub = await prisma.subscription.findUnique({
-    where: { userId: session.user.id },
-  });
+    // Simpan pending payment
+    const existingSub = await prisma.subscription.findUnique({
+      where: { userId: session.user.id },
+    });
 
-  if (existingSub) {
-    await prisma.subscription.update({
-      where: { id: existingSub.id },
-      data: { midtransOrderId: orderId, midtransToken: transaction.token },
-    });
-    await prisma.payment.upsert({
-      where: { orderId },
-      update: { amount: plan.priceMonthly },
-      create: {
-        subscriptionId: existingSub.id,
-        orderId,
-        amount: plan.priceMonthly,
-        status: "PENDING",
-      },
-    });
-  } else {
-    const newSub = await prisma.subscription.create({
-      data: {
-        userId: session.user.id,
-        planId: plan.id,
-        status: "EXPIRED",
-        midtransOrderId: orderId,
-        midtransToken: transaction.token,
-      },
-    });
-    await prisma.payment.create({
-      data: {
-        subscriptionId: newSub.id,
-        orderId,
-        amount: plan.priceMonthly,
-        status: "PENDING",
-      },
-    });
+    if (existingSub) {
+      await prisma.subscription.update({
+        where: { id: existingSub.id },
+        data: { midtransOrderId: orderId, midtransToken: transaction.token },
+      });
+      await prisma.payment.upsert({
+        where: { orderId },
+        update: { amount: plan.priceMonthly },
+        create: {
+          subscriptionId: existingSub.id,
+          orderId,
+          amount: plan.priceMonthly,
+          status: "PENDING",
+        },
+      });
+    } else {
+      const newSub = await prisma.subscription.create({
+        data: {
+          userId: session.user.id,
+          planId: plan.id,
+          status: "EXPIRED",
+          midtransOrderId: orderId,
+          midtransToken: transaction.token,
+        },
+      });
+      await prisma.payment.create({
+        data: {
+          subscriptionId: newSub.id,
+          orderId,
+          amount: plan.priceMonthly,
+          status: "PENDING",
+        },
+      });
+    }
+
+    return NextResponse.json({ token: transaction.token });
+  } catch (error: any) {
+    console.error("SNAP Error:", error);
+    return NextResponse.json({ 
+      error: error?.message || "Terjadi kesalahan saat memproses pembayaran. Cek log server." 
+    }, { status: 500 });
   }
-
-  return NextResponse.json({ token: transaction.token });
 }
