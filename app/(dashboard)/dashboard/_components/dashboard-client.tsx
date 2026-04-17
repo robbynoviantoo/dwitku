@@ -59,7 +59,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
   });
 
   const { data: recentTxResult } = useQuery({
-    queryKey: ["recent-transactions", workspaceId],
+    queryKey: ["transactions", workspaceId, "recent"],
     queryFn: () =>
       workspaceId
         ? getTransactions(workspaceId, { limit: 5 })
@@ -68,13 +68,13 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
   });
 
   const { data: monthComparison } = useQuery({
-    queryKey: ["month-comparison", workspaceId],
+    queryKey: ["report-comparison", workspaceId],
     queryFn: () => (workspaceId ? getMonthComparison(workspaceId) : null),
     enabled: !!workspaceId,
   });
 
   const { data: monthlyChart = [] } = useQuery({
-    queryKey: ["monthly-chart", workspaceId],
+    queryKey: ["report-monthly", workspaceId],
     queryFn: () => (workspaceId ? getMonthlyChart(workspaceId) : []),
     enabled: !!workspaceId,
   });
@@ -87,9 +87,9 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
       queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] }),
-      queryClient.invalidateQueries({ queryKey: ["recent-transactions", workspaceId] }),
-      queryClient.invalidateQueries({ queryKey: ["month-comparison", workspaceId] }),
-      queryClient.invalidateQueries({ queryKey: ["monthly-chart", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId, "recent"] }),
+      queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] }),
     ]);
   };
 

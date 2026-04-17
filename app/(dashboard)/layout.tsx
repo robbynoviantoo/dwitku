@@ -63,7 +63,9 @@ export default async function DashboardLayout({
                   {showVerificationBanner && dbUser?.email && (
                     <EmailVerificationBanner userEmail={dbUser.email} />
                   )}
-                  {children}
+                  <div className={showVerificationBanner ? "grayscale-unverified" : ""}>
+                    {children}
+                  </div>
                 </MainContent>
               </div>
             </WorkspaceProvider>

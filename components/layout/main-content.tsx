@@ -4,7 +4,7 @@ import { useSidebar } from "@/components/providers/sidebar-provider";
 import { cn } from "@/lib/utils";
 import { MobileHeader } from "./mobile-header";
 
-export function MainContent({ children }: { children: React.ReactNode }) {
+export function MainContent({ children, className }: { children: React.ReactNode, className?: string }) {
   const { collapsed } = useSidebar();
 
   return (
@@ -19,7 +19,8 @@ export function MainContent({ children }: { children: React.ReactNode }) {
         "ml-0 ", // Default mobile
         collapsed
           ? "md:ml-(--sidebar-collapsed-width)"
-          : "md:ml-(--sidebar-width)"
+          : "md:ml-(--sidebar-width)",
+        className
       )}
     >
       <MobileHeader />
