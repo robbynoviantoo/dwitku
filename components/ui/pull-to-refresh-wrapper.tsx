@@ -46,12 +46,14 @@ export function PullToRefreshWrapper({
 
   const isAtTop = useCallback(() => {
     const el = getScrollEl();
-    const isWindowAtTop = typeof window !== "undefined" ? window.scrollY <= 0 : true;
+    // Use a small 1px threshold for window scroll to account for Lenis/Precision
+    const isWindowAtTop = typeof window !== "undefined" ? window.scrollY <= 1 : true;
     
-    // If no scrollable container found, rely on window scroll
+    // If no specific scroll container is found, we rely exclusively on the window
     if (!el) return isWindowAtTop;
     
-    // If a container is found, it must be at the top AND the window must be at the top
+    // Important: we must check BOTH. If the window is scrolled down, 
+    // even if the element's local scrollTop is 0, we shouldn't trigger refresh.
     return el.scrollTop <= 0 && isWindowAtTop;
   }, [getScrollEl]);
 
@@ -127,6 +129,11 @@ export function PullToRefreshWrapper({
       const clamped = Math.min(delta / RESISTANCE, threshold * 1.6);
       setPullY(clamped);
       setTriggered(clamped >= threshold);
+
+      // Prevent native scroll/overscroll while actively pulling
+      if (delta > 10 && e.cancelable) {
+        e.preventDefault();
+      }
     },
     [refreshing, isAtTop, threshold]
   );
@@ -161,10 +168,12 @@ export function PullToRefreshWrapper({
   }, [triggered, refreshing, onRefresh, threshold]);
 
   useEffect(() => {
-    const el = getScrollEl() as HTMLElement | null;
+    const el = getScrollEl() || (typeof window !== "undefined" ? window : null);
     if (!el) return;
+    
+    // Passive: false is required to allow e.preventDefault() in onTouchMove
     el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
