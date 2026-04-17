@@ -500,19 +500,29 @@ export function MembersClient({
                 <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-medium capitalize">
                   {inv.role.toLowerCase()}
                 </span>
-                <button
-                  onClick={() => handleCancelInvite(inv.id)}
-                  disabled={isPending}
-                  title="Batalkan undangan"
-                  className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                >
-                  {cancelMutation.isPending &&
-                  cancelMutation.variables === inv.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <X className="w-4 h-4" />
-                  )}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => onInvite({ email: inv.email, role: inv.role })}
+                    disabled={isPending}
+                    title="Kirim ulang undangan"
+                    className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleCancelInvite(inv.id)}
+                    disabled={isPending}
+                    title="Batalkan undangan"
+                    className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                  >
+                    {cancelMutation.isPending &&
+                    cancelMutation.variables === inv.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

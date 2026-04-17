@@ -66,7 +66,15 @@ export function LoginForm() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Password</label>
+                    <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-medium text-zinc-700">Password</label>
+                        <Link 
+                            href="/forgot-password" 
+                            className="text-xs font-semibold text-green-600 hover:text-green-500 transition-colors"
+                        >
+                            Lupa Password?
+                        </Link>
+                    </div>
                     <div className="relative">
                         <input
                             {...form.register("password")}
@@ -87,6 +95,18 @@ export function LoginForm() {
                     {form.formState.errors.password && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</p>
                     )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <input
+                        {...form.register("rememberMe")}
+                        type="checkbox"
+                        id="rememberMe"
+                        className="w-4 h-4 rounded border-zinc-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                    />
+                    <label htmlFor="rememberMe" className="text-sm text-zinc-600 cursor-pointer select-none">
+                        Selalu ingat saya
+                    </label>
                 </div>
 
                 {error && (

@@ -42,9 +42,7 @@ export function RegisterForm() {
                     if (data.success) {
                         setSuccess(data.success);
                         form.reset();
-                        // Pindahkan ke login page setelah beberapa detik (sebagai bonus UX)
-                        const loginUrl = callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login";
-                        setTimeout(() => router.push(loginUrl), 2000);
+                        // Jangan redirect dulu agar user baca pesan verifikasi email
                     }
                 })
                 .catch((e) => {
