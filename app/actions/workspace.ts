@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema } from "@/lib/validations/workspace";
-import { WorkspaceRole } from "@/generated/prisma/client";
+import { WorkspaceRole, WorkspaceType } from "@/generated/prisma/client";
 import { redirect } from "next/navigation";
 import { getUserPlanLimits } from "./subscription";
 import { revalidatePath } from "next/cache";
@@ -98,7 +98,8 @@ export async function createWorkspace(
         }
     }
 
-    const { name, description, currency } = validated.data;
+    const { name, description, currency, type } = validated.data;
+    const workspaceType: WorkspaceType = type === "SALES" ? WorkspaceType.SALES : WorkspaceType.FINANCE;
 
     const workspace = await prisma.workspace.create({
         data: {
@@ -106,6 +107,7 @@ export async function createWorkspace(
             description,
             currency: currency ?? "IDR",
             isPersonal,
+            type: workspaceType,
             members: {
                 create: {
                     userId: session.user.id,
@@ -116,8 +118,12 @@ export async function createWorkspace(
     });
 
     // Auto-seed kategori default
-    const { seedDefaultCategories } = await import("./category");
-    await seedDefaultCategories(workspace.id);
+    const { seedDefaultCategories, seedDefaultSalesCategories } = await import("./category");
+    if (workspaceType === WorkspaceType.SALES) {
+        await seedDefaultSalesCategories(workspace.id);
+    } else {
+        await seedDefaultCategories(workspace.id);
+    }
 
     // Jangan panggil revalidatePath saat dipanggil dari server render (layout)
     if (!skipRevalidate) {
@@ -130,7 +136,7 @@ export async function createWorkspace(
 export async function createPersonalWorkspace() {
     // skipRevalidate=true karena dipanggil dari layout saat render
     return createWorkspace(
-        { name: "Catatan Pribadi", description: "Catatan keuangan pribadi", currency: "IDR" },
+        { name: "Catatan Pribadi", description: "Catatan keuangan pribadi", currency: "IDR", type: "FINANCE" },
         true,
         true
     );

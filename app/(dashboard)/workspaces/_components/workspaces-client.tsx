@@ -11,6 +11,8 @@ import {
   Crown,
   Eye,
   ChevronRight,
+  ShoppingBag,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { cn, getInitials } from "@/lib/utils";
@@ -24,6 +26,7 @@ type Workspace = {
   description?: string | null;
   currency: string;
   isPersonal: boolean;
+  type?: string; // "FINANCE" | "SALES"
   role: string;
   _count?: { members: number; transactions: number };
 };
@@ -171,13 +174,24 @@ export function WorkspacesClient({ workspaces: initial, user, isEmailVerified }:
                   </div>
                   <div className="ml-3 min-w-0 flex-1">
                     <p className="text-white font-bold text-base truncate leading-tight">{ws.name}</p>
-                    <span className={cn(
-                      "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border mt-1",
-                      ROLE_COLOR[ws.role] ?? ROLE_COLOR.VIEWER,
-                    )}>
-                      {ws.role === "OWNER" && <Crown className="w-2.5 h-2.5" />}
-                      {ROLE_LABEL[ws.role] ?? ws.role}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className={cn(
+                        "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                        ROLE_COLOR[ws.role] ?? ROLE_COLOR.VIEWER,
+                      )}>
+                        {ws.role === "OWNER" && <Crown className="w-2.5 h-2.5" />}
+                        {ROLE_LABEL[ws.role] ?? ws.role}
+                      </span>
+                      {ws.type === "SALES" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                          <ShoppingBag className="w-2.5 h-2.5" /> Penjualan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                          <Wallet className="w-2.5 h-2.5" /> Keuangan
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

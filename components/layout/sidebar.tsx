@@ -24,6 +24,8 @@ import {
   CreditCard,
   ShieldCheck,
   ReceiptText,
+  ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn, getInitials } from "@/lib/utils";
@@ -39,6 +41,7 @@ type Workspace = {
   name: string;
   currency: string;
   isPersonal: boolean;
+  type?: string; // "FINANCE" | "SALES"
   role: string;
 };
 
@@ -49,12 +52,22 @@ type UserInfo = {
   isAdmin?: boolean | null;
 };
 
-// Nav items when inside a workspace
+// Nav items when inside a FINANCE workspace
 const WORKSPACE_NAV = [
   { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
   { href: "/transactions", label: "Transaksi", icon: ArrowLeftRight },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/reports", label: "Laporan", icon: BarChart2 },
+  { href: "/settings", label: "Pengaturan", icon: Settings },
+  { href: "/settings/members", label: "Anggota", icon: Users },
+];
+
+// Nav items when inside a SALES workspace
+const SALES_NAV = [
+  { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
+  { href: "/sales", label: "Penjualan", icon: ShoppingBag },
+  { href: "/categories", label: "Kategori", icon: Tag },
+  { href: "/sales-reports", label: "Laporan", icon: TrendingUp },
   { href: "/settings", label: "Pengaturan", icon: Settings },
   { href: "/settings/members", label: "Anggota", icon: Users },
 ];
@@ -187,7 +200,7 @@ function DesktopSidebar({
 
                 {isOpen && !collapsed && (
                   <div className="ml-4 pl-3 mt-1 mb-1 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border)" }}>
-                    {WORKSPACE_NAV.map((item) => {
+                    {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
                       const Icon = item.icon;
                       const href = `${item.href}?workspaceId=${ws.id}`;
                       const active = pathname === item.href && activeWsId === ws.id;
@@ -214,7 +227,7 @@ function DesktopSidebar({
                     <div className="px-3 py-2 border-b border-[var(--sidebar-border)] mb-1">
                       <p className="font-bold text-sm truncate" style={{ color: "var(--sidebar-text-header)" }}>{ws.name}</p>
                     </div>
-                    {WORKSPACE_NAV.map((item) => {
+                    {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
                       const Icon = item.icon;
                       const href = `${item.href}?workspaceId=${ws.id}`;
                       const active = pathname === item.href && activeWsId === ws.id;
@@ -519,7 +532,7 @@ function MobileSidebar({
                     </button>
                     <div className={cn("overflow-hidden transition-all duration-200", isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")}>
                       <div className="ml-4 pl-3 py-1 space-y-0.5" style={{ borderLeft: "2px solid var(--sidebar-border)" }}>
-                        {WORKSPACE_NAV.map((item) => {
+                        {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
                           const Icon = item.icon;
                           const href = `${item.href}?workspaceId=${ws.id}`;
                           const active = pathname === item.href && activeWsId === ws.id;

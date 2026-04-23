@@ -28,6 +28,8 @@ model User {
   memberships   WorkspaceMember[]
   invitesSent   Invite[]          @relation("InviteSender")
   transactions  Transaction[]
+  sales         Sale[]
+  saleExpenses  SaleExpense[]
   subscription  Subscription?
   pushSubscriptions PushSubscription[]
 }
@@ -78,19 +80,28 @@ model PasswordResetToken {
 
 // ─── WORKSPACE ───────────────────────────────────────────────────────────────
 
+enum WorkspaceType {
+  FINANCE
+  SALES
+}
+
 model Workspace {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String?
-  currency    String   @default("IDR")
-  isPersonal  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  currency    String        @default("IDR")
+  isPersonal  Boolean       @default(false)
+  type        WorkspaceType @default(FINANCE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   members      WorkspaceMember[]
   categories   Category[]
   transactions Transaction[]
   invites      Invite[]
+  sales        Sale[]
+  saleExpenses SaleExpense[]
+  products     Product[]
 }
 
 model WorkspaceMember {
@@ -150,6 +161,24 @@ model Category {
 
   workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  sales        Sale[]
+  saleExpenses SaleExpense[]
+  products     Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  workspaceId String
+  categoryId  String?
+  name        String
+  costPrice   Decimal  @default(0) @db.Decimal(15, 2) // HPP per satuan
+  packages    Json?    // Array konfigurasi: [{ price: 5000, qty: 7 }, { price: 7000, qty: 10 }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id])
+  sales     Sale[]
 }
 
 // ─── TRANSAKSI ───────────────────────────────────────────────────────────────
@@ -174,6 +203,48 @@ model Transaction {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+// ─── PENJUALAN ───────────────────────────────────────────────────────────────
+
+// Satu entri = satu item yang dijual dalam satu transaksi
+model Sale {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  productId    String?
+  date         DateTime
+  categoryId   String?
+  name         String   // nama produk / item (snapshot)
+  qty          Decimal  @default(1) @db.Decimal(10, 3)
+  sellingPrice Decimal  @db.Decimal(15, 2)  // harga jual per unit
+  costPrice    Decimal  @default(0) @db.Decimal(15, 2) // HPP per unit
+  note         String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+  createdBy User      @relation(fields: [createdById], references: [id])
+}
+
+// Biaya operasional harian (untuk mengurangi laba kotor → laba bersih)
+model SaleExpense {
+  id          String   @id @default(cuid())
+  workspaceId String
+  date        DateTime
+  categoryId  String?
+  name        String   // nama biaya (contoh: gaji, listrik, bahan baku)
+  amount      Decimal  @db.Decimal(15, 2)
+  note        String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id])
+  createdBy User      @relation(fields: [createdById], references: [id])
 }
 
 // ─── PLAN ───────────────────────────────────────────────────────────────────

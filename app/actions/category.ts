@@ -41,6 +41,36 @@ export async function seedDefaultCategories(workspaceId: string) {
     });
 }
 
+/** Seed kategori default untuk workspace penjualan baru */
+export async function seedDefaultSalesCategories(workspaceId: string) {
+    const salesCategories = [
+        // Kategori produk/penjualan (type INCOME = item terjual)
+        { name: "Makanan", emoji: "🍱", color: "#f97316", type: TransactionType.INCOME },
+        { name: "Minuman", emoji: "🥤", color: "#06b6d4", type: TransactionType.INCOME },
+        { name: "Snack & Kue", emoji: "🍪", color: "#f59e0b", type: TransactionType.INCOME },
+        { name: "Produk Segar", emoji: "🥬", color: "#22c55e", type: TransactionType.INCOME },
+        { name: "Pakaian", emoji: "👕", color: "#ec4899", type: TransactionType.INCOME },
+        { name: "Elektronik", emoji: "📱", color: "#6366f1", type: TransactionType.INCOME },
+        { name: "Lainnya", emoji: "📦", color: "#64748b", type: TransactionType.INCOME },
+        // Kategori biaya operasional (type EXPENSE = pengeluaran)
+        { name: "Bahan Baku", emoji: "🧂", color: "#0ea5e9", type: TransactionType.EXPENSE },
+        { name: "Gaji Karyawan", emoji: "👷", color: "#8b5cf6", type: TransactionType.EXPENSE },
+        { name: "Listrik & Air", emoji: "⚡", color: "#f59e0b", type: TransactionType.EXPENSE },
+        { name: "Sewa Tempat", emoji: "🏪", color: "#10b981", type: TransactionType.EXPENSE },
+        { name: "Transportasi", emoji: "🚗", color: "#3b82f6", type: TransactionType.EXPENSE },
+        { name: "Pemasaran", emoji: "📢", color: "#e879f9", type: TransactionType.EXPENSE },
+        { name: "Operasional Lain", emoji: "🔧", color: "#64748b", type: TransactionType.EXPENSE },
+    ];
+
+    await prisma.category.createMany({
+        data: salesCategories.map((c) => ({
+            ...c,
+            workspaceId,
+            isDefault: true,
+        })),
+    });
+}
+
 /** Ambil semua kategori workspace */
 export async function getCategories(workspaceId: string, type?: "INCOME" | "EXPENSE") {
     const session = await auth();

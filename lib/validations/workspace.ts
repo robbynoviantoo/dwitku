@@ -13,6 +13,7 @@ export const CreateWorkspaceSchema = z.object({
     name: z.string().min(1, "Nama workspace wajib diisi").max(60, "Nama terlalu panjang"),
     description: z.string().max(200, "Deskripsi terlalu panjang").optional().or(z.literal("")),
     currency: z.string().min(1).default("IDR"),
+    type: z.enum(["FINANCE", "SALES"]).default("FINANCE"),
 });
 
 export const UpdateWorkspaceSchema = CreateWorkspaceSchema.partial();
