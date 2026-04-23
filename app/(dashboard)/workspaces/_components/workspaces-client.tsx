@@ -159,7 +159,7 @@ export function WorkspacesClient({ workspaces: initial, user, isEmailVerified }:
             {(workspaces as any[]).map((ws) => (
               <button
                 key={ws.id}
-                onClick={() => router.push(`/workspaces?workspaceId=${ws.id}`)}
+                onClick={() => router.push(ws.type === "SALES" ? `/sales?workspaceId=${ws.id}` : `/workspaces?workspaceId=${ws.id}`)}
                 className={cn(
                   "group text-left bg-white rounded-2xl border border-zinc-100 shadow-sm",
                   "hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200",

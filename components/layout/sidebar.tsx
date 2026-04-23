@@ -62,9 +62,7 @@ const WORKSPACE_NAV = [
   { href: "/settings/members", label: "Anggota", icon: Users },
 ];
 
-// Nav items when inside a SALES workspace
 const SALES_NAV = [
-  { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
   { href: "/sales", label: "Penjualan", icon: ShoppingBag },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/sales-reports", label: "Laporan", icon: TrendingUp },
