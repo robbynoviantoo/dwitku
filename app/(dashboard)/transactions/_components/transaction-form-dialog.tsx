@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TransactionSchema } from "@/lib/validations/transaction";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
+import { useLenis } from "lenis/react";
 
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
@@ -291,6 +293,14 @@ export function TransactionFormDialog({
     const [error, setError] = useState<string | undefined>();
     const isEdit = !!transaction;
 
+    // Pause Lenis smooth scroll while dialog is open so background doesn't scroll
+    const lenis = useLenis();
+    useEffect(() => {
+        lenis?.stop();
+        return () => { lenis?.start(); };
+    }, [lenis]);
+
+
     const form = useForm<{
         amount: number;
         note?: string;
@@ -353,11 +363,11 @@ export function TransactionFormDialog({
         });
     };
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 sticky top-0 bg-white z-10">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+                {/* Header — fixed, never scrolls */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-white rounded-t-2xl shrink-0">
                     <h2 className="text-lg font-bold text-zinc-900 tracking-tight">
                         {isEdit ? "Edit Transaksi" : "Tambah Transaksi"}
                     </h2>
@@ -369,7 +379,8 @@ export function TransactionFormDialog({
                     </button>
                 </div>
 
-                <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-5">
+                {/* Scrollable form area */}
+                <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-5 overflow-y-auto overscroll-contain flex-1" data-lenis-prevent>
                     {/* Type Toggle */}
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 mb-2">Tipe Transaksi</label>
@@ -432,7 +443,7 @@ export function TransactionFormDialog({
                         <label className="block text-sm font-medium text-zinc-700 mb-1.5">
                             Kategori <span className="text-red-500">*</span>
                         </label>
-                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto overscroll-contain pr-1" data-lenis-prevent>
                             {filteredCategories.length === 0 ? (
                                 <p className="col-span-3 text-xs text-zinc-400 py-4 text-center">
                                     Belum ada kategori untuk tipe ini.
@@ -513,6 +524,7 @@ export function TransactionFormDialog({
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
