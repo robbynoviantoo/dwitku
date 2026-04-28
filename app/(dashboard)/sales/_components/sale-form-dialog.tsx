@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SaleSchema } from "@/lib/validations/sale";
@@ -9,6 +10,7 @@ import { getProducts } from "@/app/actions/product";
 import { useQuery } from "@tanstack/react-query";
 import * as z from "zod";
 import { X, Loader2, Calculator, PackageSearch, Tag } from "lucide-react";
+import { useLenis } from "lenis/react";
 
 interface SaleFormDialogProps {
     open: boolean;
@@ -22,6 +24,16 @@ interface SaleFormDialogProps {
 export function SaleFormDialog({ open, onClose, workspaceId, sale, categories, onSuccess }: SaleFormDialogProps) {
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
+
+    const lenis = useLenis();
+    useEffect(() => {
+        if (open) {
+            lenis?.stop();
+        }
+        return () => {
+            lenis?.start();
+        };
+    }, [lenis, open]);
 
     const form = useForm<z.infer<typeof SaleSchema>>({
         resolver: zodResolver(SaleSchema) as any,
@@ -119,9 +131,12 @@ export function SaleFormDialog({ open, onClose, workspaceId, sale, categories, o
 
     const productCategories = categories.filter(c => c.type === "INCOME");
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain">
+            <div 
+                className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain"
+                data-lenis-prevent
+            >
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-zinc-100">
                     <h2 className="font-semibold text-zinc-900">{sale ? "Edit Penjualan" : "Tambah Penjualan"}</h2>
                     <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg transition-colors">
@@ -298,6 +313,7 @@ export function SaleFormDialog({ open, onClose, workspaceId, sale, categories, o
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
