@@ -44,137 +44,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import * as XLSX from "xlsx";
+import { CalendarPicker } from "@/components/ui/calendar-picker";
 
-// ── Shared mini calendar for filter panel ───────────────────────────────────
-const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-const MONTHS_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const DAYS_SHORT = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
-
-function MiniCalendar({
-  value,
-  onChange,
-  label,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  label: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const parsed = value ? new Date(value + "T00:00:00") : new Date();
-  const [viewYear, setViewYear] = useState(parsed.getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsed.getMonth());
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const selectedDate = value ? new Date(value + "T00:00:00") : null;
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
-  const today = new Date();
-  const isToday = (d: number) => today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d;
-  const isSelected = (d: number) => selectedDate && selectedDate.getFullYear() === viewYear && selectedDate.getMonth() === viewMonth && selectedDate.getDate() === d;
-
-  const selectDay = (day: number) => {
-    const mm = String(viewMonth + 1).padStart(2, "0");
-    const dd = String(day).padStart(2, "0");
-    onChange(`${viewYear}-${mm}-${dd}`);
-    setOpen(false);
-  };
-
-  const displayText = selectedDate
-    ? `${selectedDate.getDate()} ${MONTHS_SHORT[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`
-    : label;
-
-  return (
-    <div ref={ref} className="relative flex-1 min-w-0">
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className={cn(
-          "w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all truncate",
-          open ? "border-green-400 bg-white ring-1 ring-green-100" : "border-zinc-200 bg-white hover:border-green-300",
-          value ? "text-zinc-800 font-medium" : "text-zinc-400",
-        )}
-      >
-        <Calendar className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-        <span className="truncate">{displayText}</span>
-        {value && (
-          <span
-            onClick={(e) => { e.stopPropagation(); onChange(""); }}
-            className="ml-auto shrink-0 text-zinc-300 hover:text-zinc-500 cursor-pointer"
-          >
-            <X className="w-3 h-3" />
-          </span>
-        )}
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-1.5 bg-white border border-zinc-200 rounded-xl shadow-2xl z-[60] overflow-hidden w-64">
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-100">
-            <button type="button" onClick={prevMonth} className="p-1 rounded-lg hover:bg-zinc-100 transition-colors">
-              <ChevronLeft className="w-3.5 h-3.5 text-zinc-500" />
-            </button>
-            <span className="text-xs font-semibold text-zinc-800">{MONTHS_FULL[viewMonth]} {viewYear}</span>
-            <button type="button" onClick={nextMonth} className="p-1 rounded-lg hover:bg-zinc-100 transition-colors">
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
-            </button>
-          </div>
-          <div className="grid grid-cols-7 px-2 pt-2">
-            {DAYS_SHORT.map(d => (
-              <div key={d} className="text-center text-[9px] font-bold text-zinc-400 uppercase py-1">{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-y-0.5 px-2 pb-2">
-            {cells.map((day, i) =>
-              day === null ? <div key={`e-${i}`} /> : (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => selectDay(day)}
-                  className={cn(
-                    "mx-auto flex items-center justify-center w-7 h-7 rounded-full text-xs transition-all",
-                    isSelected(day) ? "bg-green-600 text-white font-bold" : isToday(day) ? "bg-green-50 text-green-600 font-semibold ring-1 ring-green-200" : "text-zinc-700 hover:bg-zinc-100",
-                  )}
-                >{day}</button>
-              )
-            )}
-          </div>
-          <div className="px-2 pb-2">
-            <button
-              type="button"
-              onClick={() => {
-                const t = new Date();
-                const mm = String(t.getMonth() + 1).padStart(2, "0");
-                const dd = String(t.getDate()).padStart(2, "0");
-                onChange(`${t.getFullYear()}-${mm}-${dd}`);
-                setOpen(false);
-              }}
-              className="w-full py-1 text-[10px] font-medium text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-100"
-            >Hari ini</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 type Category = {
   id: string;
@@ -425,7 +296,7 @@ function FilterPanel({
         <button
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "relative flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shadow-sm",
+            "relative cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all shadow-sm",
             open
               ? "bg-green-600 border-green-600 text-white"
               : "bg-white border-zinc-200 text-zinc-700 hover:border-green-300 hover:bg-green-50/40",
@@ -499,15 +370,18 @@ function FilterPanel({
               Rentang Tanggal
             </label>
             <div className="flex gap-2 min-w-0">
-              <MiniCalendar
+              <CalendarPicker
                 value={filter.dateFrom ?? ""}
                 onChange={(v) => onFilterChange({ dateFrom: v || undefined })}
-                label="Dari"
+                placeholder="Dari"
+                allowClear
               />
-              <MiniCalendar
+              <CalendarPicker
                 value={filter.dateTo ?? ""}
                 onChange={(v) => onFilterChange({ dateTo: v || undefined })}
-                label="Sampai"
+                placeholder="Sampai"
+                allowClear
+                align="right"
               />
             </div>
           </div>
@@ -854,7 +728,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="flex items-center gap-2 px-3 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-sm font-medium rounded-xl transition-all shadow-sm disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-sm font-medium rounded-xl transition-all shadow-sm disabled:opacity-50"
             >
               {isExporting
                 ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -1131,7 +1005,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
               <button
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page <= 1 || isPlaceholderData}
-                className="p-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-white hover:shadow-sm disabled:opacity-40 transition-all"
+                className="p-2 rounded-xl cursor-pointer border border-zinc-200 text-zinc-500 hover:bg-white hover:shadow-sm disabled:opacity-40 transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -1140,7 +1014,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                   setPage((prev) => Math.min(totalPages, prev + 1))
                 }
                 disabled={page >= totalPages || isPlaceholderData}
-                className="p-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-white hover:shadow-sm disabled:opacity-40 transition-all"
+                className="p-2 cursor-pointer rounded-xl border border-zinc-200 text-zinc-500 hover:bg-white hover:shadow-sm disabled:opacity-40 transition-all"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -1172,7 +1046,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
 
 function TransactionsSkeleton({ canEdit }: { canEdit: boolean }) {
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 w-full mx-auto">
       {/* Header skeleton */}
       <div className="flex items-start justify-between mb-6">
         <div>

@@ -12,6 +12,7 @@ import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
 import { useLenis } from "lenis/react";
+import { CalendarPicker } from "@/components/ui/calendar-picker";
 
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
@@ -96,185 +97,6 @@ function AmountInput({
                 <p className="text-xs text-zinc-400 mt-1 text-right">
                     = Rp {display}
                 </p>
-            )}
-        </div>
-    );
-}
-
-// ── Mini Calendar Picker ──────────────────────────────────────────────────────
-const MONTHS = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-const DAYS_SHORT = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-
-function CalendarPicker({
-    value,        // "YYYY-MM-DD"
-    onChange,
-    error,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    error?: string;
-}) {
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    const parsedDate = value ? new Date(value + "T00:00:00") : new Date();
-    const [viewYear, setViewYear] = useState(parsedDate.getFullYear());
-    const [viewMonth, setViewMonth] = useState(parsedDate.getMonth());
-
-    // Close on outside click
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    const selectedDate = value ? new Date(value + "T00:00:00") : null;
-
-    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-    const cells: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-    const selectDay = (day: number) => {
-        const mm = String(viewMonth + 1).padStart(2, "0");
-        const dd = String(day).padStart(2, "0");
-        onChange(`${viewYear}-${mm}-${dd}`);
-        setOpen(false);
-    };
-
-    const prevMonth = () => {
-        if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-        else setViewMonth(m => m - 1);
-    };
-    const nextMonth = () => {
-        if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-        else setViewMonth(m => m + 1);
-    };
-
-    const today = new Date();
-    const isToday = (day: number) =>
-        today.getFullYear() === viewYear &&
-        today.getMonth() === viewMonth &&
-        today.getDate() === day;
-    const isSelected = (day: number) =>
-        selectedDate &&
-        selectedDate.getFullYear() === viewYear &&
-        selectedDate.getMonth() === viewMonth &&
-        selectedDate.getDate() === day;
-
-    // Formatted display
-    const displayText = selectedDate
-        ? selectedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-        : "Pilih tanggal";
-
-    return (
-        <div ref={ref} className="relative">
-            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-                Tanggal <span className="text-red-500">*</span>
-            </label>
-            {/* Trigger */}
-            <button
-                type="button"
-                onClick={() => setOpen(v => !v)}
-                className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 border-2 rounded-xl text-sm transition-all text-left",
-                    open
-                        ? "border-green-400 bg-white"
-                        : "border-zinc-200 bg-zinc-50 hover:border-zinc-300",
-                    !value && "text-zinc-400",
-                    value && "text-zinc-900 font-medium",
-                )}
-            >
-                <Calendar className="w-4 h-4 text-zinc-400 shrink-0" />
-                <span className="flex-1">{displayText}</span>
-            </button>
-
-            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-
-            {/* Calendar dropdown */}
-            {open && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-200 rounded-2xl shadow-2xl z-[60] overflow-hidden">
-                    {/* Nav */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-                        <button
-                            type="button"
-                            onClick={prevMonth}
-                            className="p-1 rounded-lg hover:bg-zinc-100 transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4 text-zinc-500" />
-                        </button>
-                        <span className="text-sm font-semibold text-zinc-800">
-                            {MONTHS[viewMonth]} {viewYear}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={nextMonth}
-                            className="p-1 rounded-lg hover:bg-zinc-100 transition-colors"
-                        >
-                            <ChevronRight className="w-4 h-4 text-zinc-500" />
-                        </button>
-                    </div>
-
-                    {/* Days header */}
-                    <div className="grid grid-cols-7 px-3 pt-2 pb-1">
-                        {DAYS_SHORT.map(d => (
-                            <div key={d} className="text-center text-[10px] font-bold text-zinc-400 uppercase py-1">
-                                {d}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Day cells */}
-                    <div className="grid grid-cols-7 gap-y-1 px-3 pb-3">
-                        {cells.map((day, i) =>
-                            day === null ? (
-                                <div key={`e-${i}`} />
-                            ) : (
-                                <button
-                                    key={day}
-                                    type="button"
-                                    onClick={() => selectDay(day)}
-                                    className={cn(
-                                        "mx-auto flex items-center justify-center w-8 h-8 rounded-full text-sm transition-all",
-                                        isSelected(day)
-                                            ? "bg-green-600 text-white font-bold shadow-sm"
-                                            : isToday(day)
-                                                ? "bg-green-50 text-green-600 font-semibold ring-1 ring-green-200"
-                                                : "text-zinc-700 hover:bg-zinc-100",
-                                    )}
-                                >
-                                    {day}
-                                </button>
-                            )
-                        )}
-                    </div>
-
-                    {/* Quick: Hari ini */}
-                    <div className="px-3 pb-3">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const t = new Date();
-                                const mm = String(t.getMonth() + 1).padStart(2, "0");
-                                const dd = String(t.getDate()).padStart(2, "0");
-                                onChange(`${t.getFullYear()}-${mm}-${dd}`);
-                                setOpen(false);
-                            }}
-                            className="w-full py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-green-100"
-                        >
-                            Hari ini
-                        </button>
-                    </div>
-                </div>
             )}
         </div>
     );
@@ -426,17 +248,22 @@ export function TransactionFormDialog({
                     />
 
                     {/* Date — custom calendar picker */}
-                    <Controller
-                        name="date"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                            <CalendarPicker
-                                value={field.value}
-                                onChange={field.onChange}
-                                error={fieldState.error?.message}
-                            />
-                        )}
-                    />
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                            Tanggal <span className="text-red-500">*</span>
+                        </label>
+                        <Controller
+                            name="date"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <CalendarPicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                />
+                            )}
+                        />
+                    </div>
 
                     {/* Category */}
                     <div>

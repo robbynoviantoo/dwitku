@@ -12,6 +12,7 @@ import {
   MonthlyBarChart,
   CategoryDonutChart,
 } from "@/components/reports/charts";
+import { CalendarPicker } from "@/components/ui/calendar-picker";
 import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -66,11 +67,12 @@ export function ReportsClient({
   currency,
 }: ReportsClientProps) {
   const { showAmount } = usePrivacy();
+  const [dateFilter, setDateFilter] = useState<string>("");
 
   // Queries
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ["transaction-summary", workspaceId],
-    queryFn: () => getTransactionSummary(workspaceId),
+    queryKey: ["transaction-summary", workspaceId, dateFilter],
+    queryFn: () => getTransactionSummary(workspaceId, dateFilter, dateFilter),
   });
 
   const { data: monthlyData = [], isLoading: isLoadingMonthly } = useQuery({
@@ -79,8 +81,8 @@ export function ReportsClient({
   });
 
   const { data: categoryData = [], isLoading: isLoadingCategory } = useQuery({
-    queryKey: ["report-category", workspaceId],
-    queryFn: () => getCategoryChart(workspaceId),
+    queryKey: ["report-category", workspaceId, dateFilter],
+    queryFn: () => getCategoryChart(workspaceId, dateFilter, dateFilter),
   });
 
   const { data: comparison, isLoading: isLoadingComparison } = useQuery({
@@ -105,13 +107,22 @@ export function ReportsClient({
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Analitik</p>
           <h1 className="text-2xl font-bold text-zinc-900">Laporan Keuangan</h1>
           <p className="text-zinc-400 text-sm mt-1">
             {isPersonal ? "Keuangan pribadi" : `Workspace "${workspaceName}"`}
           </p>
+        </div>
+        <div className="w-full sm:w-64 shrink-0">
+          <CalendarPicker
+            value={dateFilter}
+            onChange={setDateFilter}
+            placeholder="Pilih tanggal (opsional)"
+            allowClear
+            align="right"
+          />
         </div>
       </div>
 
@@ -187,7 +198,7 @@ export function ReportsClient({
         <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
           <div className="mb-5">
             <h2 className="font-semibold text-zinc-900 text-sm">Pengeluaran per Kategori</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">Bulan ini</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{dateFilter ? `Tanggal ${new Date(dateFilter).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : "Bulan ini"}</p>
           </div>
           <CategoryDonutChart data={categoryData} currency={currency} />
         </div>

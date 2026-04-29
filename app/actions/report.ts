@@ -44,13 +44,21 @@ export async function getMonthlyChart(workspaceId: string) {
 }
 
 /** Pengeluaran per kategori (bulan ini) */
-export async function getCategoryChart(workspaceId: string) {
+export async function getCategoryChart(workspaceId: string, dateFrom?: string, dateTo?: string) {
     const session = await auth();
     if (!session?.user?.id) return [];
 
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
+    let start: Date;
+    let end: Date;
+
+    if (dateFrom || dateTo) {
+        start = dateFrom ? new Date(dateFrom) : new Date(0);
+        end = dateTo ? new Date(dateTo + "T23:59:59") : new Date();
+    } else {
+        const now = new Date();
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+    }
 
     const rows = await prisma.transaction.groupBy({
         by: ["categoryId"],
