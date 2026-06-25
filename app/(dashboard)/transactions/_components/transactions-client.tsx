@@ -35,6 +35,7 @@ import {
   deleteTransaction,
   getTransactions,
   getTransactionSummary,
+  getFilteredSummary,
   type TransactionFilter,
 } from "@/app/actions/transaction";
 import { getCategories } from "@/app/actions/category";
@@ -239,6 +240,94 @@ function TypeSelect({
           {o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ── Filter Summary Bar ──────────────────────────────────────────────────────
+function FilterSummaryBar({
+  income,
+  expense,
+  net,
+  currency,
+  showAmount,
+  isLoading,
+  hasFilter,
+}: {
+  income: number;
+  expense: number;
+  net: number;
+  currency: string;
+  showAmount: boolean;
+  isLoading: boolean;
+  hasFilter: boolean;
+}) {
+  if (!hasFilter) return null;
+
+  return (
+    <div className="mb-4 grid grid-cols-3 gap-3">
+      {/* Pemasukan */}
+      <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+          <TrendingUp className="w-4 h-4 text-green-600" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-0.5">Pemasukan</p>
+          {isLoading ? (
+            <div className="h-5 w-24 bg-green-100 rounded animate-pulse" />
+          ) : (
+            <p className="text-base font-bold text-green-700 tabular-nums truncate">
+              {showAmount ? formatCurrency(income, currency) : <span className="tracking-widest text-sm">••••••</span>}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Pengeluaran */}
+      <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+          <TrendingDown className="w-4 h-4 text-red-500" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-0.5">Pengeluaran</p>
+          {isLoading ? (
+            <div className="h-5 w-24 bg-red-100 rounded animate-pulse" />
+          ) : (
+            <p className="text-base font-bold text-red-600 tabular-nums truncate">
+              {showAmount ? formatCurrency(expense, currency) : <span className="tracking-widest text-sm">••••••</span>}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Selisih */}
+      <div className={cn(
+        "flex items-center gap-3 border rounded-2xl px-4 py-3",
+        net >= 0
+          ? "bg-blue-50 border-blue-100"
+          : "bg-orange-50 border-orange-100",
+      )}>
+        <div className={cn(
+          "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+          net >= 0 ? "bg-blue-100" : "bg-orange-100",
+        )}>
+          <ArrowLeftRight className={cn("w-4 h-4", net >= 0 ? "text-blue-600" : "text-orange-500")} />
+        </div>
+        <div className="min-w-0">
+          <p className={cn("text-xs font-semibold uppercase tracking-wider mb-0.5", net >= 0 ? "text-blue-600" : "text-orange-500")}>Selisih</p>
+          {isLoading ? (
+            <div className="h-5 w-24 bg-blue-100 rounded animate-pulse" />
+          ) : (
+            <p className={cn("text-base font-bold tabular-nums truncate", net >= 0 ? "text-blue-700" : "text-orange-600")}>
+              {showAmount ? (
+                <>{net >= 0 ? "+" : "-"}{formatCurrency(Math.abs(net), currency)}</>
+              ) : (
+                <span className="tracking-widest text-sm">••••••</span>
+              )}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -487,6 +576,16 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       getTransactionSummary(workspaceId, filter.dateFrom, filter.dateTo),
   });
 
+  const hasActiveFilter = Boolean(
+    filter.type || filter.categoryId || filter.dateFrom || filter.dateTo || search
+  );
+
+  const { data: filteredSummary, isLoading: isLoadingFilteredSummary } = useQuery({
+    queryKey: ["filtered-summary", workspaceId, filter],
+    queryFn: () => getFilteredSummary(workspaceId, filter),
+    enabled: hasActiveFilter,
+  });
+
   // Mutation
   const deleteMutation = useMutation({
     mutationFn: (transactionId: string) =>
@@ -494,6 +593,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["filtered-summary", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });
@@ -765,6 +865,17 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         </div>
       </div>
 
+      {/* Filter Summary Bar */}
+      <FilterSummaryBar
+        income={filteredSummary?.income ?? 0}
+        expense={filteredSummary?.expense ?? 0}
+        net={filteredSummary?.net ?? 0}
+        currency={currency}
+        showAmount={showAmount}
+        isLoading={isLoadingFilteredSummary}
+        hasFilter={hasActiveFilter}
+      />
+
       {/* Filter Panel */}
       <FilterPanel
         filter={filter}
@@ -1033,6 +1144,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["filtered-summary", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });

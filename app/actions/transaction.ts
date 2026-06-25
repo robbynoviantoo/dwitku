@@ -118,6 +118,52 @@ export async function getTransactionSummary(
     return { income, expense, net: income - expense };
 }
 
+/** Ringkasan berdasarkan filter lengkap: income, expense, net */
+export async function getFilteredSummary(
+    workspaceId: string,
+    filter: Omit<TransactionFilter, "page" | "limit"> = {}
+) {
+    const session = await auth();
+    if (!session?.user?.id) return { income: 0, expense: 0, net: 0 };
+
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+    });
+    if (!membership) return { income: 0, expense: 0, net: 0 };
+
+    const { categoryId, search, dateFrom, dateTo } = filter;
+
+    const baseWhere = {
+        workspaceId,
+        ...(categoryId ? { categoryId } : {}),
+        ...(search ? { note: { contains: search, mode: "insensitive" as const } } : {}),
+        ...(dateFrom || dateTo
+            ? {
+                date: {
+                    ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                    ...(dateTo ? { lte: new Date(dateTo + "T23:59:59") } : {}),
+                },
+            }
+            : {}),
+    };
+
+    const [incomeAgg, expenseAgg] = await Promise.all([
+        prisma.transaction.aggregate({
+            where: { ...baseWhere, type: TransactionType.INCOME },
+            _sum: { amount: true },
+        }),
+        prisma.transaction.aggregate({
+            where: { ...baseWhere, type: TransactionType.EXPENSE },
+            _sum: { amount: true },
+        }),
+    ]);
+
+    const income = Number(incomeAgg._sum.amount ?? 0);
+    const expense = Number(expenseAgg._sum.amount ?? 0);
+
+    return { income, expense, net: income - expense };
+}
+
 /** Buat transaksi baru */
 export async function createTransaction(
     workspaceId: string,
