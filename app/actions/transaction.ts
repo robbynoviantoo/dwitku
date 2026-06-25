@@ -131,7 +131,7 @@ export async function getFilteredSummary(
     });
     if (!membership) return { income: 0, expense: 0, net: 0 };
 
-    const { categoryId, search, dateFrom, dateTo } = filter;
+    const { type, categoryId, search, dateFrom, dateTo } = filter;
 
     const baseWhere = {
         workspaceId,
@@ -148,14 +148,18 @@ export async function getFilteredSummary(
     };
 
     const [incomeAgg, expenseAgg] = await Promise.all([
-        prisma.transaction.aggregate({
-            where: { ...baseWhere, type: TransactionType.INCOME },
-            _sum: { amount: true },
-        }),
-        prisma.transaction.aggregate({
-            where: { ...baseWhere, type: TransactionType.EXPENSE },
-            _sum: { amount: true },
-        }),
+        type === "EXPENSE"
+            ? Promise.resolve({ _sum: { amount: 0 } })
+            : prisma.transaction.aggregate({
+                where: { ...baseWhere, type: TransactionType.INCOME },
+                _sum: { amount: true },
+            }),
+        type === "INCOME"
+            ? Promise.resolve({ _sum: { amount: 0 } })
+            : prisma.transaction.aggregate({
+                where: { ...baseWhere, type: TransactionType.EXPENSE },
+                _sum: { amount: true },
+            }),
     ]);
 
     const income = Number(incomeAgg._sum.amount ?? 0);

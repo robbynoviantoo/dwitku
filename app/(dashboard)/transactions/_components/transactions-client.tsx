@@ -252,7 +252,6 @@ function FilterSummaryBar({
   currency,
   showAmount,
   isLoading,
-  hasFilter,
 }: {
   income: number;
   expense: number;
@@ -260,9 +259,7 @@ function FilterSummaryBar({
   currency: string;
   showAmount: boolean;
   isLoading: boolean;
-  hasFilter: boolean;
 }) {
-  if (!hasFilter) return null;
 
   return (
     <div className="mb-4 grid grid-cols-3 gap-3">
@@ -583,8 +580,9 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
   const { data: filteredSummary, isLoading: isLoadingFilteredSummary } = useQuery({
     queryKey: ["filtered-summary", workspaceId, filter],
     queryFn: () => getFilteredSummary(workspaceId, filter),
-    enabled: hasActiveFilter,
   });
+
+  const visibleSummary = hasActiveFilter ? filteredSummary : summary;
 
   // Mutation
   const deleteMutation = useMutation({
@@ -867,13 +865,12 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
 
       {/* Filter Summary Bar */}
       <FilterSummaryBar
-        income={filteredSummary?.income ?? 0}
-        expense={filteredSummary?.expense ?? 0}
-        net={filteredSummary?.net ?? 0}
+        income={visibleSummary?.income ?? 0}
+        expense={visibleSummary?.expense ?? 0}
+        net={visibleSummary?.net ?? 0}
         currency={currency}
         showAmount={showAmount}
-        isLoading={isLoadingFilteredSummary}
-        hasFilter={hasActiveFilter}
+        isLoading={hasActiveFilter ? isLoadingFilteredSummary : isLoadingSummary}
       />
 
       {/* Filter Panel */}
