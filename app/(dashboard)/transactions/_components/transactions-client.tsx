@@ -262,7 +262,7 @@ function FilterSummaryBar({
 }) {
 
   return (
-    <div className="mb-4 grid grid-cols-3 gap-3">
+    <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
       {/* Pemasukan */}
       <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
         <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
