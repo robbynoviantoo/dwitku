@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionSchema } from "@/lib/validations/transaction";
-import { WorkspaceRole, TransactionType } from "@/generated/prisma/client";
+import { WorkspaceRole, TransactionType, Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { getUserPlanLimits } from "./subscription";
@@ -17,6 +17,8 @@ export type TransactionFilter = {
     dateTo?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
 };
 
 /** Ambil transaksi dengan filter + pagination */
@@ -29,7 +31,7 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
     });
     if (!membership) return { items: [], total: 0, totalPages: 0 };
 
-    const { type, categoryId, search, dateFrom, dateTo, page = 1, limit = 20 } = filter;
+    const { type, categoryId, search, dateFrom, dateTo, page = 1, limit = 20, sortBy, sortOrder } = filter;
 
     const where = {
         workspaceId,
@@ -55,10 +57,22 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
                 category: { select: { id: true, name: true, emoji: true, color: true } },
                 createdBy: { select: { id: true, name: true, image: true } },
             },
-            orderBy: [
-                { date: "desc" },
-                { createdAt: "desc" },
-            ],
+            orderBy: (() => {
+                const list = [];
+                if (sortBy && sortOrder) {
+                    if (sortBy === "category") {
+                        list.push({ category: { name: sortOrder as Prisma.SortOrder } });
+                    } else if (sortBy === "createdBy") {
+                        list.push({ createdBy: { name: sortOrder as Prisma.SortOrder } });
+                    } else {
+                        list.push({ [sortBy]: sortOrder as Prisma.SortOrder } as Prisma.TransactionOrderByWithRelationInput);
+                    }
+                } else {
+                    list.push({ date: "desc" as Prisma.SortOrder });
+                }
+                list.push({ createdAt: "desc" as Prisma.SortOrder });
+                return list;
+            })(),
             skip: (page - 1) * limit,
             take: limit,
         }),

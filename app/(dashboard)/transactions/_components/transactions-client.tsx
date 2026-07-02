@@ -7,6 +7,7 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
+  SortingState,
 } from "@tanstack/react-table";
 import {
   Plus,
@@ -28,6 +29,8 @@ import {
   FileSpreadsheet,
   Loader2,
   Lock,
+  ChevronUp,
+  ArrowUpDown,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
@@ -622,6 +625,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
   const handleReset = () => {
     setFilter({});
     setSearch("");
+    setSorting([{ id: "date", desc: true }]);
     setPage(1);
   };
 
@@ -734,6 +738,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
     col.display({
       id: "actions",
       header: "",
+      enableSorting: false,
       cell: (info) => {
         const tx = info.row.original;
         if (!canEdit) return null;
@@ -758,12 +763,36 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
     }),
   ];
 
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "date", desc: true }
+  ]);
+
   const table = useReactTable({
     data: items as any[],
     columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: (updater) => {
+      const nextSorting = typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(nextSorting);
+      const sort = nextSorting[0];
+      if (sort) {
+        handleFilterChange({
+          sortBy: sort.id,
+          sortOrder: sort.desc ? "desc" : "asc",
+        });
+      } else {
+        handleFilterChange({
+          sortBy: undefined,
+          sortOrder: undefined,
+        });
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: totalPages,
+    manualSorting: true,
   });
 
   const isLoading =
@@ -1050,14 +1079,38 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
             <thead>
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id} className="border-b border-zinc-100 bg-zinc-50">
-                  {hg.headers.map((h) => (
-                    <th
-                      key={h.id}
-                      className="text-left px-4 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap"
-                    >
-                      {flexRender(h.column.columnDef.header, h.getContext())}
-                    </th>
-                  ))}
+                  {hg.headers.map((h) => {
+                    const isSortable = h.column.getCanSort();
+                    const sortDirection = h.column.getIsSorted();
+
+                    return (
+                      <th
+                        key={h.id}
+                        className={cn(
+                          "text-left px-4 py-3.5 text-xs font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap",
+                          isSortable && "cursor-pointer select-none hover:bg-zinc-100 transition-colors"
+                        )}
+                        onClick={h.column.getToggleSortingHandler()}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>{flexRender(h.column.columnDef.header, h.getContext())}</span>
+                          {isSortable && (
+                            <span className="inline-flex shrink-0">
+                              {sortDirection === "asc" && (
+                                <ChevronUp className="w-3.5 h-3.5 text-green-600" />
+                              )}
+                              {sortDirection === "desc" && (
+                                <ChevronDown className="w-3.5 h-3.5 text-green-600" />
+                              )}
+                              {!sortDirection && (
+                                <ArrowUpDown className="w-3 h-3 text-zinc-300 hover:text-zinc-400 transition-colors" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               ))}
             </thead>
