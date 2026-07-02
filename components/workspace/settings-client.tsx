@@ -20,6 +20,7 @@ import { Loader2, Trash2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type Workspace = {
   id: string;
@@ -32,6 +33,7 @@ type Workspace = {
 export function SettingsClient({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { locale, t } = useLanguage();
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
 
@@ -70,7 +72,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
     onSuccess: (result) => {
       if (result.error) setError(result.error);
       else {
-        setSuccess("Pengaturan berhasil disimpan.");
+        setSuccess(t("settings.saved"));
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       }
@@ -109,12 +111,12 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
 
   const handleDelete = async () => {
     const result = await Swal.fire({
-      title: "Hapus Workspace?",
-      html: "Apakah Anda yakin ingin menghapus workspace ini? Semua data transaksi dan anggota akan ikut <b>terhapus secara permanen</b>.",
+      title: t("settings.alertDeleteTitle"),
+      html: t("settings.alertDeleteText"),
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Ya, Hapus",
-      cancelButtonText: "Batal",
+      confirmButtonText: t("transactions.yesDelete"),
+      cancelButtonText: t("transactions.cancel"),
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
       reverseButtons: true,
@@ -133,12 +135,12 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
 
   const handleLeave = async () => {
     const result = await Swal.fire({
-      title: "Keluar Workspace?",
-      html: "Apakah Anda yakin ingin keluar dari workspace ini? Anda tidak akan bisa mengakses data di dalamnya lagi.",
+      title: t("settings.alertLeaveTitle"),
+      html: t("settings.alertLeaveText"),
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Ya, Keluar",
-      cancelButtonText: "Batal",
+      confirmButtonText: t("settings.yesLeave"),
+      cancelButtonText: t("transactions.cancel"),
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
       reverseButtons: true,
@@ -177,12 +179,12 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
       {/* General settings */}
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
         <h2 className="font-semibold text-zinc-900 mb-5">
-          Informasi Workspace
+          {t("settings.info")}
         </h2>
         <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-              Nama Workspace
+              {t("settings.name")}
             </label>
             <input
               {...form.register("name")}
@@ -197,7 +199,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-              Deskripsi
+              {t("settings.description")}
             </label>
             <textarea
               {...form.register("description")}
@@ -208,7 +210,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-              Mata Uang
+              {t("settings.currency")}
             </label>
             <select
               {...form.register("currency")}
@@ -242,7 +244,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
               {updateMutation.isPending && (
                 <Loader2 className="w-4 h-4 animate-spin" />
               )}
-              Simpan Perubahan
+              {t("settings.saveChanges")}
             </button>
           )}
         </form>
@@ -250,16 +252,16 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
 
       {/* Danger zone */}
       <div className="bg-white rounded-xl border border-red-100 shadow-sm p-6">
-        <h2 className="font-semibold text-red-600 mb-4">Zona Berbahaya</h2>
+        <h2 className="font-semibold text-red-600 mb-4">{t("settings.dangerZone")}</h2>
         <div className="space-y-3">
           {!isOwner && (
             <div className="flex items-center justify-between p-4 border border-zinc-100 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-zinc-900">
-                  Keluar dari Workspace
+                  {t("settings.leaveTitle")}
                 </p>
                 <p className="text-xs text-zinc-400">
-                  Kamu tidak akan bisa lagi mengakses workspace ini.
+                  {t("settings.leaveDesc")}
                 </p>
               </div>
               <button
@@ -272,7 +274,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
                 ) : (
                   <LogOut className="w-4 h-4" />
                 )}
-                Keluar
+                {t("settings.leaveBtn")}
               </button>
             </div>
           )}
@@ -280,10 +282,10 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
             <div className="flex items-center justify-between p-4 border border-zinc-100 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-zinc-900">
-                  Hapus Workspace
+                  {t("settings.deleteTitle")}
                 </p>
                 <p className="text-xs text-zinc-400">
-                  Hapus workspace beserta semua transaksi dan anggota. Permanen.
+                  {t("settings.deleteDesc")}
                 </p>
               </div>
               <button
@@ -296,7 +298,7 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                Hapus
+                {t("settings.deleteBtn")}
               </button>
             </div>
           )}
@@ -307,11 +309,12 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
 }
 
 function SettingsSkeleton() {
+  const { t } = useLanguage();
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
         <h2 className="font-semibold text-zinc-900 mb-5">
-          Informasi Workspace
+          {t("settings.info")}
         </h2>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (

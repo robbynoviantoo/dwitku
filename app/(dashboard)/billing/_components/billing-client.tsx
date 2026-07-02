@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { PLAN_LIMITS, type PlanKey } from "@/lib/subscription-limits";
 import { cancelSubscription } from "@/app/actions/subscription";
 import Swal from "sweetalert2";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type SubStatus = "TRIAL" | "ACTIVE" | "EXPIRED" | "CANCELLED";
 
@@ -38,6 +39,24 @@ const STATUS_CONFIG: Record<SubStatus, { label: string; color: string; icon: any
 export function BillingClient({ subscription, user }: BillingClientProps) {
   const [loading, setLoading] = useState<PlanKey | null>(null);
   const [cancelling, setCancelling] = useState(false);
+
+    const { locale, t } = useLanguage();
+
+  const getStatusLabel = (status: SubStatus) => {
+    switch (status) {
+      case "TRIAL": return t("billing.trialStatus");
+      case "ACTIVE": return t("billing.activeStatus");
+      case "EXPIRED": return t("billing.expiredStatus");
+      case "CANCELLED": return t("billing.cancelledStatus");
+      default: return status;
+    }
+  };
+
+  const getPlanCardBadge = (key: PlanKey) => {
+    if (key === "basic") return locale === "id" ? "Paling Populer" : "Most Popular";
+    if (key === "pro") return "Power User";
+    return undefined;
+  };
 
   const currentPlanKey = (subscription?.plan?.key as PlanKey) ?? "free";
   const subStatus = subscription?.status;
@@ -92,10 +111,10 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
           }).then(() => window.location.reload());
         },
         onPending: async (result: any) => {
-          Swal.fire({ title: "Menunggu Pembayaran", text: "Kami akan mengaktifkan akunmu setelah pembayaran dikonfirmasi.", icon: "info", confirmButtonColor: "#16a34a", customClass: { popup: "!rounded-2xl" } });
+          Swal.fire({ title: t("billing.pendingTitle"), text: t("billing.pendingText"), icon: "info", confirmButtonColor: "#16a34a", customClass: { popup: "!rounded-2xl" } });
         },
         onError: () => {
-          Swal.fire({ title: "Pembayaran Gagal", text: "Silakan coba kembali.", icon: "error", confirmButtonColor: "#16a34a", customClass: { popup: "!rounded-2xl" } });
+          Swal.fire({ title: t("billing.failedTitle"), text: t("billing.failedText"), icon: "error", confirmButtonColor: "#16a34a", customClass: { popup: "!rounded-2xl" } });
         },
       });
     } catch (e: any) {
@@ -132,9 +151,9 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
           <Crown className="w-6 h-6 text-amber-500" />
-          Billing & Langganan
+          {t("billing.title")}
         </h1>
-        <p className="text-zinc-500 text-sm mt-1">Kelola paket langganan dan pembayaranmu.</p>
+        <p className="text-zinc-500 text-sm mt-1">{t("billing.subtitle")}</p>
       </div>
 
       {/* Current Plan Banner */}
@@ -149,9 +168,9 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
                 <p className="font-bold text-zinc-900">{subscription.plan.name}</p>
                 <p className="text-xs text-zinc-500">
                   {subStatus === "TRIAL" && subscription.trialEndsAt
-                    ? `Trial hingga ${new Date(subscription.trialEndsAt).toLocaleDateString("id-ID")}`
+                    ? `${t("billing.trialUntil")} ${new Date(subscription.trialEndsAt).toLocaleDateString("id-ID")}`
                     : subStatus === "ACTIVE" && subscription.currentPeriodEnd
-                    ? `Aktif hingga ${new Date(subscription.currentPeriodEnd).toLocaleDateString("id-ID")}`
+                    ? `${t("billing.activeUntil")} ${new Date(subscription.currentPeriodEnd).toLocaleDateString("id-ID")}`
                     : "Tidak aktif"}
                 </p>
               </div>
@@ -160,7 +179,7 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
               {subStatus && (
                 <span className={cn("flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full border", STATUS_CONFIG[subStatus].color)}>
                   {subStatus === "ACTIVE" && <CheckCircle2 className="w-3 h-3" />}
-                  {STATUS_CONFIG[subStatus].label}
+                  {getStatusLabel(subStatus)}
                 </span>
               )}
               {(subStatus === "ACTIVE" || subStatus === "TRIAL") && (
@@ -169,7 +188,7 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
                   disabled={cancelling}
                   className="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-1 rounded-lg hover:bg-red-50 transition-colors"
                 >
-                  {cancelling ? "..." : "Batalkan"}
+                  {cancelling ? "..." : t("billing.cancel")}
                 </button>
               )}
             </div>
@@ -187,16 +206,16 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
             <div key={key} className={cn("bg-white rounded-2xl border-2 p-6 flex flex-col relative", color, highlight && "shadow-lg shadow-green-100")}>
               {badge && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-green-600 text-white text-[11px] font-bold rounded-full whitespace-nowrap">
-                  {badge}
+                  {getPlanCardBadge(key)}
                 </div>
               )}
               <div className="mb-4">
                 <h3 className="font-bold text-lg text-zinc-900">{limits.displayName}</h3>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-3xl font-extrabold text-zinc-900">
-                    {limits.priceMonthly === 0 ? "Gratis" : `Rp ${limits.priceMonthly.toLocaleString("id-ID")}`}
+                    {limits.priceMonthly === 0 ? (locale === "id" ? "Gratis" : "Free") : `Rp ${limits.priceMonthly.toLocaleString("id-ID")}`}
                   </span>
-                  {limits.priceMonthly > 0 && <span className="text-xs text-zinc-400">/ bulan</span>}
+                  {limits.priceMonthly > 0 && <span className="text-xs text-zinc-400">{t("billing.perMonth")}</span>}
                 </div>
               </div>
 
@@ -219,11 +238,11 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
 
               {isCurrent ? (
                 <div className="w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200">
-                  ✓ Paket Aktif
+                  {t("billing.activePlan")}
                 </div>
               ) : key === "free" ? (
                 <div className="w-full text-center py-2.5 rounded-xl text-sm font-medium text-zinc-400 bg-zinc-50">
-                  Gratis Selamanya
+                  {t("billing.freeForever")}
                 </div>
               ) : (
                 <button
@@ -236,8 +255,8 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
                   )}
                 >
                   {loading === key
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
-                    : <><Zap className="w-4 h-4" /> Pilih {limits.displayName}</>}
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("billing.processing")}</>
+                    : <><Zap className="w-4 h-4" /> {t("billing.select")} {limits.displayName}</>}
                 </button>
               )}
             </div>
@@ -248,7 +267,7 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
       {/* Info */}
       <div className="mt-8 p-4 bg-zinc-50 rounded-xl border border-zinc-100 text-sm text-zinc-500 flex items-start gap-2">
         <Lock className="w-4 h-4 mt-0.5 shrink-0 text-zinc-400" />
-        <p>Pembayaran diproses dengan aman melalui Midtrans. Kami tidak menyimpan data kartu kredit atau rekening bankmu.</p>
+        <p>{t("billing.info")}</p>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
     Building2, ArrowRight, Loader2, Wallet, ShoppingBag, CheckCircle2,
 } from "lucide-react";
 import Swal from "sweetalert2";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type WorkspaceType = "FINANCE" | "SALES";
 
@@ -38,11 +39,29 @@ const TYPES: { type: WorkspaceType; icon: React.ReactNode; title: string; descri
 
 export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
     const router = useRouter();
+    const { locale, t } = useLanguage();
     const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
     const [step, setStep] = useState<1 | 2>(1);
     const [selectedType, setSelectedType] = useState<WorkspaceType>("FINANCE");
+
+        const translatedTypes = [
+        {
+            type: "FINANCE" as const,
+            icon: <Wallet className="w-8 h-8" />,
+            title: t("onboarding.financeTitle"),
+            description: t("onboarding.financeDesc"),
+            color: "green",
+        },
+        {
+            type: "SALES" as const,
+            icon: <ShoppingBag className="w-8 h-8" />,
+            title: t("onboarding.salesTitle"),
+            description: t("onboarding.salesDesc"),
+            color: "blue",
+        },
+    ];
 
     const form = useForm<z.infer<typeof CreateWorkspaceSchema>>({
         resolver: zodResolver(CreateWorkspaceSchema) as any,
@@ -52,11 +71,11 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
     const onSubmit = (values: z.infer<typeof CreateWorkspaceSchema>) => {
         if (!isEmailVerified) {
             Swal.fire({
-                title: "Perhatian",
-                text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru.",
+                title: locale === "id" ? "Perhatian" : "Warning",
+                text: locale === "id" ? "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru." : "You must verify your email address first before you can create a new workspace.",
                 icon: "warning",
                 confirmButtonColor: "#f59e0b",
-                confirmButtonText: "Mengerti",
+                confirmButtonText: locale === "id" ? "Mengerti" : "Understood",
                 customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
             });
             return;
@@ -84,10 +103,10 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
                     <img src="/icon-192.png" alt="Logo" className="w-12 h-12 rounded-2xl shadow-lg shadow-green-100 mb-6" />
                     <div className="text-center">
                         <p className="text-sm font-semibold text-green-600 uppercase tracking-wider mb-1">
-                            {step === 1 ? "Langkah 1 dari 2" : "Langkah 2 dari 2"}
+                            {step === 1 ? (locale === "id" ? "Langkah 1 dari 2" : "Step 1 of 2") : (locale === "id" ? "Langkah 2 dari 2" : "Step 2 of 2")}
                         </p>
                         <h1 className="text-3xl font-bold text-zinc-900">
-                            {step === 1 ? "Pilih Tipe Workspace" : "Detail Workspace"}
+                            {step === 1 ? t("onboarding.title1") : t("onboarding.title2")}
                         </h1>
                         <p className="text-zinc-500 mt-2 text-sm max-w-sm mx-auto">
                             {step === 1
@@ -100,7 +119,7 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
                 {/* Step 1: Type Selector */}
                 {step === 1 && (
                     <div className="space-y-4">
-                        {TYPES.map(({ type, icon, title, description, color }) => {
+                        {translatedTypes.map(({ type, icon, title, description, color }) => {
                             const isSelected = selectedType === type;
                             const colorMap = {
                                 green: {
@@ -161,12 +180,12 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-                                    Nama Workspace <span className="text-red-500">*</span>
+                                    {t("settings.name")} <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     {...form.register("name")}
                                     disabled={isPending}
-                                    placeholder={selectedType === "SALES" ? "Contoh: Toko Maju, Warung Sari..." : "Contoh: Keuangan Keluarga, Kas RT..."}
+                                    placeholder={selectedType === "SALES" ? t("onboarding.namePlaceholderSales") : t("onboarding.namePlaceholderFinance")}
                                     className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400"
                                 />
                                 {form.formState.errors.name && (
@@ -176,19 +195,19 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
 
                             <div>
                                 <label className="block text-sm font-medium text-zinc-700 mb-1.5">
-                                    Deskripsi <span className="text-zinc-400 font-normal">(opsional)</span>
+                                    {t("settings.description")} <span className="text-zinc-400 font-normal">({t("settings.optional").toLowerCase()})</span>
                                 </label>
                                 <textarea
                                     {...form.register("description")}
                                     disabled={isPending}
                                     rows={2}
-                                    placeholder="Catatan singkat tentang workspace ini..."
+                                    placeholder={t("onboarding.descPlaceholder")}
                                     className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors text-zinc-900 placeholder-zinc-400 resize-none"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 mb-1.5">Mata Uang</label>
+                                <label className="block text-sm font-medium text-zinc-700 mb-1.5">{t("settings.currency")}</label>
                                 <select
                                     {...form.register("currency")}
                                     disabled={isPending}
@@ -214,7 +233,7 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
                                     disabled={isPending}
                                     className="flex-1 py-2.5 border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
                                 >
-                                    Kembali
+                                    {t("onboarding.back")}
                                 </button>
                                 <button
                                     type="submit"
@@ -222,9 +241,9 @@ export function OnboardingClient({ isEmailVerified }: OnboardingClientProps) {
                                     className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-xl transition-colors disabled:opacity-60 shadow-lg shadow-green-100"
                                 >
                                     {isPending ? (
-                                        <><Loader2 className="w-4 h-4 animate-spin" /> Membuat...</>
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> {t("onboarding.creating")}</>
                                     ) : (
-                                        <><Building2 className="w-4 h-4" /> Buat Workspace</>
+                                        <><Building2 className="w-4 h-4" /> {t("onboarding.createWorkspace")}</>
                                     )}
                                 </button>
                             </div>

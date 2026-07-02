@@ -3,10 +3,17 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { OnboardingClient } from "./_components/onboarding-client";
 
-export const metadata = {
-    title: "Buat Workspace — Dwitku",
-    description: "Buat workspace baru untuk mulai mencatat keuangan.",
-};
+import { cookies } from "next/headers";
+
+export async function generateMetadata() {
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("locale")?.value || "id";
+    const isEn = locale === "en";
+    return {
+        title: isEn ? "Create Workspace — Dwitku" : "Buat Workspace — Dwitku",
+        description: isEn ? "Create a new workspace to start tracking finances." : "Buat workspace baru untuk mulai mencatat keuangan.",
+    };
+}
 
 export default async function OnboardingPage() {
     const session = await auth();

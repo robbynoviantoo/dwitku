@@ -20,6 +20,7 @@ import { Mail, X, UserMinus, Loader2, Send, Shield, Eye, User } from "lucide-rea
 import { formatDateShort } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type Member = {
   id: string;
@@ -74,6 +75,7 @@ export function MembersClient({
   currentUserId: string;
 }) {
   const queryClient = useQueryClient();
+  const { locale, t } = useLanguage();
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
   const [warning, setWarning] = useState<
@@ -270,7 +272,7 @@ export function MembersClient({
         <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
           <h2 className="font-semibold text-zinc-900 mb-4 flex items-center gap-2">
             <Mail className="w-4 h-4 text-green-600" />
-            Undang Anggota
+            {t("members.invite")}
           </h2>
 
           <form
@@ -285,7 +287,7 @@ export function MembersClient({
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 type="text"
                 disabled={isPending}
-                placeholder="Cari nama atau email anggota baru..."
+                placeholder={t("members.searchPlaceholder")}
                 autoComplete="off"
                 className="w-full px-4 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-zinc-50 focus:bg-white transition-colors"
               />
@@ -301,7 +303,7 @@ export function MembersClient({
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-lg z-50 overflow-hidden">
                   <p className="text-xs text-zinc-400 px-3 pt-2 pb-1 font-medium">
-                    Pengguna di platform
+                    {t("members.usersOnPlatform")}
                   </p>
                   {suggestions.map((user) => (
                     <button
@@ -352,7 +354,7 @@ export function MembersClient({
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              Undang
+              {t("members.inviteBtn")}
             </button>
           </form>
 
@@ -383,11 +385,11 @@ export function MembersClient({
                   }}
                   className="text-xs px-2 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded font-medium whitespace-nowrap transition-colors"
                 >
-                  {copied ? "✓ Disalin!" : "Salin Link"}
+                  {copied ? `✓ ${t("members.copied")}` : t("members.copyLink")}
                 </button>
               </div>
               <p className="text-xs text-amber-600 mt-1.5">
-                Bagikan link ini secara manual ke orang yang ingin kamu undang.
+                {t("members.shareDesc")}
               </p>
             </div>
           )}
@@ -397,7 +399,7 @@ export function MembersClient({
       {/* Members list */}
       <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
         <h2 className="font-semibold text-zinc-900 mb-4">
-          Anggota ({(workspace.members as Member[]).length})
+          {t("members.membersList")} ({(workspace.members as Member[]).length})
         </h2>
         <div className="divide-y divide-zinc-50">
           {(workspace.members as Member[]).map((member) => (
@@ -418,7 +420,7 @@ export function MembersClient({
                 <p className="text-sm font-medium text-zinc-900 truncate">
                   {member.user.name ?? "—"}
                   {member.user.id === currentUserId && (
-                    <span className="ml-1.5 text-xs text-zinc-400">(Kamu)</span>
+                    <span className="ml-1.5 text-xs text-zinc-400">({t("members.you")})</span>
                   )}
                 </p>
                 <p className="text-xs text-zinc-400 truncate">
@@ -460,7 +462,7 @@ export function MembersClient({
                     handleRemoveMember(member.user.id, member.user.name)
                   }
                   disabled={isPending}
-                  title="Keluarkan anggota"
+                  title={t("members.removeBtn")}
                   className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                 >
                   {removeMutation.isPending &&
@@ -480,7 +482,7 @@ export function MembersClient({
       {(workspace.invites as Invite[]).length > 0 && (
         <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-6">
           <h2 className="font-semibold text-zinc-900 mb-4">
-            Undangan Pending ({(workspace.invites as Invite[]).length})
+            {t("members.pendingInvites")} ({(workspace.invites as Invite[]).length})
           </h2>
           <div className="divide-y divide-zinc-50">
             {(workspace.invites as Invite[]).map((inv) => (
@@ -493,7 +495,7 @@ export function MembersClient({
                     {inv.email}
                   </p>
                   <p className="text-xs text-zinc-400">
-                    Oleh {inv.sender.name ?? "—"} · Berlaku hingga{" "}
+                    {t("members.invitedBy")} {inv.sender.name ?? "—"} · {t("members.validUntil")}{" "}
                     {formatDateShort(inv.expiresAt)}
                   </p>
                 </div>
@@ -504,7 +506,7 @@ export function MembersClient({
                   <button
                     onClick={() => onInvite({ email: inv.email, role: inv.role })}
                     disabled={isPending}
-                    title="Kirim ulang undangan"
+                    title={t("members.resend")}
                     className="p-1.5 text-zinc-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
                   >
                     <Send className="w-4 h-4" />
@@ -512,7 +514,7 @@ export function MembersClient({
                   <button
                     onClick={() => handleCancelInvite(inv.id)}
                     disabled={isPending}
-                    title="Batalkan undangan"
+                    title={t("members.cancelInvite")}
                     className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                   >
                     {cancelMutation.isPending &&

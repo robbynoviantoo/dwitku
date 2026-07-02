@@ -4,12 +4,16 @@ import { getUserWorkspaces } from "@/app/actions/workspace";
 import { MembersClient } from "@/components/workspace/members-client";
 import { Users } from "lucide-react";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 
 export default async function MembersPage({
   searchParams,
 }: {
   searchParams: Promise<{ workspaceId?: string }>;
 }) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("locale")?.value || "id";
+  const isEn = locale === "en";
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -23,12 +27,12 @@ export default async function MembersPage({
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Kolaborasi</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">{isEn ? "Collaboration" : "Kolaborasi"}</p>
         <h1 className="text-2xl font-bold text-zinc-900">
-          Anggota Workspace
+          {isEn ? "Workspace Members" : "Anggota Workspace"}
         </h1>
         <p className="text-zinc-500 text-sm mt-1">
-          Kelola anggota dan undangan untuk workspace Anda.
+          {isEn ? "Manage members and invitations for your workspace." : "Kelola anggota dan undangan untuk workspace Anda."}
         </p>
       </div>
 

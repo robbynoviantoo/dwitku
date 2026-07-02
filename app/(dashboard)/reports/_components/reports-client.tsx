@@ -26,6 +26,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 
 interface ReportsClientProps {
   workspaceId: string;
@@ -41,6 +42,7 @@ function ChangeIndicator({
   current: number;
   previous: number;
 }) {
+  const { t } = useLanguage();
   if (previous === 0) return null;
   const pct = Math.round(((current - previous) / Math.abs(previous)) * 100);
   const up = pct >= 0;
@@ -55,7 +57,7 @@ function ChangeIndicator({
       ) : (
         <ArrowDownRight className="w-3 h-3" />
       )}
-      {Math.abs(pct)}% vs bln lalu
+      {Math.abs(pct)}% {t("reports.vsLastMonth")}
     </span>
   );
 }
@@ -67,6 +69,7 @@ export function ReportsClient({
   currency,
 }: ReportsClientProps) {
   const { showAmount } = usePrivacy();
+  const { t } = useLanguage();
   const [dateFilter, setDateFilter] = useState<string>("");
 
   // Queries
@@ -109,17 +112,17 @@ export function ReportsClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Analitik</p>
-          <h1 className="text-2xl font-bold text-zinc-900">Laporan Keuangan</h1>
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">{t("reports.analytics")}</p>
+          <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
           <p className="text-zinc-400 text-sm mt-1">
-            {isPersonal ? "Keuangan pribadi" : `Workspace "${workspaceName}"`}
+            {isPersonal ? t("reports.personalFinance") : `Workspace "${workspaceName}"`}
           </p>
         </div>
         <div className="w-full sm:w-64 shrink-0">
           <CalendarPicker
             value={dateFilter}
             onChange={setDateFilter}
-            placeholder="Pilih tanggal (opsional)"
+            placeholder={t("reports.selectDate")}
             allowClear
             align="right"
           />
@@ -130,7 +133,7 @@ export function ReportsClient({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           {
-            label: "Total Pemasukan",
+            label: t("dashboard.totalIncome"),
             value: currentSummary.income,
             current: comparison?.current.income ?? 0,
             previous: comparison?.previous.income ?? 0,
@@ -140,7 +143,7 @@ export function ReportsClient({
             valueBg: "text-green-600",
           },
           {
-            label: "Total Pengeluaran",
+            label: t("dashboard.totalExpense"),
             value: currentSummary.expense,
             current: comparison?.current.expense ?? 0,
             previous: comparison?.previous.expense ?? 0,
@@ -150,7 +153,7 @@ export function ReportsClient({
             valueBg: "text-red-500",
           },
           {
-            label: "Saldo Bersih",
+            label: t("dashboard.netBalance"),
             value: currentSummary.net,
             current: comparison?.current.net ?? 0,
             previous: comparison?.previous.net ?? 0,
@@ -176,7 +179,7 @@ export function ReportsClient({
                 {showAmount ? formatCurrency(card.value, currency) : "••••••"}
               </p>
               <p className="text-xs text-zinc-400">
-                Bulan ini: {showAmount ? formatCurrency(card.current, currency) : "••••••"}
+                {t("reports.thisMonth")}: {showAmount ? formatCurrency(card.current, currency) : "••••••"}
               </p>
             </div>
           );
@@ -188,8 +191,8 @@ export function ReportsClient({
         <div className="lg:col-span-3 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-semibold text-zinc-900 text-sm">Pemasukan vs Pengeluaran</h2>
-              <p className="text-xs text-zinc-400 mt-0.5">6 bulan terakhir</p>
+              <h2 className="font-semibold text-zinc-900 text-sm">{t("reports.incomeVsExpense")}</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">{t("reports.last6Months")}</p>
             </div>
           </div>
           <MonthlyBarChart data={monthlyData} currency={currency} />
@@ -197,8 +200,8 @@ export function ReportsClient({
 
         <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
           <div className="mb-5">
-            <h2 className="font-semibold text-zinc-900 text-sm">Pengeluaran per Kategori</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">{dateFilter ? `Tanggal ${new Date(dateFilter).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : "Bulan ini"}</p>
+            <h2 className="font-semibold text-zinc-900 text-sm">{t("reports.expenseByCategory")}</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">{dateFilter ? `${t("reports.date")} ${new Date(dateFilter).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : t("reports.thisMonth")}</p>
           </div>
           <CategoryDonutChart data={categoryData} currency={currency} />
         </div>
@@ -207,41 +210,41 @@ export function ReportsClient({
       {/* Comparison Table */}
       {comparison && (
         <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
-          <h2 className="font-semibold text-zinc-900 text-sm mb-5">Perbandingan Bulan Ini vs Bulan Lalu</h2>
+          <h2 className="font-semibold text-zinc-900 text-sm mb-5">{t("reports.comparisonTitle")}</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100">
                   <th className="text-left py-2 text-xs text-zinc-500 font-medium w-40">
-                    Metrik
+                    {t("reports.metric")}
                   </th>
                   <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    Bulan Ini
+                    {t("reports.thisMonth")}
                   </th>
                   <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    Bulan Lalu
+                    {t("reports.lastMonth")}
                   </th>
                   <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    Perubahan
+                    {t("reports.change")}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {[
                   {
-                    label: "Pemasukan",
+                    label: t("dashboard.pemasukan"),
                     cur: comparison.current.income,
                     prev: comparison.previous.income,
                     colorClass: "text-green-600",
                   },
                   {
-                    label: "Pengeluaran",
+                    label: t("dashboard.pengeluaran"),
                     cur: comparison.current.expense,
                     prev: comparison.previous.expense,
                     colorClass: "text-red-500",
                   },
                   {
-                    label: "Saldo Bersih",
+                    label: t("dashboard.netBalance"),
                     cur: comparison.current.net,
                     prev: comparison.previous.net,
                     colorClass:
@@ -312,11 +315,12 @@ function ReportsSkeleton({
   workspaceName: string;
   isPersonal: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="mb-8">
         <Skeleton className="h-3 w-16 mb-2" />
-        <h1 className="text-2xl font-bold text-zinc-900">Laporan Keuangan</h1>
+        <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
         <Skeleton className="h-4 w-48 mt-2" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

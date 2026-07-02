@@ -16,6 +16,7 @@ import { broadcastInvalidate } from "@/components/providers/query-provider";
 import { CategoryFormDialog } from "@/app/(dashboard)/categories/_components/category-form-dialog";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type Category = {
   id: string;
@@ -34,6 +35,7 @@ type Props = {
 
 export function CategoriesClient({ workspaceId, canEdit }: Props) {
   const queryClient = useQueryClient();
+  const { locale, t } = useLanguage();
   const [filter, setFilter] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
   const [dialog, setDialog] = useState<{ open: boolean; category?: Category }>({
     open: false,
@@ -53,7 +55,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
       queryClient.invalidateQueries({ queryKey: ["categories", workspaceId] });
       broadcastInvalidate(["categories", workspaceId]);
     },
-    onError: (err: any) => setError(err.message || "Gagal menghapus kategori"),
+    onError: (err: any) => setError(err.message || t("categories.failedDelete")),
   });
 
   const filtered =
@@ -63,12 +65,12 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
 
   const handleDelete = async (cat: Category) => {
     const result = await Swal.fire({
-      title: "Hapus Kategori?",
-      html: `Apakah Anda yakin ingin menghapus kategori <b>${cat.emoji} ${cat.name}</b>? Tindakan ini tidak bisa dibatalkan.`,
+      title: t("categories.deleteTitle"),
+      html: `${t("categories.deleteText")} <b>${cat.emoji} ${cat.name}</b>? ${locale === "id" ? "Tindakan ini tidak bisa dibatalkan." : "This action cannot be undone."}`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Ya, Hapus",
-      cancelButtonText: "Batal",
+      confirmButtonText: t("transactions.yesDelete"),
+      cancelButtonText: t("transactions.cancel"),
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#6b7280",
       reverseButtons: true,
@@ -101,11 +103,11 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Manajemen</p>
-          <h1 className="text-2xl font-bold text-zinc-900">Kategori</h1>
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">{t("categories.management")}</p>
+          <h1 className="text-2xl font-bold text-zinc-900">{t("sidebar.kategori")}</h1>
           <p className="text-zinc-400 text-sm mt-1">
-            <span className="font-semibold text-green-600">{income}</span> pemasukan ·{" "}
-            <span className="font-semibold text-red-500">{expense}</span> pengeluaran
+            <span className="font-semibold text-green-600">{income}</span> {t("transactions.income").toLowerCase()} ·{" "}
+            <span className="font-semibold text-red-500">{expense}</span> {t("transactions.expense").toLowerCase()}
           </p>
         </div>
         {canEdit && (
@@ -114,7 +116,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
             className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Kategori Baru
+            {t("categories.newCategory")}
           </button>
         )}
       </div>
@@ -122,9 +124,9 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
       {/* Filter Tabs */}
       <div className="flex gap-1 bg-zinc-100/80 dark:bg-zinc-800 p-1 rounded-xl w-fit mb-6 border border-zinc-200/60 dark:border-zinc-700">
         {[
-          { key: "ALL", label: "Semua", count: (categories as Category[]).length },
-          { key: "EXPENSE", label: "Pengeluaran", count: expense },
-          { key: "INCOME", label: "Pemasukan", count: income },
+          { key: "ALL", label: t("categories.all"), count: (categories as Category[]).length },
+          { key: "EXPENSE", label: t("transactions.expense"), count: expense },
+          { key: "INCOME", label: t("transactions.income"), count: income },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -150,7 +152,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
             onClick={() => setError(undefined)}
             className="ml-2 underline"
           >
-            tutup
+            {t("categories.close")}
           </button>
         </div>
       )}
@@ -159,7 +161,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-zinc-400">
           <Tag className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">Belum ada kategori. Buat yang pertama!</p>
+          <p className="text-sm">{t("categories.noCategories")}</p>
         </div>
       ) : (
         <div
@@ -190,11 +192,11 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
                 <p className="text-sm font-semibold text-zinc-900 truncate">{cat.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {cat.type === "INCOME" ? (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-600">Pemasukan</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-600">{t("transactions.income")}</span>
                   ) : (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">Pengeluaran</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">{t("transactions.expense")}</span>
                   )}
-                  <span className="text-xs text-zinc-400 dark:text-white">{cat._count.transactions} transaksi</span>
+                  <span className="text-xs text-zinc-400 dark:text-white">{cat._count.transactions} {t("transactions.found")}</span>
                 </div>
               </div>
 
@@ -219,7 +221,7 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
 
               {cat.isDefault && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-white shrink-0">
-                  Bawaan
+                  {t("categories.default")}
                 </span>
               )}
             </div>
@@ -246,12 +248,13 @@ export function CategoriesClient({ workspaceId, canEdit }: Props) {
 }
 
 function CategoriesSkeleton({ canEdit }: { canEdit: boolean }) {
+  const { t } = useLanguage();
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
       <div className="flex items-start justify-between mb-8">
         <div>
           <Skeleton className="h-3 w-20 mb-2" />
-          <h1 className="text-2xl font-bold text-zinc-900">Kategori</h1>
+          <h1 className="text-2xl font-bold text-zinc-900">{t("sidebar.kategori")}</h1>
           <Skeleton className="h-4 w-40 mt-2" />
         </div>
         {canEdit && <Skeleton className="h-10 w-36 rounded-xl" />}

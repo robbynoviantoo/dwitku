@@ -4,6 +4,7 @@ import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { LanguageProvider } from "@/components/providers/language-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -60,9 +61,11 @@ export default function RootLayout({
       >
         <QueryProvider>
           <SessionProvider>
+            <LanguageProvider>
             <LenisProvider>
               {children}
             </LenisProvider>
+          </LanguageProvider>
           </SessionProvider>
         </QueryProvider>
         <script

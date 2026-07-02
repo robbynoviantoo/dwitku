@@ -47,6 +47,7 @@ import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 import * as XLSX from "xlsx";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
 
@@ -92,6 +93,7 @@ function CategorySelect({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -139,7 +141,7 @@ function CategorySelect({
       >
         <Tag className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
         <span className="flex-1 text-left truncate">
-          {selected ? `${selected.emoji} ${selected.name}` : "Semua Kategori"}
+          {selected ? `${selected.emoji} ${selected.name}` : t("transactions.allCategories")}
         </span>
         <ChevronDown
           className={cn(
@@ -159,7 +161,7 @@ function CategorySelect({
                 ref={inputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari kategori..."
+                placeholder={t("transactions.searchCategory")}
                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300 bg-zinc-50 focus:bg-white"
               />
             </div>
@@ -176,13 +178,13 @@ function CategorySelect({
               )}
             >
               <span className="w-5 text-center text-base">🗂️</span>
-              <span className="flex-1">Semua Kategori</span>
+              <span className="flex-1">{t("transactions.allCategories")}</span>
               {!value && <Check className="w-3.5 h-3.5 text-green-500" />}
             </button>
 
             {filtered.length === 0 ? (
               <p className="px-3 py-3 text-xs text-zinc-400 text-center">
-                Kategori tidak ditemukan
+                {t("transactions.categoryNotFound")}
               </p>
             ) : (
               filtered.map((c) => (
@@ -216,10 +218,11 @@ function TypeSelect({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useLanguage();
   const options = [
-    { value: "", label: "Semua Tipe", emoji: "📊" },
-    { value: "INCOME", label: "Pemasukan", emoji: "↑", color: "text-green-700 bg-green-50 border-green-200" },
-    { value: "EXPENSE", label: "Pengeluaran", emoji: "↓", color: "text-red-700 bg-red-50 border-red-200" },
+    { value: "", label: t("transactions.allTypes"), emoji: "📊" },
+    { value: "INCOME", label: t("transactions.income"), emoji: "↑", color: "text-green-700 bg-green-50 border-green-200" },
+    { value: "EXPENSE", label: t("transactions.expense"), emoji: "↓", color: "text-red-700 bg-red-50 border-red-200" },
   ];
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -263,6 +266,7 @@ function FilterSummaryBar({
   showAmount: boolean;
   isLoading: boolean;
 }) {
+  const { t } = useLanguage();
 
   return (
     <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
@@ -272,7 +276,7 @@ function FilterSummaryBar({
           <TrendingUp className="w-4 h-4 text-green-600" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-0.5">Pemasukan</p>
+          <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-0.5">{t("transactions.income")}</p>
           {isLoading ? (
             <div className="h-5 w-24 bg-green-100 rounded animate-pulse" />
           ) : (
@@ -289,7 +293,7 @@ function FilterSummaryBar({
           <TrendingDown className="w-4 h-4 text-red-500" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-0.5">Pengeluaran</p>
+          <p className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-0.5">{t("transactions.expense")}</p>
           {isLoading ? (
             <div className="h-5 w-24 bg-red-100 rounded animate-pulse" />
           ) : (
@@ -314,7 +318,7 @@ function FilterSummaryBar({
           <ArrowLeftRight className={cn("w-4 h-4", net >= 0 ? "text-blue-600" : "text-orange-500")} />
         </div>
         <div className="min-w-0">
-          <p className={cn("text-xs font-semibold uppercase tracking-wider mb-0.5", net >= 0 ? "text-blue-600" : "text-orange-500")}>Selisih</p>
+          <p className={cn("text-xs font-semibold uppercase tracking-wider mb-0.5", net >= 0 ? "text-blue-600" : "text-orange-500")}>{t("transactions.difference")}</p>
           {isLoading ? (
             <div className="h-5 w-24 bg-blue-100 rounded animate-pulse" />
           ) : (
@@ -348,6 +352,7 @@ function FilterPanel({
   onSearch: (v: string) => void;
   onReset: () => void;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const activeCount = [
@@ -368,7 +373,7 @@ function FilterPanel({
           <input
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Cari catatan transaksi..."
+            placeholder={t("transactions.searchPlaceholder")}
             className="w-full pl-9 pr-4 py-2.5 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-300 bg-white shadow-sm transition-all placeholder:text-zinc-400"
           />
           {search && (
@@ -392,7 +397,7 @@ function FilterPanel({
           )}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          <span className="hidden sm:inline">Filter</span>
+          <span className="hidden sm:inline">{t("transactions.filter")}</span>
           {activeCount > 0 && (
             <span
               className={cn(
@@ -412,7 +417,7 @@ function FilterPanel({
             className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all bg-white shadow-sm"
           >
             <X className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
+            <span className="hidden sm:inline">{t("transactions.reset")}</span>
           </button>
         )}
       </div>
@@ -431,7 +436,7 @@ function FilterPanel({
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               <Filter className="w-3 h-3" />
-              Tipe Transaksi
+              {t("transactions.type")}
             </label>
             <TypeSelect
               value={filter.type ?? ""}
@@ -443,7 +448,7 @@ function FilterPanel({
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               <Tag className="w-3 h-3" />
-              Kategori
+              {t("transactions.category")}
             </label>
             <CategorySelect
               categories={categories}
@@ -456,19 +461,19 @@ function FilterPanel({
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               <Calendar className="w-3 h-3" />
-              Rentang Tanggal
+              {t("transactions.dateRange")}
             </label>
             <div className="flex gap-2 min-w-0">
               <CalendarPicker
                 value={filter.dateFrom ?? ""}
                 onChange={(v) => onFilterChange({ dateFrom: v || undefined })}
-                placeholder="Dari"
+                placeholder={t("transactions.from")}
                 allowClear
               />
               <CalendarPicker
                 value={filter.dateTo ?? ""}
                 onChange={(v) => onFilterChange({ dateTo: v || undefined })}
-                placeholder="Sampai"
+                placeholder={t("transactions.to")}
                 allowClear
                 align="right"
               />
@@ -479,16 +484,16 @@ function FilterPanel({
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               <ArrowUpDown className="w-3 h-3" />
-              Urutkan
+              {t("transactions.sort")}
             </label>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {[
-                { sortBy: "date", sortOrder: "desc", label: "Terbaru" },
-                { sortBy: "date", sortOrder: "asc", label: "Terlama" },
-                { sortBy: "amount", sortOrder: "desc", label: "Nominal Terbesar" },
-                { sortBy: "amount", sortOrder: "asc", label: "Nominal Terkecil" },
-                { sortBy: "category", sortOrder: "asc", label: "Kategori (A-Z)" },
-                { sortBy: "category", sortOrder: "desc", label: "Kategori (Z-A)" },
+                { sortBy: "date", sortOrder: "desc", label: t("transactions.newest") },
+                { sortBy: "date", sortOrder: "asc", label: t("transactions.oldest") },
+                { sortBy: "amount", sortOrder: "desc", label: t("transactions.highestAmount") },
+                { sortBy: "amount", sortOrder: "asc", label: t("transactions.lowestAmount") },
+                { sortBy: "category", sortOrder: "asc", label: t("transactions.categoryAZ") },
+                { sortBy: "category", sortOrder: "desc", label: t("transactions.categoryZA") },
               ].map((opt) => {
                 const isSelected =
                   (filter.sortBy === opt.sortBy && filter.sortOrder === opt.sortOrder) ||
@@ -561,6 +566,7 @@ function FilterPanel({
 export function TransactionsClient({ workspaceId, currency, canEdit, canExport = false, planKey = "free", isEmailVerified }: Props) {
   const queryClient = useQueryClient();
   const { showAmount } = usePrivacy();
+  const { t } = useLanguage();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<TransactionFilter>({});
   const [search, setSearch] = useState("");
@@ -594,7 +600,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         text: "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa mencatat transaksi.",
         icon: "warning",
         confirmButtonColor: "#f59e0b",
-        confirmButtonText: "Mengerti",
+        confirmButtonText: t("transactions.understood"),
         customClass: { popup: "!rounded-2xl !font-[Inter,sans-serif]" }
       });
       return;
@@ -708,7 +714,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
 
   const columns = [
     col.accessor("date", {
-      header: "Tanggal",
+      header: t("transactions.dateHeader"),
       cell: (info) => (
         <span className="text-sm text-zinc-600 whitespace-nowrap tabular-nums">
           {formatDateShort(new Date(info.getValue()))}
@@ -716,7 +722,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       ),
     }),
     col.accessor("type", {
-      header: "Tipe",
+      header: t("transactions.typeHeader"),
       cell: (info) => (
         <span
           className={cn(
@@ -731,12 +737,12 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
           ) : (
             <TrendingDown className="w-3 h-3" />
           )}
-          {info.getValue() === "INCOME" ? "Masuk" : "Keluar"}
+          {info.getValue() === "INCOME" ? t("transactions.in") : t("transactions.out")}
         </span>
       ),
     }),
     col.accessor("category", {
-      header: "Kategori",
+      header: t("transactions.categoryHeader"),
       cell: (info) => {
         const cat = info.getValue();
         return (
@@ -748,7 +754,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       },
     }),
     col.accessor("note", {
-      header: "Catatan",
+      header: t("transactions.notesHeader"),
       cell: (info) => (
         <span className="text-sm text-zinc-500 max-w-48 truncate block">
           {info.getValue() ?? "—"}
@@ -756,7 +762,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       ),
     }),
     col.accessor("amount", {
-      header: "Nominal",
+      header: t("transactions.amountHeader"),
       cell: (info) => {
         const tx = info.row.original;
         return (
@@ -775,7 +781,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       },
     }),
     col.accessor("createdBy", {
-      header: "Dibuat oleh",
+      header: t("transactions.createdByHeader"),
       cell: (info) => {
         const u = info.getValue();
         return (
@@ -894,9 +900,9 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Keuangan</p>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Transaksi</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">{t("transactions.transactionsHeader")}</h1>
           <p className="text-zinc-400 text-sm mt-1 font-normal">
-            {total.toLocaleString("id-ID")} transaksi ditemukan
+            {total.toLocaleString("id-ID")} {t("transactions.found")}
           </p>
         </div>
         {/* Right side: Export + Tambah */}
@@ -910,7 +916,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
               {isExporting
                 ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <FileSpreadsheet className="w-4 h-4 text-emerald-600" />}
-              <span className="hidden sm:inline">{isExporting ? "Mengekspor..." : "Export Excel"}</span>
+              <span className="hidden sm:inline">{isExporting ? t("transactions.exporting") : "Export Excel"}</span>
             </button>
           ) : (
             <button
@@ -936,7 +942,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
               className="flex items-center cursor-pointer gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah</span>
+              <span>{t("transactions.add")}</span>
             </button>
           )}
         </div>
@@ -986,13 +992,13 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         {items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm py-14 text-center">
             <ArrowLeftRight className="w-8 h-8 mx-auto mb-3 text-zinc-300" />
-            <p className="text-sm text-zinc-400 font-medium">Belum ada transaksi.</p>
+            <p className="text-sm text-zinc-400 font-medium">{t("transactions.noTransactions")}.</p>
             {canEdit && (
               <button
                 onClick={() => handleOpenDialog()}
                 className="mt-3 text-green-600 text-sm font-medium underline underline-offset-2"
               >
-                Tambah sekarang
+                {t("transactions.addNow")}
               </button>
             )}
           </div>
@@ -1046,7 +1052,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      {isIncome ? "Masuk" : "Keluar"}
+                      {isIncome ? t("transactions.in") : t("transactions.out")}
                     </span>
                     {tx.note && (
                       <p className="text-xs text-zinc-500 truncate">{tx.note}</p>
@@ -1172,7 +1178,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                     className="text-center py-20 text-zinc-400 text-sm"
                   >
                     <ArrowLeftRight className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                    <p className="font-medium">Belum ada transaksi</p>
+                    <p className="font-medium">{t("transactions.noTransactions")}</p>
                     {canEdit && (
                       <button
                         onClick={() => setDialog({ open: true })}
@@ -1208,9 +1214,9 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-zinc-100 bg-zinc-50/50">
             <p className="text-sm text-zinc-500 tabular-nums">
-              Halaman <span className="font-semibold text-zinc-700">{page}</span> dari{" "}
+              {t("transactions.pageOf")} <span className="font-semibold text-zinc-700">{page}</span> {t("transactions.of")}{" "}
               <span className="font-semibold text-zinc-700">{totalPages}</span>
-              <span className="text-zinc-400"> · {total} transaksi</span>
+              <span className="text-zinc-400"> · {total} {t("transactions.found")}</span>
             </p>
             <div className="flex gap-1">
               <button
@@ -1257,6 +1263,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
 }
 
 function TransactionsSkeleton({ canEdit }: { canEdit: boolean }) {
+  const { t } = useLanguage();
   return (
     <div className="p-4 md:p-8 w-full mx-auto">
       {/* Header skeleton */}
@@ -1264,7 +1271,7 @@ function TransactionsSkeleton({ canEdit }: { canEdit: boolean }) {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2 tracking-tight">
             <ArrowLeftRight className="w-6 h-6 text-green-500" />
-            Transaksi
+            {t("sidebar.transaksi")}
           </h1>
           <Skeleton className="h-4 w-32 mt-2" />
         </div>

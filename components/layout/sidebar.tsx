@@ -33,6 +33,7 @@ import { useState, useEffect } from "react";
 import { useSidebar } from "@/components/providers/sidebar-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 import { PushSubscriber } from "@/components/push-subscriber";
 import * as Popover from "@radix-ui/react-popover";
 
@@ -43,6 +44,23 @@ type Workspace = {
   isPersonal: boolean;
   type?: string; // "FINANCE" | "SALES"
   role: string;
+};
+
+
+const getTranslationKey = (label: string) => {
+  switch (label) {
+    case "Ringkasan": return "sidebar.ringkasan";
+    case "Transaksi": return "sidebar.transaksi";
+    case "Kategori": return "sidebar.kategori";
+    case "Laporan": return "sidebar.laporan";
+    case "Pengaturan": return "sidebar.pengaturan";
+    case "Anggota": return "sidebar.anggota";
+    case "Penjualan": return "sidebar.penjualan";
+    case "Laporan Penjualan": return "sidebar.laporanPenjualan";
+    case "Langganan": return "sidebar.langganan";
+    case "Riwayat Order": return "sidebar.riwayatOrder";
+    default: return label;
+  }
 };
 
 type UserInfo = {
@@ -95,7 +113,8 @@ function DesktopSidebar({
   const { collapsed, toggleCollapsed } = useSidebar();
   const { theme, toggleTheme } = useTheme();
   const { showAmount, toggleShowAmount } = usePrivacy();
-  const activeWs = workspaces.find((w) => w.id === activeWsId);
+  const { locale, setLocale, t } = useLanguage();
+const activeWs = workspaces.find((w) => w.id === activeWsId);
 
   const [expandedWs, setExpandedWs] = useState<string | null>(activeWsId);
   useEffect(() => { if (activeWsId) setExpandedWs(activeWsId); }, [activeWsId]);
@@ -208,7 +227,7 @@ function DesktopSidebar({
                           className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors", !active && "hover:bg-[var(--sidebar-item-bg-hover)]", active && "font-medium")}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0" />
-                          {item.label}
+                          {t(getTranslationKey(item.label))}
                         </Link>
                       );
                     })}
@@ -235,7 +254,7 @@ function DesktopSidebar({
                           className={cn("flex items-center gap-2 px-3 py-2 mx-1 rounded-md text-xs transition-colors hover:bg-[var(--sidebar-item-bg-hover)]")}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0" />
-                          {item.label}
+                          {t(getTranslationKey(item.label))}
                         </Link>
                       );
                     })}
@@ -248,7 +267,7 @@ function DesktopSidebar({
 
           {workspaces.length === 0 && !collapsed && (
             <div className="px-3 py-3 text-center">
-              <p className="text-xs italic" style={{ color: "var(--sidebar-section-label)" }}>Belum ada workspace.</p>
+              <p className="text-xs italic" style={{ color: "var(--sidebar-section-label)" }}>{t("sidebar.belumAdaWorkspace")}</p>
               <Link 
                 href="/onboarding" 
                 className="text-xs mt-1 inline-block" style={{ color: "var(--accent)" }}
@@ -266,7 +285,7 @@ function DesktopSidebar({
                   }
                 }}
               >
-                + Buat sekarang
+                {t("sidebar.buatSekarang")}
               </Link>
             </div>
           )}
@@ -293,7 +312,7 @@ function DesktopSidebar({
             }}
           >
             <Plus className="w-3.5 h-3.5" />
-            Tambah Workspace
+            {t("sidebar.tambahWorkspace")}
           </Link>
         )}
 
@@ -305,7 +324,7 @@ function DesktopSidebar({
                 style={pathname.startsWith("/admin") ? { backgroundColor: "var(--sidebar-item-bg-active)", color: "var(--sidebar-text-active)" } : { color: "var(--sidebar-text)" }}
                 className={cn("flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors mb-1", !pathname.startsWith("/admin") && "hover:bg-[var(--sidebar-item-bg-hover)]", pathname.startsWith("/admin") && "font-medium")}>
                 <ShieldCheck className="w-4 h-4 shrink-0 text-amber-500" />
-                Admin Dashboard
+                {t("sidebar.adminDashboard")}
               </Link>
             )}
             {GLOBAL_NAV.map((item) => {
@@ -316,7 +335,7 @@ function DesktopSidebar({
                   style={active ? { backgroundColor: "var(--sidebar-item-bg-active)", color: "var(--sidebar-text-active)" } : { color: "var(--sidebar-text)" }}
                   className={cn("flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors", !active && "hover:bg-[var(--sidebar-item-bg-hover)]", active && "font-medium")}>
                   <Icon className="w-4 h-4 shrink-0" />
-                  {item.label}
+                  {t(getTranslationKey(item.label))}
                 </Link>
               );
             })}
@@ -325,7 +344,7 @@ function DesktopSidebar({
         {collapsed && (
           <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border)" }}>
             {user.isAdmin && (
-              <Link href="/admin" title="Admin Dashboard"
+              <Link href="/admin" title={t("sidebar.adminDashboard")}
                 style={{ color: "var(--sidebar-text)" }}
                 className="flex justify-center items-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--sidebar-item-bg-hover)] transition-colors mb-1">
                 <ShieldCheck className="w-4 h-4 text-amber-500" />
@@ -334,7 +353,7 @@ function DesktopSidebar({
             {GLOBAL_NAV.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} title={item.label}
+                <Link key={item.href} href={item.href} title={t(getTranslationKey(item.label))}
                   style={{ color: "var(--sidebar-text)" }}
                   className="flex justify-center items-center w-10 h-10 mx-auto rounded-xl hover:bg-[var(--sidebar-item-bg-hover)] transition-colors">
                   <Icon className="w-4 h-4" />
@@ -347,16 +366,58 @@ function DesktopSidebar({
 
       {/* Footer */}
       <div style={{ borderTop: "1px solid var(--sidebar-border)" }} className="shrink-0 py-2 px-2 space-y-1">
-        <button onClick={toggleShowAmount} title={showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"} style={{ color: "var(--sidebar-text)" }}
+        {/* Language Switcher */}
+        <div className={cn("flex items-center gap-3", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-1.5")}>
+          {collapsed ? (
+            <button
+              onClick={() => setLocale(locale === "id" ? "en" : "id")}
+              title={locale === "id" ? "Switch to English" : "Ubah ke Bahasa Indonesia"}
+              className="w-8 h-8 rounded-lg flex items-center justify-center border border-zinc-200 dark:border-zinc-700 hover:bg-[var(--sidebar-item-bg-hover)] text-xs font-bold text-[var(--sidebar-text)] transition-colors cursor-pointer"
+            >
+              {locale.toUpperCase()}
+            </button>
+          ) : (
+            <div className="flex items-center justify-between w-full text-sm">
+              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{t("sidebar.lang")}</span>
+              <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <button
+                  onClick={() => setLocale("id")}
+                  className={cn(
+                    "px-2 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                    locale === "id"
+                      ? "bg-white dark:bg-zinc-700 text-green-600 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-700"
+                  )}
+                >
+                  ID
+                </button>
+                <button
+                  onClick={() => setLocale("en")}
+                  className={cn(
+                    "px-2 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                    locale === "en"
+                      ? "bg-white dark:bg-zinc-700 text-green-600 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-700"
+                  )}
+                >
+                  EN
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+
+        <button onClick={toggleShowAmount} title={showAmount ? t("sidebar.sembunyikanSaldo") : t("sidebar.tampilkanSaldo")} style={{ color: "var(--sidebar-text)" }}
           className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2")}>
           {showAmount ? <EyeOff className="w-4 h-4 shrink-0" /> : <Eye className="w-4 h-4 shrink-0" />}
-          {!collapsed && <span>{showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}</span>}
+          {!collapsed && <span>{showAmount ? t("sidebar.sembunyikanSaldo") : t("sidebar.tampilkanSaldo")}</span>}
         </button>
         <PushSubscriber collapsed={collapsed} className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2", "text-[var(--sidebar-text)]")} />
-        <button onClick={toggleTheme} title={theme === "dark" ? "Mode Terang" : "Mode Gelap"} style={{ color: "var(--sidebar-text)" }}
+        <button onClick={toggleTheme} title={theme === "dark" ? t("sidebar.modeTerang") : t("sidebar.modeGelap")} style={{ color: "var(--sidebar-text)" }}
           className={cn("w-full flex items-center cursor-pointer gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2")}>
           {theme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
-          {!collapsed && <span>{theme === "dark" ? "Mode Terang" : "Mode Gelap"}</span>}
+          {!collapsed && <span>{theme === "dark" ? t("sidebar.modeTerang") : t("sidebar.modeGelap")}</span>}
         </button>
         {!collapsed && (
           <div className="flex items-center gap-3 px-3 py-2">
@@ -372,10 +433,10 @@ function DesktopSidebar({
             </div>
           </div>
         )}
-        <button onClick={() => signOut({ callbackUrl: "/" })} title={collapsed ? "Keluar" : undefined} style={{ color: "var(--sidebar-text)" }}
+        <button onClick={() => signOut({ callbackUrl: "/" })} title={collapsed ? t("sidebar.keluar") : undefined} style={{ color: "var(--sidebar-text)" }}
           className={cn("w-full flex cursor-pointer items-center gap-3 rounded-xl text-sm transition-colors hover:bg-[var(--sidebar-item-bg-hover)]", collapsed ? "justify-center w-10 h-10 mx-auto" : "px-3 py-2")}>
           <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && "Keluar"}
+          {!collapsed && t("sidebar.keluar")}
         </button>
       </div>
     </aside>
@@ -399,6 +460,7 @@ function MobileSidebar({
   const { mobileOpen, setMobileOpen } = useSidebar();
   const { theme, toggleTheme } = useTheme();
   const { showAmount, toggleShowAmount } = usePrivacy();
+  const { locale, setLocale, t } = useLanguage();
 
   const [expandedWs, setExpandedWs] = useState<string | null>(activeWsId);
   useEffect(() => { if (activeWsId) setExpandedWs(activeWsId); }, [activeWsId]);
@@ -537,7 +599,7 @@ function MobileSidebar({
                             return (
                             <Link key={item.href} href={href} onClick={close}
                               className={cn("flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors", active ? "bg-green-600 text-white font-medium" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100")}>
-                              <Icon className="w-3.5 h-3.5 shrink-0" />{item.label}
+                              <Icon className="w-3.5 h-3.5 shrink-0" />{t(getTranslationKey(item.label))}
                             </Link>
                           );
                         })}
@@ -552,13 +614,43 @@ function MobileSidebar({
 
         {/* Footer */}
         <div className="shrink-0 px-3 py-4 space-y-1 border-t" style={{ borderColor: "var(--sidebar-border)" }}>
+          {/* Mobile Language Switcher */}
+          <div className="flex items-center justify-between w-full px-3 py-2 border-b dark:border-zinc-800">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{t("sidebar.lang")}</span>
+            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700">
+              <button
+                onClick={() => setLocale("id")}
+                className={cn(
+                  "px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                  locale === "id"
+                    ? "bg-white dark:bg-zinc-700 text-green-600 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                )}
+              >
+                ID
+              </button>
+              <button
+                onClick={() => setLocale("en")}
+                className={cn(
+                  "px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                  locale === "en"
+                    ? "bg-white dark:bg-zinc-700 text-green-600 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                )}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
+
           {/* Global nav in mobile footer */}
           {user.isAdmin && (
             <Link href="/admin" onClick={close}
               className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors border border-amber-200 bg-amber-50 text-amber-700",
                 pathname.startsWith("/admin") && "ring-2 ring-amber-400 ring-offset-2")}>
               <ShieldCheck className="w-4 h-4 shrink-0 text-amber-500" />
-              Admin Dashboard
+              {t("sidebar.adminDashboard")}
             </Link>
           )}
           {GLOBAL_NAV.map((item) => {
@@ -569,25 +661,25 @@ function MobileSidebar({
                 className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                   active ? "bg-green-50 text-green-700" : "text-zinc-700 hover:bg-zinc-100")}>
                 <Icon className={cn("w-4 h-4 shrink-0", active ? "text-green-600" : "text-zinc-400")} />
-                {item.label}
+                {t(getTranslationKey(item.label))}
               </Link>
             );
           })}
           <button onClick={toggleShowAmount}
             className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors", showAmount ? "text-zinc-700 hover:bg-zinc-100" : "text-green-600 bg-green-50 hover:bg-green-100")}>
             {showAmount ? <EyeOff className="w-4 h-4 shrink-0" /> : <Eye className="w-4 h-4 shrink-0" />}
-            {showAmount ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
+            {showAmount ? t("sidebar.sembunyikanSaldo") : t("sidebar.tampilkanSaldo")}
           </button>
           <PushSubscriber collapsed={false} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-zinc-700 hover:bg-zinc-100" />
           <button onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-zinc-700 hover:bg-zinc-100">
             {theme === "dark" ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-green-500" />}
-            {theme === "dark" ? "Mode Terang" : "Mode Gelap"}
+            {theme === "dark" ? t("sidebar.modeTerang") : t("sidebar.modeGelap")}
           </button>
           <button onClick={() => signOut({ callbackUrl: "/" })}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-red-600 hover:bg-red-50">
             <LogOut className="w-4 h-4 shrink-0" />
-            Keluar
+            {t("sidebar.keluar")}
           </button>
         </div>
       </div>

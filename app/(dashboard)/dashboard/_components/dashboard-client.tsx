@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "next/navigation";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 import { getUserWorkspaces } from "@/app/actions/workspace";
 
 import Swal from "sweetalert2";
@@ -48,6 +49,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
   const activeWs = allWorkspaces.find((w) => w.id === workspaceId);
   const currency = activeWs?.currency ?? "IDR";
   const { showAmount } = usePrivacy();
+  const { t } = useLanguage();
 
   const { data: summary, isLoading } = useQuery({
     queryKey: ["transaction-summary", workspaceId],
@@ -81,7 +83,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
 
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? "Selamat Pagi" : hour < 15 ? "Selamat Siang" : hour < 18 ? "Selamat Sore" : "Selamat Malam";
+    hour < 12 ? t("greeting.morning") : hour < 15 ? t("greeting.afternoon") : hour < 18 ? t("greeting.evening") : t("greeting.night");
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -100,16 +102,16 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
         <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mb-4">
           <Building2 className="w-8 h-8 text-green-500" />
         </div>
-        <h2 className="text-lg font-bold text-zinc-700 mb-1">Pilih workspace terlebih dahulu</h2>
+        <h2 className="text-lg font-bold text-zinc-700 mb-1">{t("dashboard.selectWorkspace")}</h2>
         <p className="text-sm text-zinc-500 mb-6 max-w-xs">
-          Buka daftar workspace dan pilih salah satu untuk melihat ringkasan keuangan.
+          {t("dashboard.selectWorkspaceDesc")}
         </p>
         <Link
           href="/workspaces"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm shadow-sm transition-all"
         >
           <LayoutGrid className="w-4 h-4" />
-          Lihat Workspace
+          {t("dashboard.viewWorkspace")}
         </Link>
       </div>
     );
@@ -165,9 +167,9 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
               <span className="font-medium text-green-600">"{activeWs?.name ?? "..."}"</span>
             </p>
             <h1 className="text-2xl font-bold text-zinc-900">
-              {greeting}, {initialUser?.name?.split(" ")[0] ?? "teman"} 👋
+              {greeting}, {initialUser?.name?.split(" ")[0] ?? t("greeting.friend")} 👋
             </h1>
-            <p className="text-sm text-zinc-400 mt-0.5">Berikut adalah ringkasan keuanganmu hari ini.</p>
+            <p className="text-sm text-zinc-400 mt-0.5">{t("dashboard.subtitle")}</p>
           </div>
           <Link
             href={`/transactions?workspaceId=${workspaceId}`}
@@ -201,7 +203,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-green-200" />
-              <p className="text-sm text-green-100 font-medium">Saldo Bersih (All-time)</p>
+              <p className="text-sm text-green-100 font-medium">{t("dashboard.netBalance")}</p>
             </div>
             <p className="text-4xl font-extrabold tracking-tight mb-4">
               {showAmount
@@ -210,13 +212,13 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
             </p>
             <div className="flex gap-6 flex-wrap">
               <div>
-                <p className="text-xs text-green-200 mb-0.5">Total Pemasukan</p>
+                <p className="text-xs text-green-200 mb-0.5">{t("dashboard.totalIncome")}</p>
                 <p className="text-lg font-bold">
                   {showAmount ? formatCurrency(currentSummary.income, currency) : "••••••"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-green-200 mb-0.5">Total Pengeluaran</p>
+                <p className="text-xs text-green-200 mb-0.5">{t("dashboard.totalExpense")}</p>
                 <p className="text-lg font-bold">
                   {showAmount ? formatCurrency(currentSummary.expense, currency) : "••••••"}
                 </p>
@@ -235,7 +237,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                   <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center">
                     <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
-                  <span className="text-xs font-medium text-zinc-500">Pemasukan Bulan Ini</span>
+                  <span className="text-xs font-medium text-zinc-500">{t("dashboard.incomeThisMonth")}</span>
                 </div>
                 {incomeChange !== null && (
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${incomeChange >= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
@@ -247,7 +249,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                 {showAmount ? formatCurrency(comparison.current.income, currency) : "••••••"}
               </p>
               <p className="text-xs text-zinc-400 mt-1">
-                Bulan lalu: {showAmount ? formatCurrency(comparison.previous.income, currency) : "••••••"}
+                {t("dashboard.lastMonth")}: {showAmount ? formatCurrency(comparison.previous.income, currency) : "••••••"}
               </p>
             </div>
 
@@ -258,7 +260,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                   <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center">
                     <TrendingDown className="w-4 h-4 text-red-500" />
                   </div>
-                  <span className="text-xs font-medium text-zinc-500">Pengeluaran Bulan Ini</span>
+                  <span className="text-xs font-medium text-zinc-500">{t("dashboard.expenseThisMonth")}</span>
                 </div>
                 {expenseChange !== null && (
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${expenseChange <= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
@@ -270,7 +272,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                 {showAmount ? formatCurrency(comparison.current.expense, currency) : "••••••"}
               </p>
               <p className="text-xs text-zinc-400 mt-1">
-                Bulan lalu: {showAmount ? formatCurrency(comparison.previous.expense, currency) : "••••••"}
+                {t("dashboard.lastMonth")}: {showAmount ? formatCurrency(comparison.previous.expense, currency) : "••••••"}
               </p>
             </div>
 
@@ -280,7 +282,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                 <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
                   <Wallet className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-xs font-medium text-zinc-500">Saldo Bersih Bulan Ini</span>
+                <span className="text-xs font-medium text-zinc-500">{t("dashboard.netThisMonth")}</span>
               </div>
               <p className={`text-xl font-extrabold ${comparison.current.net >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {showAmount ? formatCurrency(comparison.current.net, currency) : "••••••"}
@@ -297,8 +299,8 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
               </div>
               <p className="text-xs text-zinc-400 mt-1">
                 {comparison.current.income > 0
-                  ? `${((comparison.current.net / comparison.current.income) * 100).toFixed(0)}% dari pemasukan tersisa`
-                  : "Belum ada pemasukan bulan ini"}
+                  ? `${((comparison.current.net / comparison.current.income) * 100).toFixed(0)}% ${t("dashboard.incomeRemaining")}`
+                  : t("dashboard.noIncomeThisMonth")}
               </p>
             </div>
           </div>
@@ -307,15 +309,15 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
         {/* ── Bottom Section: Recent Tx + Mini Chart ── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-          {/* Transaksi Terbaru (3/5) */}
+          {/* {t("dashboard.recentTransactions")} (3/5) */}
           <div className="lg:col-span-3 bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-50">
-              <p className="font-semibold text-zinc-900 text-sm">Transaksi Terbaru</p>
+              <p className="font-semibold text-zinc-900 text-sm">{t("dashboard.recentTransactions")}</p>
               <Link
                 href={`/transactions?workspaceId=${workspaceId}`}
                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
               >
-                Lihat semua <ChevronRight className="w-3.5 h-3.5" />
+                {t("dashboard.viewAll")} <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
@@ -323,12 +325,12 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
               {recentTx.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-zinc-400">
                   <ArrowLeftRight className="w-8 h-8 mb-2 opacity-20" />
-                  <p className="text-sm">Belum ada transaksi</p>
+                  <p className="text-sm">{t("dashboard.noTransactions")}</p>
                   <Link
                     href={`/transactions?workspaceId=${workspaceId}`}
                     className="mt-3 text-xs text-green-600 hover:underline font-medium"
                   >
-                    Catat transaksi pertama →
+                    {t("dashboard.recordFirstTransaction")} →
                   </Link>
                 </div>
               ) : (
@@ -373,12 +375,12 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           {/* Mini Bar Chart 6 Bulan (2/5) */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-50">
-              <p className="font-semibold text-zinc-900 text-sm">6 Bulan Terakhir</p>
+              <p className="font-semibold text-zinc-900 text-sm">{t("dashboard.last6Months")}</p>
               <Link
                 href={`/reports?workspaceId=${workspaceId}`}
                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
               >
-                <BarChart2 className="w-3.5 h-3.5" /> Laporan
+                <BarChart2 className="w-3.5 h-3.5" /> {t("sidebar.laporan")}
               </Link>
             </div>
 
@@ -386,7 +388,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
               {monthlyChart.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-32 text-zinc-300">
                   <BarChart2 className="w-8 h-8 mb-2" />
-                  <p className="text-xs">Belum ada data</p>
+                  <p className="text-xs">{t("dashboard.noData")}</p>
                 </div>
               ) : (
                 <>
@@ -394,11 +396,11 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                   <div className="flex gap-4 mb-4">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-sm bg-green-500" />
-                      <span className="text-[10px] text-zinc-500 font-medium">Pemasukan</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">{t("dashboard.pemasukan")}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-sm bg-red-400" />
-                      <span className="text-[10px] text-zinc-500 font-medium">Pengeluaran</span>
+                      <span className="text-[10px] text-zinc-500 font-medium">{t("dashboard.pengeluaran")}</span>
                     </div>
                   </div>
 
@@ -436,14 +438,10 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                 href={`/categories?workspaceId=${workspaceId}`}
                 className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors border-r border-zinc-50"
               >
-                Kategori
+                {t("sidebar.kategori")}
               </Link>
               <Link
-                href={`/reports?workspaceId=${workspaceId}`}
-                className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
-              >
-                Laporan
-              </Link>
+                href={`/reports?workspaceId=${workspaceId}`} className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">{t("sidebar.laporan")}</Link>
             </div>
           </div>
         </div>
@@ -454,11 +452,12 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
 }
 
 function DashboardSkeleton({ greeting, name }: { greeting: string; name?: string | null }) {
+  const { t } = useLanguage();
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto space-y-6">
       <div>
         <Skeleton className="h-4 w-32 mb-2" />
-        <h1 className="text-2xl font-bold text-zinc-900">{greeting}, {name?.split(" ")[0] ?? "teman"} 👋</h1>
+        <h1 className="text-2xl font-bold text-zinc-900">{greeting}, {name?.split(" ")[0] ?? t("greeting.friend")} 👋</h1>
         <Skeleton className="h-3 w-48 mt-2" />
       </div>
       <Skeleton className="h-40 rounded-2xl" />
