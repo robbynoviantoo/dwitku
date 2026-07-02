@@ -475,6 +475,44 @@ function FilterPanel({
             </div>
           </div>
 
+          {/* Urutkan */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+              <ArrowUpDown className="w-3 h-3" />
+              Urutkan
+            </label>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              {[
+                { sortBy: "date", sortOrder: "desc", label: "Terbaru" },
+                { sortBy: "date", sortOrder: "asc", label: "Terlama" },
+                { sortBy: "amount", sortOrder: "desc", label: "Nominal Terbesar" },
+                { sortBy: "amount", sortOrder: "asc", label: "Nominal Terkecil" },
+                { sortBy: "category", sortOrder: "asc", label: "Kategori (A-Z)" },
+                { sortBy: "category", sortOrder: "desc", label: "Kategori (Z-A)" },
+              ].map((opt) => {
+                const isSelected =
+                  (filter.sortBy === opt.sortBy && filter.sortOrder === opt.sortOrder) ||
+                  (!filter.sortBy && opt.sortBy === "date" && opt.sortOrder === "desc");
+
+                return (
+                  <button
+                    key={`${opt.sortBy}-${opt.sortOrder}`}
+                    type="button"
+                    onClick={() => onFilterChange({ sortBy: opt.sortBy, sortOrder: opt.sortOrder as any })}
+                    className={cn(
+                      "flex items-center justify-center sm:justify-start gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer",
+                      isSelected
+                        ? "bg-green-100 border-green-300 text-green-800 shadow-sm"
+                        : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Active filters pills */}
           {activeCount > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-zinc-100">
@@ -532,6 +570,22 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
   }>({ open: false });
   const [error, setError] = useState<string | undefined>();
   const [isExporting, setIsExporting] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "date", desc: true }
+  ]);
+
+  useEffect(() => {
+    if (filter.sortBy) {
+      setSorting([
+        {
+          id: filter.sortBy,
+          desc: filter.sortOrder === "desc",
+        },
+      ]);
+    } else {
+      setSorting([{ id: "date", desc: true }]);
+    }
+  }, [filter.sortBy, filter.sortOrder]);
 
   const handleOpenDialog = (tx?: Transaction) => {
     if (isEmailVerified === false) {
@@ -762,10 +816,6 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       },
     }),
   ];
-
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "date", desc: true }
-  ]);
 
   const table = useReactTable({
     data: items as any[],
