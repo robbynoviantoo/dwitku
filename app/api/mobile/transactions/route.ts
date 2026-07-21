@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { jsonResponse, corsHeaders } from "@/lib/mobile-cors";
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders(),
+  });
+}
 
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const token = authHeader.split(" ")[1];
@@ -14,14 +22,14 @@ export async function GET(req: NextRequest) {
     });
 
     if (!session || session.expires < new Date()) {
-      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+      return jsonResponse({ error: "Session expired" }, 401);
     }
 
     const { searchParams } = new URL(req.url);
     const workspaceId = searchParams.get("workspaceId");
 
     if (!workspaceId) {
-      return NextResponse.json({ error: "workspaceId is required" }, { status: 400 });
+      return jsonResponse({ error: "workspaceId is required" }, 400);
     }
 
     // Verify membership
@@ -35,7 +43,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!member) {
-      return NextResponse.json({ error: "Akses ke workspace ini dilarang" }, { status: 403 });
+      return jsonResponse({ error: "Akses ke workspace ini dilarang" }, 403);
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -63,7 +71,7 @@ export async function GET(req: NextRequest) {
       { income: 0, expense: 0 }
     );
 
-    return NextResponse.json({
+    return jsonResponse({
       transactions,
       categories,
       summary: {
@@ -74,7 +82,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Mobile Get Transactions Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return jsonResponse({ error: "Internal Server Error" }, 500);
   }
 }
 
@@ -82,7 +90,7 @@ export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const token = authHeader.split(" ")[1];
@@ -91,14 +99,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (!session || session.expires < new Date()) {
-      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+      return jsonResponse({ error: "Session expired" }, 401);
     }
 
     const body = await req.json();
     const { amount, note, date, type, workspaceId, categoryId } = body;
 
     if (!amount || !workspaceId || !categoryId || !type) {
-      return NextResponse.json({ error: "Field wajib tidak lengkap" }, { status: 400 });
+      return jsonResponse({ error: "Field wajib tidak lengkap" }, 400);
     }
 
     const transaction = await prisma.transaction.create({
@@ -117,9 +125,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ transaction }, { status: 201 });
+    return jsonResponse({ transaction }, 201);
   } catch (error) {
     console.error("Mobile Create Transaction Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return jsonResponse({ error: "Internal Server Error" }, 500);
   }
 }

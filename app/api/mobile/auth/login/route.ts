@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { jsonResponse, corsHeaders } from "@/lib/mobile-cors";
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders(),
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email dan password wajib diisi" }, { status: 400 });
+      return jsonResponse({ error: "Email dan password wajib diisi" }, 400);
     }
 
     const user = await prisma.user.findUnique({
@@ -16,12 +24,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user || !user.password) {
-      return NextResponse.json({ error: "Kredensial tidak valid" }, { status: 401 });
+      return jsonResponse({ error: "Kredensial tidak valid" }, 401);
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return NextResponse.json({ error: "Kredensial tidak valid" }, { status: 401 });
+      return jsonResponse({ error: "Kredensial tidak valid" }, 401);
     }
 
     // Buat session token baru untuk mobile app auth
@@ -36,7 +44,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    return jsonResponse({
       user: {
         id: user.id,
         name: user.name,
@@ -47,6 +55,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Mobile Login Error:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
+    return jsonResponse({ error: "Terjadi kesalahan server" }, 500);
   }
 }

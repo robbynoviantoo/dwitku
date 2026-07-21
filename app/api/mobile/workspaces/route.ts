@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { jsonResponse, corsHeaders } from "@/lib/mobile-cors";
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders(),
+  });
+}
 
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const token = authHeader.split(" ")[1];
@@ -15,7 +23,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!session || session.expires < new Date()) {
-      return NextResponse.json({ error: "Session expired or invalid" }, { status: 401 });
+      return jsonResponse({ error: "Session expired or invalid" }, 401);
     }
 
     const workspaces = await prisma.workspace.findMany({
@@ -34,9 +42,9 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ workspaces });
+    return jsonResponse({ workspaces });
   } catch (error) {
     console.error("Mobile Get Workspaces Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return jsonResponse({ error: "Internal Server Error" }, 500);
   }
 }
