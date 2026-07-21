@@ -44,4 +44,4 @@ next-env.d.ts
 
 /generated/prisma
 
-/mobile/node_modules
+/mobile
