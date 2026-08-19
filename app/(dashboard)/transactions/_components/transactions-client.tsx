@@ -110,8 +110,8 @@ export function TransactionsClient({
   });
 
   const hasActiveFilter = Boolean(
-    filter.startDate ||
-      filter.endDate ||
+    filter.dateFrom ||
+      filter.dateTo ||
       filter.type ||
       filter.categoryId ||
       filter.walletId ||
