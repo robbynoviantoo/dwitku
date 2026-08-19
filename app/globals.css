@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* ─── Tailwind v4 Theme Color Overrides ──────── */
+@theme {
+  --color-green-50: #e6f3ec;
+  --color-green-100: #c2e2d0;
+  --color-green-200: #93ccae;
+  --color-green-300: #5cb286;
+  --color-green-400: #2c935f;
+  --color-green-500: #004C29;
+  --color-green-600: #004C29;
+  --color-green-700: #003d21;
+  --color-green-800: #00301a;
+  --color-green-900: #002413;
+  --color-green-950: #00150b;
+}
+
 /* Configure dark mode to use the 'dark' class on <html> */
 @variant dark (&:where(.dark, .dark *));
 
@@ -19,16 +34,16 @@
   /* Sidebar */
   --sidebar-bg: #ffffff;
   --sidebar-border: rgba(0, 0, 0, 0.07);
-  --sidebar-text: #64748b;
+  --sidebar-text: #475569;
   --sidebar-text-header: #0f172a;
   --sidebar-text-active: #ffffff;
-  --sidebar-item-bg-active: #16a34a;
+  --sidebar-item-bg-active: #004C29;
   --sidebar-item-bg-hover: rgba(0, 0, 0, 0.04);
   --sidebar-section-label: #94a3b8;
-  --sidebar-logo-bg: #16a34a;
+  --sidebar-logo-bg: #004C29;
   --sidebar-user-meta: #94a3b8;
-  --sidebar-icon-ws-bg: #f0fdf4;
-  --sidebar-icon-ws-text: #16a34a;
+  --sidebar-icon-ws-bg: #e6f3ec;
+  --sidebar-icon-ws-text: #004C29;
 
   /* Content */
   --text-primary: #0f172a;
@@ -38,19 +53,19 @@
   /* Border */
   --border-color: #e2e8f0;
 
-  /* Accent — Green */
-  --accent: #16a34a;
-  --accent-hover: #15803d;
-  --accent-light: #f0fdf4;
-  --accent-ring: rgba(22, 163, 74, 0.2);
+  /* Accent — Emerald Green #004C29 */
+  --accent: #004C29;
+  --accent-hover: #00381e;
+  --accent-light: #e6f3ec;
+  --accent-ring: rgba(0, 76, 41, 0.25);
 
   /* Cards */
   --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
 
   /* Status */
-  --income-color: #16a34a;
-  --income-bg: #f0fdf4;
-  --income-border: #bbf7d0;
+  --income-color: #004C29;
+  --income-bg: #e6f3ec;
+  --income-border: #a7d7bc;
   --expense-color: #dc2626;
   --expense-bg: #fef2f2;
   --expense-border: #fecaca;
@@ -63,41 +78,41 @@ html.dark {
   --bg-card: #161b22;
   --bg-card-hover: #1c2333;
 
-  /* Sidebar — lebih terang agar mudah dibaca */
+  /* Sidebar — terang & kontras jelas */
   --sidebar-bg: #0a0d14;
-  --sidebar-border: rgba(255,255,255,0.06);
-  --sidebar-text: #dadada;           /* lebih terang dari sebelumnya (#6b7280) */
-  --sidebar-text-header: #f1f5f9;
-  --sidebar-text-active: #f9fafb;
-  --sidebar-item-bg-active: #16a34a;
-  --sidebar-item-bg-hover: rgba(255,255,255,0.06);
-  --sidebar-section-label: #6b7280;  /* lebih terang dari #374151 */
-  --sidebar-logo-bg: #16a34a;
-  --sidebar-user-meta: #64748b;      /* lebih terang dari #4b5563 */
-  --sidebar-icon-ws-bg: #052e16;
-  --sidebar-icon-ws-text: #4ade80;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-text: #cbd5e1;           /* slate-300 — terang & jelas */
+  --sidebar-text-header: #ffffff;
+  --sidebar-text-active: #ffffff;
+  --sidebar-item-bg-active: #004C29;
+  --sidebar-item-bg-hover: rgba(255,255,255,0.08);
+  --sidebar-section-label: #94a3b8;  /* slate-400 */
+  --sidebar-logo-bg: #004C29;
+  --sidebar-user-meta: #94a3b8;
+  --sidebar-icon-ws-bg: #004C29;
+  --sidebar-icon-ws-text: #ffffff;
 
-  /* Content — comfortable contrast (tidak terlalu terang, tidak terlalu gelap) */
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;   /* slate-400 — nyaman di mata */
-  --text-muted: #64748b;       /* slate-500 — untuk subteks */
+  /* Content — kontras tinggi agar tidak menyatu dengan gelap */
+  --text-primary: #f8fafc;     /* slate-50 — teks utama super tajam */
+  --text-secondary: #cbd5e1;   /* slate-300 — teks kedua jelas */
+  --text-muted: #94a3b8;       /* slate-400 — subteks tetap jelas */
 
   /* Border */
-  --border-color: #21262d;
+  --border-color: #262c36;
 
-  /* Accent — Green */
-  --accent: #22c55e;
-  --accent-hover: #16a34a;
-  --accent-light: #052e16;
-  --accent-ring: rgba(34, 197, 94, 0.2);
+  /* Accent — #004C29 */
+  --accent: #004C29;
+  --accent-hover: #006034;
+  --accent-light: #062b19;
+  --accent-ring: rgba(0, 76, 41, 0.35);
 
   /* Cards */
   --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
 
   /* Status */
-  --income-color: #4ade80;
-  --income-bg: #052e16;
-  --income-border: #14532d;
+  --income-color: #34d399;
+  --income-bg: #062b19;
+  --income-border: #004C29;
   --expense-color: #f87171;
   --expense-bg: #2a1515;
   --expense-border: #7f1d1d;
@@ -141,25 +156,33 @@ body {
 
 /* Backgrounds */
 html.dark .bg-white   { background-color: var(--bg-card) !important; }
-html.dark .bg-zinc-50 { background-color: #12171f !important; }
-html.dark .bg-zinc-100 { background-color: #1c2333 !important; }
-html.dark .bg-zinc-200 { background-color: #21262d !important; }
-html.dark .bg-zinc-800 { background-color: #0d1117 !important; }
-html.dark .bg-zinc-900 { background-color: #080b10 !important; }
+html.dark .bg-zinc-50 { background-color: #141a24 !important; }
+html.dark .bg-zinc-100 { background-color: #1e2638 !important; }
+html.dark .bg-zinc-200 { background-color: #28334a !important; }
+html.dark .bg-zinc-800 { background-color: #121720 !important; }
+html.dark .bg-zinc-900 { background-color: #0b0f15 !important; }
 
-/* Text — calibrated untuk keterbacaan optimal di dark background */
-html.dark .text-zinc-900 { color: #f1f5f9 !important; }   /* putih hangat */
-html.dark .text-zinc-800 { color: #e2e8f0 !important; }   /* slate-200 */
-html.dark .text-zinc-700 { color: #cbd5e1 !important; }   /* slate-300 */
-html.dark .text-zinc-600 { color: #94a3b8 !important; }   /* slate-400 */
-html.dark .text-zinc-500 { color: #64748b !important; }   /* slate-500 */
-html.dark .text-zinc-400 { color: #475569 !important; }   /* slate-600 — subteks */
+/* Text — calibrated contrast agar tajam dan tidak pudar di dark background */
+html.dark .text-zinc-900 { color: #ffffff !important; }   /* putih murni */
+html.dark .text-zinc-800 { color: #f8fafc !important; }   /* slate-50 */
+html.dark .text-zinc-700 { color: #f1f5f9 !important; }   /* slate-100 */
+html.dark .text-zinc-600 { color: #e2e8f0 !important; }   /* slate-200 */
+html.dark .text-zinc-500 { color: #cbd5e1 !important; }   /* slate-300 — sangat jelas */
+html.dark .text-zinc-400 { color: #cbd5e1 !important; }   /* slate-300 — label seperti Account Holder kini terang dan jelas */
+html.dark .dark\:text-zinc-400 { color: #cbd5e1 !important; }
+html.dark .dark\:text-zinc-500 { color: #cbd5e1 !important; }
+
+/* Green classes override to #004C29 where applicable */
+html.dark .bg-green-600 { background-color: #004C29 !important; }
+html.dark .hover\:bg-green-700:hover { background-color: #00381e !important; }
+html.dark .text-green-600 { color: #34d399 !important; }
+html.dark .text-green-700 { color: #4ade80 !important; }
 
 /* Borders */
-html.dark .border-zinc-50  { border-color: #1c2333 !important; }
-html.dark .border-zinc-100 { border-color: #21262d !important; }
-html.dark .border-zinc-200 { border-color: #30363d !important; }
-html.dark .border-zinc-300 { border-color: #3d444d !important; }
+html.dark .border-zinc-50  { border-color: #1e2638 !important; }
+html.dark .border-zinc-100 { border-color: #262f40 !important; }
+html.dark .border-zinc-200 { border-color: #333d52 !important; }
+html.dark .border-zinc-300 { border-color: #434f69 !important; }
 
 /* Slate bg (dipakai tabel & komponen lain) */
 html.dark .bg-slate-50    { background-color: #12171f !important; }

@@ -60,6 +60,22 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
     },
   });
 
+  // Lock body scroll while dialog is open
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollBarWidth > 0) {
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
+    }
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, []);
+
   const [balanceDisplay, setBalanceDisplay] = useState(
     wallet?.initialBalance && wallet.initialBalance > 0
       ? formatThousands(String(wallet.initialBalance))

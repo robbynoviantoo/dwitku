@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import { getWalletProvider } from "@/lib/wallet-providers";
 import { Building2, Wallet as WalletIcon, Banknote, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,6 +13,7 @@ interface WalletLogoProps {
 
 export function WalletLogo({ providerCode, className, size = "md" }: WalletLogoProps) {
   const provider = getWalletProvider(providerCode);
+  const [imgError, setImgError] = useState(false);
 
   const sizeClasses = {
     sm: "w-6 h-6 text-[9px] rounded-lg",
@@ -26,8 +29,8 @@ export function WalletLogo({ providerCode, className, size = "md" }: WalletLogoP
     xl: "w-7 h-7",
   };
 
-  // Modern SVG / Stylized representations for top banks & e-wallets
-  const renderBrandVisual = () => {
+  // Modern text / icon fallback if image is not in public/banks
+  const renderFallbackVisual = () => {
     switch (provider.code) {
       case "bca":
         return <span className="font-black tracking-tighter text-white">BCA</span>;
@@ -65,20 +68,40 @@ export function WalletLogo({ providerCode, className, size = "md" }: WalletLogoP
     }
   };
 
+  const hasImage = provider.code && !imgError && provider.code !== "cash" && provider.code !== "brankas";
+
   return (
     <div
       style={{
-        backgroundColor: provider.logoBg,
+        backgroundColor: hasImage ? "transparent" : provider.logoBg,
         color: provider.logoColor,
       }}
       className={cn(
-        "flex items-center justify-center font-bold shrink-0 select-none shadow-sm transition-transform",
+        "flex items-center justify-center font-bold",
         sizeClasses[size],
         className
       )}
       title={provider.name}
     >
-      {renderBrandVisual()}
+      {hasImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/banks/${provider.code}.png`}
+          alt={provider.name}
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            // Coba SVG jika PNG tidak ditemukan
+            const target = e.currentTarget;
+            if (target.src.endsWith(".png")) {
+              target.src = `/banks/${provider.code}.svg`;
+            } else {
+              setImgError(true);
+            }
+          }}
+        />
+      ) : (
+        renderFallbackVisual()
+      )}
     </div>
   );
 }

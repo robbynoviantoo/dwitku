@@ -116,7 +116,7 @@ export function WalletsClient({ workspaceId, currency, canEdit, isEmailVerified 
 
   return (
     <PullToRefreshWrapper onRefresh={async () => { await refetch(); }}>
-      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 md:p-8 mx-auto space-y-6">
         {/* ── Top Header ────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -142,9 +142,9 @@ export function WalletsClient({ workspaceId, currency, canEdit, isEmailVerified 
 
         {/* ── Total Net Wealth Hero Banner ───────────────────── */}
         <div className="relative overflow-hidden rounded-3xl bg-zinc-900 text-white p-6 md:p-8 shadow-xl border border-zinc-800">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-700 via-emerald-800 to-zinc-950 opacity-90" />
-          <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[120%] bg-emerald-400/20 blur-[80px] rounded-full animate-pulse" />
-          <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[90%] bg-green-500/20 blur-[80px] rounded-full" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#004C29] via-[#00381e] to-zinc-950 opacity-95" />
+          <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[120%] bg-emerald-400/15 blur-[80px] rounded-full animate-pulse" />
+          <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[90%] bg-emerald-600/20 blur-[80px] rounded-full" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
