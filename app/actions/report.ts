@@ -116,3 +116,113 @@ export async function getMonthComparison(workspaceId: string) {
         previous: { income: prevIncome, expense: prevExpense, net: prevIncome - prevExpense },
     };
 }
+
+export type CalendarDayData = {
+    date: string; // YYYY-MM-DD
+    day: number;
+    income: number;
+    expense: number;
+    net: number;
+    transactions: {
+        id: string;
+        amount: number;
+        type: TransactionType;
+        note: string | null;
+        category: {
+            id: string;
+            name: string;
+            emoji: string;
+            color: string;
+        } | null;
+    }[];
+};
+
+export type CalendarMonthData = {
+    year: number;
+    month: number;
+    totalIncome: number;
+    totalExpense: number;
+    totalNet: number;
+    days: Record<string, CalendarDayData>;
+};
+
+/** Ambil transaksi & ringkasan harian per bulan untuk Kalender Keuangan */
+export async function getCalendarTransactions(
+    workspaceId: string,
+    year: number,
+    month: number // 1 - 12
+): Promise<CalendarMonthData | null> {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+    });
+    if (!membership) return null;
+
+    const targetDate = new Date(year, month - 1, 1);
+    const start = startOfMonth(targetDate);
+    const end = endOfMonth(targetDate);
+
+    const transactions = await prisma.transaction.findMany({
+        where: {
+            workspaceId,
+            date: {
+                gte: start,
+                lte: end,
+            },
+        },
+        include: {
+            category: { select: { id: true, name: true, emoji: true, color: true } },
+        },
+        orderBy: { date: "asc" },
+    });
+
+    const days: Record<string, CalendarDayData> = {};
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    for (const tx of transactions) {
+        const dateKey = format(tx.date, "yyyy-MM-dd");
+        const dayNum = tx.date.getDate();
+        const amountNum = Number(tx.amount);
+
+        if (!days[dateKey]) {
+            days[dateKey] = {
+                date: dateKey,
+                day: dayNum,
+                income: 0,
+                expense: 0,
+                net: 0,
+                transactions: [],
+            };
+        }
+
+        if (tx.type === TransactionType.INCOME) {
+            days[dateKey].income += amountNum;
+            totalIncome += amountNum;
+        } else {
+            days[dateKey].expense += amountNum;
+            totalExpense += amountNum;
+        }
+        days[dateKey].net = days[dateKey].income - days[dateKey].expense;
+
+        days[dateKey].transactions.push({
+            id: tx.id,
+            amount: amountNum,
+            type: tx.type,
+            note: tx.note,
+            category: tx.category,
+        });
+    }
+
+    return {
+        year,
+        month,
+        totalIncome,
+        totalExpense,
+        totalNet: totalIncome - totalExpense,
+        days,
+    };
+}
+

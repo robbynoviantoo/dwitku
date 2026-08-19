@@ -12,6 +12,7 @@ import { sendPushToWorkspace } from "./web-push";
 export type TransactionFilter = {
     type?: "INCOME" | "EXPENSE";
     categoryId?: string;
+    walletId?: string;
     search?: string;
     dateFrom?: string;
     dateTo?: string;
@@ -31,12 +32,13 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
     });
     if (!membership) return { items: [], total: 0, totalPages: 0 };
 
-    const { type, categoryId, search, dateFrom, dateTo, page = 1, limit = 20, sortBy, sortOrder } = filter;
+    const { type, categoryId, walletId, search, dateFrom, dateTo, page = 1, limit = 20, sortBy, sortOrder } = filter;
 
     const where = {
         workspaceId,
         ...(type ? { type: type as TransactionType } : {}),
         ...(categoryId ? { categoryId } : {}),
+        ...(walletId ? { walletId } : {}),
         ...(search
             ? { note: { contains: search, mode: "insensitive" as const } }
             : {}),
@@ -55,6 +57,7 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
             where,
             include: {
                 category: { select: { id: true, name: true, emoji: true, color: true } },
+                wallet: { select: { id: true, name: true, providerCode: true, type: true, holderName: true, accountNumber: true, color: true } },
                 createdBy: { select: { id: true, name: true, image: true } },
             },
             orderBy: (() => {
@@ -145,11 +148,12 @@ export async function getFilteredSummary(
     });
     if (!membership) return { income: 0, expense: 0, net: 0 };
 
-    const { type, categoryId, search, dateFrom, dateTo } = filter;
+    const { type, categoryId, walletId, search, dateFrom, dateTo } = filter;
 
     const baseWhere = {
         workspaceId,
         ...(categoryId ? { categoryId } : {}),
+        ...(walletId ? { walletId } : {}),
         ...(search ? { note: { contains: search, mode: "insensitive" as const } } : {}),
         ...(dateFrom || dateTo
             ? {
@@ -200,7 +204,7 @@ export async function createTransaction(
     const validated = TransactionSchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
 
-    const { amount, note, date, type, categoryId } = validated.data;
+    const { amount, note, date, type, categoryId, walletId } = validated.data;
 
     const transaction = await prisma.transaction.create({
         data: {
@@ -210,6 +214,7 @@ export async function createTransaction(
             type: type as TransactionType,
             workspaceId,
             categoryId,
+            walletId: walletId || null,
             createdById: session.user.id,
         },
     });
@@ -228,6 +233,8 @@ export async function createTransaction(
     revalidatePath("/transactions");
     revalidatePath("/workspaces");
     revalidatePath("/reports");
+    revalidatePath("/wallets");
+    revalidatePath("/dashboard");
     return {
         success: true,
         transaction: {
@@ -256,7 +263,7 @@ export async function updateTransaction(
     const validated = TransactionSchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
 
-    const { amount, note, date, type, categoryId } = validated.data;
+    const { amount, note, date, type, categoryId, walletId } = validated.data;
 
     const transaction = await prisma.transaction.update({
         where: { id: transactionId },
@@ -266,12 +273,15 @@ export async function updateTransaction(
             date: new Date(date),
             type: type as TransactionType,
             categoryId,
+            walletId: walletId || null,
         },
     });
 
     revalidatePath("/transactions");
     revalidatePath("/workspaces");
     revalidatePath("/reports");
+    revalidatePath("/wallets");
+    revalidatePath("/dashboard");
     return {
         success: true,
         transaction: {
@@ -298,5 +308,7 @@ export async function deleteTransaction(transactionId: string, workspaceId: stri
     revalidatePath("/transactions");
     revalidatePath("/workspaces");
     revalidatePath("/reports");
+    revalidatePath("/wallets");
+    revalidatePath("/dashboard");
     return { success: true };
 }

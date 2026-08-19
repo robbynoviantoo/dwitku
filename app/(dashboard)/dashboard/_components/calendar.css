@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Financial Calendar Styles (Modern Aesthetic)
+   ========================================================================== */
+
+.financial-calendar-card {
+  position: relative;
+  background: var(--bg-card, #ffffff);
+  border-radius: 1rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.financial-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+@media (min-width: 640px) {
+  .financial-calendar-grid {
+    gap: 5px;
+  }
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #94a3b8);
+  padding: 0.2rem 0.1rem;
+}
+
+.calendar-day-cell {
+  position: relative;
+  min-height: 52px;
+  border-radius: 0.75rem;
+  padding: 0.25rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(226, 232, 240, 0.9); /* Halus & bersih */
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-main, #fafafa);
+  cursor: pointer;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .calendar-day-cell {
+    min-height: 60px;
+    padding: 0.35rem 0.45rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .calendar-day-cell {
+    min-height: 68px;
+  }
+}
+
+.calendar-day-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  border-color: rgba(22, 163, 74, 0.45);
+  z-index: 2;
+}
+
+.calendar-day-cell.empty {
+  opacity: 0.2;
+  background: transparent;
+  cursor: default;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+}
+.calendar-day-cell.empty:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.calendar-day-cell.today {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 1px #16a34a;
+  background: rgba(22, 163, 74, 0.04);
+}
+
+.calendar-day-cell.selected {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3);
+}
+
+/* Status variants based on Net */
+.calendar-day-cell.has-surplus {
+  background: linear-gradient(180deg, rgba(240, 253, 244, 0.85) 0%, rgba(220, 252, 231, 0.45) 100%);
+  border-color: rgba(187, 247, 208, 0.95);
+}
+.calendar-day-cell.has-surplus:hover {
+  border-color: #22c55e;
+}
+
+.calendar-day-cell.has-deficit {
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.85) 0%, rgba(254, 226, 226, 0.45) 100%);
+  border-color: rgba(254, 202, 202, 0.95);
+}
+.calendar-day-cell.has-deficit:hover {
+  border-color: #ef4444;
+}
+
+.calendar-day-cell.has-balanced {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.6) 100%);
+  border-color: #cbd5e1;
+}
+
+.day-number {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary, #475569);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+.calendar-day-cell.today .day-number {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+/* Day Badges & Amount Tags */
+.day-financial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.flow-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 0.375rem;
+  padding: 0.1rem 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+  .flow-pill {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.15rem;
+  }
+}
+
+.flow-pill-income {
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.flow-pill-expense {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.flow-pill-net-positive {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.flow-pill-net-negative {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.flow-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.flow-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+}
+
+/* ==========================================================================
+   Dark Mode Overrides
+   ========================================================================== */
+html.dark .financial-calendar-card {
+  background: #161b22;
+  border-color: #21262d;
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .calendar-day-cell {
+  background: #0d1117;
+  border-color: #30363d; /* Border halus pemisah tanggal di dark mode */
+}
+
+html.dark .calendar-day-cell:hover {
+  background: #161b22;
+  border-color: #22c55e;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+}
+
+html.dark .calendar-day-cell.empty {
+  opacity: 0.15;
+  border-color: #21262d;
+}
+
+html.dark .calendar-day-cell.today {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+html.dark .calendar-day-cell.today .day-number {
+  background: #22c55e;
+  color: #080b10;
+}
+
+html.dark .calendar-day-cell.has-surplus {
+  background: linear-gradient(180deg, rgba(5, 46, 22, 0.7) 0%, rgba(20, 83, 45, 0.4) 100%);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+html.dark .calendar-day-cell.has-deficit {
+  background: linear-gradient(180deg, rgba(69, 10, 10, 0.7) 0%, rgba(127, 29, 29, 0.4) 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+html.dark .calendar-day-cell.has-balanced {
+  background: #12171f;
+  border-color: #30363d;
+}
+
+html.dark .day-number {
+  color: #cbd5e1;
+}
+
+html.dark .flow-pill-income {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.2);
+}
+
+html.dark .flow-pill-expense {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+html.dark .flow-pill-net-positive {
+  color: #4ade80;
+}
+
+html.dark .flow-pill-net-negative {
+  color: #f87171;
+}

@@ -19,4 +19,5 @@ export const TransactionSchema = z.object({
     date: z.string().min(1, "Tanggal wajib diisi"),
     type: z.enum(["INCOME", "EXPENSE"]),
     categoryId: z.string().min(1, "Kategori wajib dipilih"),
+    walletId: z.string().optional().nullable(),
 });

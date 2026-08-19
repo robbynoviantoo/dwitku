@@ -24,7 +24,7 @@ import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { getUserWorkspaces } from "@/app/actions/workspace";
-
+import { DashboardCalendar } from "./dashboard-calendar";
 import Swal from "sweetalert2";
 
 interface DashboardClientProps {
@@ -49,7 +49,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
   const activeWs = allWorkspaces.find((w) => w.id === workspaceId);
   const currency = activeWs?.currency ?? "IDR";
   const { showAmount } = usePrivacy();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const { data: summary, isLoading } = useQuery({
     queryKey: ["transaction-summary", workspaceId],
@@ -92,6 +92,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
       queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId, "recent"] }),
       queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] }),
       queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] }),
+      queryClient.invalidateQueries({ queryKey: ["calendar-transactions", workspaceId] }),
     ]);
   };
 
@@ -158,41 +159,38 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
 
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
-      <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto space-y-6">
+      <div className="p-3 md:p-5 max-w-7xl lg:max-w-full mx-auto space-y-3.5 h-[calc(100vh-2rem)] md:h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
 
-        {/* ── Header ─────────────────────────────────── */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        {/* ── Compact Header ─────────────────────────── */}
+        <div className="flex items-center justify-between gap-2 flex-wrap shrink-0">
           <div>
-            <p className="text-sm text-zinc-500 mb-0.5">
-              <span className="font-medium text-green-600">"{activeWs?.name ?? "..."}"</span>
-            </p>
-            <h1 className="text-2xl font-bold text-zinc-900">
+            <h1 className="text-lg md:text-xl font-bold text-zinc-900 leading-tight">
               {greeting}, {initialUser?.name?.split(" ")[0] ?? t("greeting.friend")} 👋
+              <span className="text-xs font-normal text-zinc-500 ml-2">
+                • <span className="font-medium text-green-600">"{activeWs?.name ?? "..."}"</span>
+              </span>
             </h1>
-            <p className="text-sm text-zinc-400 mt-0.5">{t("dashboard.subtitle")}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{t("dashboard.subtitle")}</p>
           </div>
           <Link
             href={`/transactions?workspaceId=${workspaceId}`}
             onClick={handleCreateTx}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors"
           >
-            <ArrowLeftRight className="w-4 h-4" />
+            <ArrowLeftRight className="w-3.5 h-3.5" />
             Catat Transaksi
           </Link>
         </div>
 
-        {/* ── Hero Balance Card ─────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl bg-zinc-200 text-white p-6 shadow-xl border border-white/5">
+        {/* ── Hero Balance Card (Extra Grand & Luxurious) ─── */}
+        <div className="relative overflow-hidden rounded-3xl bg-zinc-200 text-white p-6 md:p-8 shadow-xl border border-white/10 shrink-0">
           {/* Modern Premium Decoration: Mesh Glow & Subtle Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-green-700 to-emerald-900 opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-700 to-teal-950 opacity-95" />
+          <div className="absolute -top-[30%] -right-[10%] w-[60%] h-[140%] bg-emerald-400/30 blur-[80px] rounded-full animate-pulse" />
+          <div className="absolute -bottom-[30%] -left-[10%] w-[50%] h-[120%] bg-green-500/30 blur-[80px] rounded-full" />
           
-          {/* Animated Mesh Glow */}
-          <div className="absolute -top-[10%] -right-[10%] w-[50%] h-[80%] bg-emerald-400/30 blur-[80px] rounded-full animate-pulse" />
-          <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[70%] bg-green-500/20 blur-[100px] rounded-full" />
-          
-          {/* Subtle Grid Pattern */}
           <div 
-            className="absolute inset-0 opacity-[0.08]" 
+            className="absolute inset-0 opacity-[0.09]" 
             style={{ 
               backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
               backgroundSize: '24px 24px',
@@ -200,26 +198,44 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
             }} 
           />
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-green-200" />
-              <p className="text-sm text-green-100 font-medium">{t("dashboard.netBalance")}</p>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            {/* Net Balance (Extra Large) */}
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15">
+                <Sparkles className="w-4 h-4 text-green-300" />
+                <span className="text-xs md:text-sm text-green-100 font-semibold tracking-wide">
+                  {t("dashboard.netBalance")}
+                </span>
+              </div>
+              <p className="text-4xl md:text-6xl font-black tracking-tight leading-none text-white drop-shadow-sm">
+                {showAmount
+                  ? formatCurrency(currentSummary.net, currency)
+                  : <span className="tracking-widest text-3xl md:text-5xl">••••••••</span>}
+              </p>
             </div>
-            <p className="text-4xl font-extrabold tracking-tight mb-4">
-              {showAmount
-                ? formatCurrency(currentSummary.net, currency)
-                : <span className="tracking-widest text-3xl">••••••••</span>}
-            </p>
-            <div className="flex gap-6 flex-wrap">
+
+            {/* Total In & Out (Grand container) */}
+            <div className="flex items-center gap-6 sm:gap-12 bg-black/25 backdrop-blur-md px-6 py-4 md:py-5 rounded-2xl border border-white/20 shadow-2xl">
               <div>
-                <p className="text-xs text-green-200 mb-0.5">{t("dashboard.totalIncome")}</p>
-                <p className="text-lg font-bold">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="w-5 h-5 rounded-md bg-green-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-3.5 h-3.5 text-green-300" />
+                  </div>
+                  <p className="text-xs text-green-200 font-semibold">{t("dashboard.totalIncome")}</p>
+                </div>
+                <p className="text-lg md:text-2xl font-extrabold text-white font-mono leading-tight">
                   {showAmount ? formatCurrency(currentSummary.income, currency) : "••••••"}
                 </p>
               </div>
+              <div className="w-[1px] h-12 bg-white/20" />
               <div>
-                <p className="text-xs text-green-200 mb-0.5">{t("dashboard.totalExpense")}</p>
-                <p className="text-lg font-bold">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="w-5 h-5 rounded-md bg-red-500/20 flex items-center justify-center">
+                    <TrendingDown className="w-3.5 h-3.5 text-red-300" />
+                  </div>
+                  <p className="text-xs text-red-200 font-semibold">{t("dashboard.totalExpense")}</p>
+                </div>
+                <p className="text-lg md:text-2xl font-extrabold text-white font-mono leading-tight">
                   {showAmount ? formatCurrency(currentSummary.expense, currency) : "••••••"}
                 </p>
               </div>
@@ -227,108 +243,36 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           </div>
         </div>
 
-        {/* ── Monthly Summary Cards ─────────────────── */}
-        {comparison && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Pemasukan Bulan Ini */}
-            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="text-xs font-medium text-zinc-500">{t("dashboard.incomeThisMonth")}</span>
-                </div>
-                {incomeChange !== null && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${incomeChange >= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
-                    {incomeChange >= 0 ? "+" : ""}{incomeChange.toFixed(1)}%
-                  </span>
-                )}
-              </div>
-              <p className="text-xl font-extrabold text-zinc-900">
-                {showAmount ? formatCurrency(comparison.current.income, currency) : "••••••"}
-              </p>
-              <p className="text-xs text-zinc-400 mt-1">
-                {t("dashboard.lastMonth")}: {showAmount ? formatCurrency(comparison.previous.income, currency) : "••••••"}
-              </p>
-            </div>
+        {/* ── Main Section: Calendar & Recent Transactions Side-by-Side (Fit 100vh) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 flex-1 min-h-0">
 
-            {/* Pengeluaran Bulan Ini */}
-            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center">
-                    <TrendingDown className="w-4 h-4 text-red-500" />
-                  </div>
-                  <span className="text-xs font-medium text-zinc-500">{t("dashboard.expenseThisMonth")}</span>
-                </div>
-                {expenseChange !== null && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${expenseChange <= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
-                    {expenseChange >= 0 ? "+" : ""}{expenseChange.toFixed(1)}%
-                  </span>
-                )}
-              </div>
-              <p className="text-xl font-extrabold text-zinc-900">
-                {showAmount ? formatCurrency(comparison.current.expense, currency) : "••••••"}
-              </p>
-              <p className="text-xs text-zinc-400 mt-1">
-                {t("dashboard.lastMonth")}: {showAmount ? formatCurrency(comparison.previous.expense, currency) : "••••••"}
-              </p>
-            </div>
-
-            {/* Saldo Bersih Bulan Ini */}
-            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-blue-600" />
-                </div>
-                <span className="text-xs font-medium text-zinc-500">{t("dashboard.netThisMonth")}</span>
-              </div>
-              <p className={`text-xl font-extrabold ${comparison.current.net >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {showAmount ? formatCurrency(comparison.current.net, currency) : "••••••"}
-              </p>
-              <div className="mt-2 w-full bg-zinc-100 rounded-full h-1.5">
-                <div
-                  className="h-1.5 rounded-full bg-green-500 transition-all"
-                  style={{
-                    width: comparison.current.income > 0
-                      ? `${Math.min(100, (comparison.current.net / comparison.current.income) * 100)}%`
-                      : "0%",
-                  }}
-                />
-              </div>
-              <p className="text-xs text-zinc-400 mt-1">
-                {comparison.current.income > 0
-                  ? `${((comparison.current.net / comparison.current.income) * 100).toFixed(0)}% ${t("dashboard.incomeRemaining")}`
-                  : t("dashboard.noIncomeThisMonth")}
-              </p>
-            </div>
+          {/* Kalender Keuangan (7/12) */}
+          <div className="lg:col-span-7 h-full overflow-y-auto">
+            <DashboardCalendar workspaceId={workspaceId} currency={currency} />
           </div>
-        )}
 
-        {/* ── Bottom Section: Recent Tx + Mini Chart ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-          {/* {t("dashboard.recentTransactions")} (3/5) */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-50">
-              <p className="font-semibold text-zinc-900 text-sm">{t("dashboard.recentTransactions")}</p>
+          {/* Transaksi Terbaru (5/12) */}
+          <div className="lg:col-span-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col h-full overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm">
+                {t("dashboard.recentTransactions")}
+              </p>
               <Link
                 href={`/transactions?workspaceId=${workspaceId}`}
-                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
+                className="flex items-center gap-1 text-[11px] sm:text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
               >
-                {t("dashboard.viewAll")} <ChevronRight className="w-3.5 h-3.5" />
+                {t("dashboard.viewAll")} <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
-            <div className="divide-y divide-zinc-50">
+            <div className="divide-y divide-zinc-50 dark:divide-zinc-800/60 overflow-y-auto flex-1 p-1">
               {recentTx.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-zinc-400">
-                  <ArrowLeftRight className="w-8 h-8 mb-2 opacity-20" />
-                  <p className="text-sm">{t("dashboard.noTransactions")}</p>
+                <div className="flex flex-col items-center justify-center h-full py-8 text-zinc-400">
+                  <ArrowLeftRight className="w-6 h-6 mb-1.5 opacity-20" />
+                  <p className="text-xs">{t("dashboard.noTransactions")}</p>
                   <Link
                     href={`/transactions?workspaceId=${workspaceId}`}
-                    className="mt-3 text-xs text-green-600 hover:underline font-medium"
+                    className="mt-2 text-[11px] text-green-600 hover:underline font-medium"
                   >
                     {t("dashboard.recordFirstTransaction")} →
                   </Link>
@@ -337,111 +281,37 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
                 recentTx.map((tx) => {
                   const isIncome = tx.type === "INCOME";
                   return (
-                    <div key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-50/80 transition-colors">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? "bg-green-50" : "bg-red-50"}`}>
+                    <div key={tx.id} className="flex items-center gap-2.5 px-3 py-2.5 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 rounded-xl transition-colors">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? "bg-green-50 dark:bg-green-950/60" : "bg-red-50 dark:bg-red-950/60"}`}>
                         {tx.category?.emoji ? (
-                          <span className="text-base">{tx.category.emoji}</span>
+                          <span className="text-sm">{tx.category.emoji}</span>
                         ) : isIncome ? (
-                          <ArrowDownLeft className="w-4 h-4 text-green-500" />
+                          <ArrowDownLeft className="w-3.5 h-3.5 text-green-500" />
                         ) : (
-                          <ArrowUpRight className="w-4 h-4 text-red-400" />
+                          <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-zinc-800 truncate">
-                          {tx.note || tx.category?.name || (isIncome ? "Pemasukan" : "Pengeluaran")}
+                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                          {tx.note || tx.category?.name || (isIncome ? t("dashboard.pemasukan") : t("dashboard.pengeluaran"))}
                         </p>
-                        <p className="text-xs text-zinc-400">
+                        <p className="text-[10px] text-zinc-400">
                           {tx.category?.name && (
                             <span className="mr-1">{tx.category.name} ·</span>
                           )}
-                          {new Date(tx.date).toLocaleDateString("id-ID", {
+                          {new Date(tx.date).toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
                             day: "2-digit",
                             month: "short",
-                            year: "numeric",
                           })}
                         </p>
                       </div>
-                      <p className={`text-sm font-bold shrink-0 ${isIncome ? "text-green-600" : "text-red-500"}`}>
+                      <p className={`text-xs font-bold font-mono shrink-0 ${isIncome ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                         {isIncome ? "+" : "-"}{showAmount ? formatCurrency(tx.amount, currency) : "••••••"}
                       </p>
                     </div>
                   );
                 })
               )}
-            </div>
-          </div>
-
-          {/* Mini Bar Chart 6 Bulan (2/5) */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-50">
-              <p className="font-semibold text-zinc-900 text-sm">{t("dashboard.last6Months")}</p>
-              <Link
-                href={`/reports?workspaceId=${workspaceId}`}
-                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
-              >
-                <BarChart2 className="w-3.5 h-3.5" /> {t("sidebar.laporan")}
-              </Link>
-            </div>
-
-            <div className="p-5">
-              {monthlyChart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-zinc-300">
-                  <BarChart2 className="w-8 h-8 mb-2" />
-                  <p className="text-xs">{t("dashboard.noData")}</p>
-                </div>
-              ) : (
-                <>
-                  {/* Legend */}
-                  <div className="flex gap-4 mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-sm bg-green-500" />
-                      <span className="text-[10px] text-zinc-500 font-medium">{t("dashboard.pemasukan")}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-sm bg-red-400" />
-                      <span className="text-[10px] text-zinc-500 font-medium">{t("dashboard.pengeluaran")}</span>
-                    </div>
-                  </div>
-
-                  {/* Bar chart */}
-                  <div className="flex items-end gap-2 h-40">
-                    {monthlyChart.map((m, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full flex gap-0.5 items-end h-32">
-                          {/* Income bar */}
-                          <div
-                            className="flex-1 bg-green-500 rounded-t-sm min-h-[2px] transition-all duration-500"
-                            style={{ height: `${(m.income / maxVal) * 100}%` }}
-                            title={`Pemasukan: ${formatCurrency(m.income, currency)}`}
-                          />
-                          {/* Expense bar */}
-                          <div
-                            className="flex-1 bg-red-400 rounded-t-sm min-h-[2px] transition-all duration-500"
-                            style={{ height: `${(m.expense / maxVal) * 100}%` }}
-                            title={`Pengeluaran: ${formatCurrency(m.expense, currency)}`}
-                          />
-                        </div>
-                        <span className="text-[9px] text-zinc-400 text-center leading-tight">
-                          {m.month.split(" ")[0]}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Quick links */}
-            <div className="border-t border-zinc-50 grid grid-cols-2">
-              <Link
-                href={`/categories?workspaceId=${workspaceId}`}
-                className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors border-r border-zinc-50"
-              >
-                {t("sidebar.kategori")}
-              </Link>
-              <Link
-                href={`/reports?workspaceId=${workspaceId}`} className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">{t("sidebar.laporan")}</Link>
             </div>
           </div>
         </div>

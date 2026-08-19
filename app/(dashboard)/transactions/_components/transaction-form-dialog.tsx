@@ -14,6 +14,11 @@ import { broadcastInvalidate } from "@/components/providers/query-provider";
 import { useLenis } from "lenis/react";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
 
+import { getWallets, WalletWithBalance } from "@/app/actions/wallet";
+import { WalletLogo } from "@/components/ui/wallet-logo";
+import { useQuery } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/utils";
+
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
 type Transaction = {
@@ -23,6 +28,7 @@ type Transaction = {
     date: Date;
     type: string;
     categoryId: string;
+    walletId?: string | null;
 };
 
 type Props = {
@@ -115,6 +121,12 @@ export function TransactionFormDialog({
     const [error, setError] = useState<string | undefined>();
     const isEdit = !!transaction;
 
+    const { data: wallets = [] } = useQuery({
+        queryKey: ["wallets", workspaceId],
+        queryFn: () => getWallets(workspaceId),
+        enabled: !!workspaceId,
+    });
+
     // Pause Lenis smooth scroll while dialog is open so background doesn't scroll
     const lenis = useLenis();
     useEffect(() => {
@@ -122,6 +134,7 @@ export function TransactionFormDialog({
         return () => { lenis?.start(); };
     }, [lenis]);
 
+    const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
 
     const form = useForm<{
         amount: number;
@@ -129,6 +142,7 @@ export function TransactionFormDialog({
         date: string;
         type: "INCOME" | "EXPENSE";
         categoryId: string;
+        walletId?: string;
     }>({
         resolver: zodResolver(TransactionSchema) as any,
         defaultValues: {
@@ -139,6 +153,7 @@ export function TransactionFormDialog({
                 : new Date().toISOString().split("T")[0],
             type: (transaction?.type as "INCOME" | "EXPENSE") ?? "EXPENSE",
             categoryId: transaction?.categoryId ?? "",
+            walletId: transaction?.walletId ?? (defaultWallet?.id || ""),
         },
     });
 
@@ -246,6 +261,41 @@ export function TransactionFormDialog({
                             />
                         )}
                     />
+
+                    {/* Sumber Dana / Dompet */}
+                    {wallets.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-700 mb-1.5">
+                                Sumber Dana / Dompet
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 rounded-2xl border border-zinc-200 bg-zinc-50/50">
+                                {wallets.map((w) => {
+                                    const selected = form.watch("walletId") === w.id;
+                                    return (
+                                        <button
+                                            key={w.id}
+                                            type="button"
+                                            onClick={() => form.setValue("walletId", w.id)}
+                                            className={cn(
+                                                "flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer",
+                                                selected
+                                                    ? "border-green-500 bg-white ring-2 ring-green-500/20 shadow-sm"
+                                                    : "border-transparent bg-white/60 hover:bg-white"
+                                            )}
+                                        >
+                                            <WalletLogo providerCode={w.providerCode} size="sm" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-zinc-900 truncate">{w.name}</p>
+                                                <p className="text-[10px] text-zinc-400 truncate">
+                                                    {w.holderName ? `${w.holderName} · ` : ""}{formatCurrency(w.currentBalance, "IDR")}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Date — custom calendar picker */}
                     <div>

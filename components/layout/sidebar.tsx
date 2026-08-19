@@ -51,6 +51,7 @@ const getTranslationKey = (label: string) => {
   switch (label) {
     case "Ringkasan": return "sidebar.ringkasan";
     case "Transaksi": return "sidebar.transaksi";
+    case "Dompet": return "sidebar.dompet";
     case "Kategori": return "sidebar.kategori";
     case "Laporan": return "sidebar.laporan";
     case "Pengaturan": return "sidebar.pengaturan";
@@ -74,6 +75,7 @@ type UserInfo = {
 const WORKSPACE_NAV = [
   { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
   { href: "/transactions", label: "Transaksi", icon: ArrowLeftRight },
+  { href: "/wallets", label: "Dompet", icon: CreditCard },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/reports", label: "Laporan", icon: BarChart2 },
   { href: "/settings", label: "Pengaturan", icon: Settings },

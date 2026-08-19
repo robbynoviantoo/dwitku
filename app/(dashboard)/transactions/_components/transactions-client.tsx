@@ -31,6 +31,7 @@ import {
   Lock,
   ChevronUp,
   ArrowUpDown,
+  CreditCard,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
@@ -42,15 +43,16 @@ import {
   type TransactionFilter,
 } from "@/app/actions/transaction";
 import { getCategories } from "@/app/actions/category";
+import { getWallets } from "@/app/actions/wallet";
+import { WalletLogo } from "@/components/ui/wallet-logo";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { formatCurrency, formatDateShort, cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import * as XLSX from "xlsx";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
-
+import { Skeleton } from "@/components/ui/skeleton";
+import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
 
 type Category = {
   id: string;
@@ -68,6 +70,8 @@ type Transaction = {
   type: string;
   categoryId: string;
   category: { id: string; name: string; emoji: string; color: string };
+  walletId?: string | null;
+  wallet?: { id: string; name: string; providerCode: string | null; type: string; holderName: string | null; accountNumber: string | null; color: string } | null;
   createdBy: { id: string; name: string | null; image: string | null };
 };
 
@@ -614,6 +618,11 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
     queryFn: () => getCategories(workspaceId),
   });
 
+  const { data: wallets = [] } = useQuery({
+    queryKey: ["wallets", workspaceId],
+    queryFn: () => getWallets(workspaceId),
+  });
+
   const {
     data: transactionData,
     isLoading: isLoadingTransactions,
@@ -637,7 +646,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
   });
 
   const hasActiveFilter = Boolean(
-    filter.type || filter.categoryId || filter.dateFrom || filter.dateTo || search
+    filter.type || filter.categoryId || filter.walletId || filter.dateFrom || filter.dateTo || search
   );
 
   const { data: filteredSummary, isLoading: isLoadingFilteredSummary } = useQuery({
@@ -658,12 +667,15 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
       queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] });
 
       broadcastInvalidate(["transactions", workspaceId]);
       broadcastInvalidate(["transaction-summary", workspaceId]);
       broadcastInvalidate(["report-monthly", workspaceId]);
       broadcastInvalidate(["report-category", workspaceId]);
       broadcastInvalidate(["report-comparison", workspaceId]);
+      broadcastInvalidate(["wallets", workspaceId]);
     },
     onError: (err: any) => setError(err.message || "Gagal menghapus transaksi"),
   });
@@ -748,8 +760,28 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
         return (
           <span className="flex items-center gap-1.5 text-sm">
             <span>{cat.emoji}</span>
-            <span className="text-zinc-700">{cat.name}</span>
+            <span className="text-zinc-700 font-medium">{cat.name}</span>
           </span>
+        );
+      },
+    }),
+    col.accessor("wallet", {
+      header: "Dompet",
+      cell: (info) => {
+        const wallet = info.getValue();
+        if (!wallet) {
+          return <span className="text-xs text-zinc-400 italic">—</span>;
+        }
+        return (
+          <div className="flex items-center gap-1.5">
+            <WalletLogo providerCode={wallet.providerCode} size="sm" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-zinc-800 truncate max-w-[110px]">{wallet.name}</p>
+              {wallet.holderName && (
+                <p className="text-[10px] text-zinc-400 truncate max-w-[110px]">{wallet.holderName}</p>
+              )}
+            </div>
+          </div>
         );
       },
     }),
@@ -1054,6 +1086,12 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                       )}
                       {isIncome ? t("transactions.in") : t("transactions.out")}
                     </span>
+                    {tx.wallet && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 text-xs font-medium">
+                        <WalletLogo providerCode={tx.wallet.providerCode} size="sm" />
+                        <span className="truncate max-w-[90px]">{tx.wallet.name}</span>
+                      </div>
+                    )}
                     {tx.note && (
                       <p className="text-xs text-zinc-500 truncate">{tx.note}</p>
                     )}
@@ -1159,7 +1197,7 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
                                 <ChevronDown className="w-3.5 h-3.5 text-green-600" />
                               )}
                               {!sortDirection && (
-                                <ArrowUpDown className="w-3 h-3 text-zinc-300 hover:text-zinc-400 transition-colors" />
+                                <ArrowUpDown className="w-3.5 h-3.5 text-zinc-300 hover:text-zinc-400 transition-colors" />
                               )}
                             </span>
                           )}
@@ -1254,6 +1292,8 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
             queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] });
             queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] });
           }}
         />
       )}
