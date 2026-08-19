@@ -51,6 +51,7 @@ const getTranslationKey = (label: string) => {
   switch (label) {
     case "Ringkasan": return "sidebar.ringkasan";
     case "Transaksi": return "sidebar.transaksi";
+    case "Dompet": return "sidebar.dompet";
     case "Kategori": return "sidebar.kategori";
     case "Laporan": return "sidebar.laporan";
     case "Pengaturan": return "sidebar.pengaturan";
@@ -74,6 +75,7 @@ type UserInfo = {
 const WORKSPACE_NAV = [
   { href: "/workspaces", label: "Ringkasan", icon: LayoutGrid },
   { href: "/transactions", label: "Transaksi", icon: ArrowLeftRight },
+  { href: "/wallets", label: "Dompet", icon: CreditCard },
   { href: "/categories", label: "Kategori", icon: Tag },
   { href: "/reports", label: "Laporan", icon: BarChart2 },
   { href: "/settings", label: "Pengaturan", icon: Settings },
@@ -217,7 +219,7 @@ const activeWs = workspaces.find((w) => w.id === activeWsId);
 
                 {isOpen && !collapsed && (
                   <div className="ml-4 pl-3 mt-1 mb-1 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border)" }}>
-                    {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
+                    {WORKSPACE_NAV.map((item) => {
                       const Icon = item.icon;
                       const href = `${item.href}?workspaceId=${ws.id}`;
                       const active = pathname === item.href && activeWsId === ws.id;
@@ -244,7 +246,7 @@ const activeWs = workspaces.find((w) => w.id === activeWsId);
                     <div className="px-3 py-2 border-b border-[var(--sidebar-border)] mb-1">
                       <p className="font-bold text-sm truncate" style={{ color: "var(--sidebar-text-header)" }}>{ws.name}</p>
                     </div>
-                    {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
+                    {WORKSPACE_NAV.map((item) => {
                       const Icon = item.icon;
                       const href = `${item.href}?workspaceId=${ws.id}`;
                       const active = pathname === item.href && activeWsId === ws.id;
@@ -592,7 +594,7 @@ function MobileSidebar({
                     </button>
                     <div className={cn("overflow-hidden transition-all duration-200", isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")}>
                       <div className="ml-4 pl-3 py-1 space-y-0.5" style={{ borderLeft: "2px solid var(--sidebar-border)" }}>
-                        {(ws.type === "SALES" ? SALES_NAV : WORKSPACE_NAV).map((item) => {
+                        {WORKSPACE_NAV.map((item) => {
                           const Icon = item.icon;
                           const href = `${item.href}?workspaceId=${ws.id}`;
                           const active = pathname === item.href && activeWsId === ws.id;

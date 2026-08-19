@@ -31,10 +31,6 @@ export default async function WorkspacesPage({
   const isEmailVerified = !dbUser?.password || !!dbUser?.emailVerified;
 
   if (workspaceId) {
-    const activeWs = workspaces.find((w) => w.id === workspaceId);
-    if (activeWs?.type === "SALES") {
-      redirect("/sales?workspaceId=" + workspaceId);
-    }
     return (
       <DashboardClient
         initialUser={{ name: session.user.name }}

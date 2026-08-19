@@ -83,9 +83,171 @@ export async function getCategoryChart(workspaceId: string, dateFrom?: string, d
     return rows.map((r) => ({
         name: catMap[r.categoryId!]?.name ?? "Lainnya",
         emoji: catMap[r.categoryId!]?.emoji ?? "📦",
-        color: catMap[r.categoryId!]?.color ?? "#6366f1",
+        color: catMap[r.categoryId!]?.color ?? "#004C29",
         value: Number(r._sum.amount ?? 0),
     }));
+}
+
+/** Distribusi Saldo / Pengeluaran per Dompet */
+export async function getWalletDistribution(workspaceId: string, dateFrom?: string, dateTo?: string) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const dateFilter =
+        dateFrom || dateTo
+            ? {
+                date: {
+                    ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                    ...(dateTo ? { lte: new Date(dateTo + "T23:59:59") } : {}),
+                },
+            }
+            : {};
+
+    const rows = await prisma.transaction.groupBy({
+        by: ["walletId"],
+        where: {
+            workspaceId,
+            type: TransactionType.EXPENSE,
+            walletId: { not: null },
+            ...dateFilter,
+        },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: "desc" } },
+        take: 6,
+    });
+
+    const walletIds = rows.map((r) => r.walletId).filter(Boolean) as string[];
+    const wallets = await prisma.wallet.findMany({
+        where: { id: { in: walletIds } },
+        select: { id: true, name: true, providerCode: true, color: true },
+    });
+
+    const walletMap = Object.fromEntries(wallets.map((w) => [w.id, w]));
+
+    return rows.map((r) => ({
+        name: walletMap[r.walletId!]?.name ?? "Lainnya",
+        providerCode: walletMap[r.walletId!]?.providerCode ?? null,
+        color: walletMap[r.walletId!]?.color ?? "#004C29",
+        value: Number(r._sum.amount ?? 0),
+    }));
+}
+
+/** Top 5 Pengeluaran Terbesar pada Periode Ini */
+export async function getTopTransactions(workspaceId: string, dateFrom?: string, dateTo?: string) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const dateFilter =
+        dateFrom || dateTo
+            ? {
+                date: {
+                    ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                    ...(dateTo ? { lte: new Date(dateTo + "T23:59:59") } : {}),
+                },
+            }
+            : {};
+
+    const items = await prisma.transaction.findMany({
+        where: {
+            workspaceId,
+            type: TransactionType.EXPENSE,
+            ...dateFilter,
+        },
+        include: {
+            category: { select: { name: true, emoji: true, color: true } },
+            wallet: { select: { name: true, providerCode: true } },
+        },
+        orderBy: { amount: "desc" },
+        take: 5,
+    });
+
+    return items.map((tx) => ({
+        id: tx.id,
+        note: tx.note || tx.category?.name || "Pengeluaran",
+        category: tx.category,
+        wallet: tx.wallet,
+        date: tx.date,
+        amount: Number(tx.amount),
+    }));
+}
+
+
+/** Detailed Financial Report Metrics */
+export async function getDetailedReportSummary(
+    workspaceId: string,
+    dateFrom?: string,
+    dateTo?: string
+) {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+    });
+    if (!membership) return null;
+
+    const dateFilter =
+        dateFrom || dateTo
+            ? {
+                date: {
+                    ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                    ...(dateTo ? { lte: new Date(dateTo + "T23:59:59") } : {}),
+                },
+            }
+            : {};
+
+    const [incomeAgg, expenseAgg, incomeCount, expenseCount] = await Promise.all([
+        prisma.transaction.aggregate({
+            where: { workspaceId, type: TransactionType.INCOME, ...dateFilter },
+            _sum: { amount: true },
+            _avg: { amount: true },
+            _max: { amount: true },
+        }),
+        prisma.transaction.aggregate({
+            where: { workspaceId, type: TransactionType.EXPENSE, ...dateFilter },
+            _sum: { amount: true },
+            _avg: { amount: true },
+            _max: { amount: true },
+        }),
+        prisma.transaction.count({
+            where: { workspaceId, type: TransactionType.INCOME, ...dateFilter },
+        }),
+        prisma.transaction.count({
+            where: { workspaceId, type: TransactionType.EXPENSE, ...dateFilter },
+        }),
+    ]);
+
+    const totalIncome = Number(incomeAgg._sum.amount ?? 0);
+    const totalExpense = Number(expenseAgg._sum.amount ?? 0);
+    const netCashflow = totalIncome - totalExpense;
+
+    // Savings Rate percentage
+    const savingsRate = totalIncome > 0 ? Math.round((netCashflow / totalIncome) * 100) : 0;
+
+    // Days in range for daily average calculation
+    let daySpan = 30;
+    if (dateFrom && dateTo) {
+        const d1 = new Date(dateFrom).getTime();
+        const d2 = new Date(dateTo).getTime();
+        daySpan = Math.max(1, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1);
+    }
+
+    return {
+        totalIncome,
+        totalExpense,
+        netCashflow,
+        savingsRate,
+        incomeCount,
+        expenseCount,
+        totalTransactions: incomeCount + expenseCount,
+        avgIncome: Number(incomeAgg._avg.amount ?? 0),
+        avgExpense: Number(expenseAgg._avg.amount ?? 0),
+        maxIncome: Number(incomeAgg._max.amount ?? 0),
+        maxExpense: Number(expenseAgg._max.amount ?? 0),
+        dailyAvgExpense: totalExpense / daySpan,
+        dailyAvgIncome: totalIncome / daySpan,
+        daySpan,
+    };
 }
 
 /** Summary saldo bulan berjalan vs bulan lalu */
@@ -116,3 +278,113 @@ export async function getMonthComparison(workspaceId: string) {
         previous: { income: prevIncome, expense: prevExpense, net: prevIncome - prevExpense },
     };
 }
+
+export type CalendarDayData = {
+    date: string; // YYYY-MM-DD
+    day: number;
+    income: number;
+    expense: number;
+    net: number;
+    transactions: {
+        id: string;
+        amount: number;
+        type: TransactionType;
+        note: string | null;
+        category: {
+            id: string;
+            name: string;
+            emoji: string;
+            color: string;
+        } | null;
+    }[];
+};
+
+export type CalendarMonthData = {
+    year: number;
+    month: number;
+    totalIncome: number;
+    totalExpense: number;
+    totalNet: number;
+    days: Record<string, CalendarDayData>;
+};
+
+/** Ambil transaksi & ringkasan harian per bulan untuk Kalender Keuangan */
+export async function getCalendarTransactions(
+    workspaceId: string,
+    year: number,
+    month: number // 1 - 12
+): Promise<CalendarMonthData | null> {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+    });
+    if (!membership) return null;
+
+    const targetDate = new Date(year, month - 1, 1);
+    const start = startOfMonth(targetDate);
+    const end = endOfMonth(targetDate);
+
+    const transactions = await prisma.transaction.findMany({
+        where: {
+            workspaceId,
+            date: {
+                gte: start,
+                lte: end,
+            },
+        },
+        include: {
+            category: { select: { id: true, name: true, emoji: true, color: true } },
+        },
+        orderBy: { date: "asc" },
+    });
+
+    const days: Record<string, CalendarDayData> = {};
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    for (const tx of transactions) {
+        const dateKey = format(tx.date, "yyyy-MM-dd");
+        const dayNum = tx.date.getDate();
+        const amountNum = Number(tx.amount);
+
+        if (!days[dateKey]) {
+            days[dateKey] = {
+                date: dateKey,
+                day: dayNum,
+                income: 0,
+                expense: 0,
+                net: 0,
+                transactions: [],
+            };
+        }
+
+        if (tx.type === TransactionType.INCOME) {
+            days[dateKey].income += amountNum;
+            totalIncome += amountNum;
+        } else {
+            days[dateKey].expense += amountNum;
+            totalExpense += amountNum;
+        }
+        days[dateKey].net = days[dateKey].income - days[dateKey].expense;
+
+        days[dateKey].transactions.push({
+            id: tx.id,
+            amount: amountNum,
+            type: tx.type,
+            note: tx.note,
+            category: tx.category,
+        });
+    }
+
+    return {
+        year,
+        month,
+        totalIncome,
+        totalExpense,
+        totalNet: totalIncome - totalExpense,
+        days,
+    };
+}
+

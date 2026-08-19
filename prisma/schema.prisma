@@ -28,6 +28,7 @@ model User {
   memberships   WorkspaceMember[]
   invitesSent   Invite[]          @relation("InviteSender")
   transactions  Transaction[]
+  wallets       Wallet[]
   sales         Sale[]
   saleExpenses  SaleExpense[]
   subscription  Subscription?
@@ -98,6 +99,7 @@ model Workspace {
   members      WorkspaceMember[]
   categories   Category[]
   transactions Transaction[]
+  wallets      Wallet[]
   invites      Invite[]
   sales        Sale[]
   saleExpenses SaleExpense[]
@@ -121,6 +123,35 @@ enum WorkspaceRole {
   OWNER
   EDITOR
   VIEWER
+}
+
+// ─── DOMPET / WALLETS ────────────────────────────────────────────────────────
+
+enum WalletType {
+  BANK
+  EWALLET
+  CASH
+  OTHER
+}
+
+model Wallet {
+  id             String      @id @default(cuid())
+  workspaceId    String
+  name           String
+  type           WalletType  @default(BANK)
+  providerCode   String?     // "bca", "bri", "mandiri", "bni", "bsi", "jago", "seabank", "gopay", "ovo", "dana", "shopeepay", "cash", etc.
+  accountNumber  String?     // Nomor rekening / e-wallet
+  holderName     String?     // Nama pemilik rekening/dompet
+  color          String      @default("#16a34a")
+  initialBalance Decimal     @default(0) @db.Decimal(15, 2)
+  isDefault      Boolean     @default(false)
+  createdById    String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  transactions Transaction[]
 }
 
 // ─── INVITE ──────────────────────────────────────────────────────────────────
@@ -191,12 +222,14 @@ model Transaction {
   type        TransactionType
   workspaceId String
   categoryId  String
+  walletId    String?
   createdById String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   category  Category  @relation(fields: [categoryId], references: [id])
+  wallet    Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
   createdBy User      @relation(fields: [createdById], references: [id])
 }
 
