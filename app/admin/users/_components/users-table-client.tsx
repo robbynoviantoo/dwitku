@@ -32,6 +32,7 @@ interface UserItem {
   subscription: {
     id: string;
     status: string;
+    hasUsedTrial?: boolean;
     plan: {
       key: string;
       name: string;
@@ -57,6 +58,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
   const [search, setSearch] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<string>("ALL");
   const [selectedRole, setSelectedRole] = useState<string>("ALL");
+  const [selectedTrial, setSelectedTrial] = useState<string>("ALL");
   const [selectedVerification, setSelectedVerification] = useState<string>("ALL");
   const [selectedProvider, setSelectedProvider] = useState<string>("ALL");
   const [selectedWorkspaceFilter, setSelectedWorkspaceFilter] = useState<string>("ALL");
@@ -77,6 +79,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
     setSearch("");
     setSelectedPlan("ALL");
     setSelectedRole("ALL");
+    setSelectedTrial("ALL");
     setSelectedVerification("ALL");
     setSelectedProvider("ALL");
     setSelectedWorkspaceFilter("ALL");
@@ -88,6 +91,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
     search !== "" ||
     selectedPlan !== "ALL" ||
     selectedRole !== "ALL" ||
+    selectedTrial !== "ALL" ||
     selectedVerification !== "ALL" ||
     selectedProvider !== "ALL" ||
     selectedWorkspaceFilter !== "ALL" ||
@@ -131,6 +135,15 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
         matchesRole = !u.isAdmin;
       }
 
+      // Trial Status
+      let matchesTrial = true;
+      const hasUsedTrial = !!u.subscription?.hasUsedTrial;
+      if (selectedTrial === "CLAIMED") {
+        matchesTrial = hasUsedTrial;
+      } else if (selectedTrial === "UNCLAIMED") {
+        matchesTrial = !hasUsedTrial;
+      }
+
       // Verification
       const isGoogleUser = u.accounts.some((a) => a.provider === "google");
       const isVerified = !!u.emailVerified || isGoogleUser;
@@ -161,6 +174,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
         matchesSearch &&
         matchesPlan &&
         matchesRole &&
+        matchesTrial &&
         matchesVerification &&
         matchesProvider &&
         matchesWorkspace
@@ -223,6 +237,8 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
           u.subscription?.plan?.key === "basic" &&
           (u.subscription?.status === "ACTIVE" || u.subscription?.status === "TRIAL")
       ).length,
+      claimedTrial: users.filter((u) => !!u.subscription?.hasUsedTrial).length,
+      unclaimedTrial: users.filter((u) => !u.subscription?.hasUsedTrial).length,
       unverified: users.filter(
         (u) => !u.emailVerified && !u.accounts.some((a) => a.provider === "google")
       ).length,
@@ -244,11 +260,12 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
           onClick={() => {
             setSelectedPlan("ALL");
             setSelectedRole("ALL");
+            setSelectedTrial("ALL");
             setSelectedVerification("ALL");
             setPage(1);
           }}
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            selectedPlan === "ALL" && selectedRole === "ALL" && selectedVerification === "ALL"
+            selectedPlan === "ALL" && selectedRole === "ALL" && selectedTrial === "ALL" && selectedVerification === "ALL"
               ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs"
               : "bg-white dark:bg-[#161b22] border border-slate-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-slate-50"
           }`}
@@ -300,6 +317,36 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>Basic ({stats.basic})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setSelectedTrial("CLAIMED");
+            setPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            selectedTrial === "CLAIMED"
+              ? "bg-purple-600 text-white shadow-xs"
+              : "bg-white dark:bg-[#161b22] border border-slate-200 dark:border-zinc-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50/50"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Pernah Trial ({stats.claimedTrial})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setSelectedTrial("UNCLAIMED");
+            setPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            selectedTrial === "UNCLAIMED"
+              ? "bg-emerald-600 text-white shadow-xs"
+              : "bg-white dark:bg-[#161b22] border border-slate-200 dark:border-zinc-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50/50"
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Belum Trial ({stats.unclaimedTrial})</span>
         </button>
 
         <button
@@ -401,7 +448,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
 
         {/* Advanced Filters Drawer */}
         {showAdvancedFilters && (
-          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in duration-150">
+          <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-4 gap-3 animate-in fade-in duration-150">
             {/* Role Filter */}
             <div>
               <label className="text-[11px] font-bold text-zinc-500 mb-1 block">Role Pengguna</label>
@@ -416,6 +463,23 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
                 <option value="ALL">Semua Role</option>
                 <option value="ADMIN">Super Admin Saja</option>
                 <option value="USER">User Biasa</option>
+              </select>
+            </div>
+
+            {/* Trial Status Filter */}
+            <div>
+              <label className="text-[11px] font-bold text-zinc-500 mb-1 block">Status Trial</label>
+              <select
+                value={selectedTrial}
+                onChange={(e) => {
+                  setSelectedTrial(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-200"
+              >
+                <option value="ALL">Semua Status Trial</option>
+                <option value="CLAIMED">Pernah Klaim Trial</option>
+                <option value="UNCLAIMED">Belum Pernah Trial (Tersedia)</option>
               </select>
             </div>
 
@@ -546,24 +610,39 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
                     {/* Subscription */}
                     <td className="px-6 py-3.5">
                       <div className="flex flex-col gap-1 items-start">
-                        <span
-                          className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                            isPro
-                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                              : isBasic
-                              ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20"
-                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
-                          }`}
-                        >
-                          {planName}
-                        </span>
-                        {subStatus && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span
-                            className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${
-                              STATUS_COLOR[subStatus] ?? ""
+                            className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                              isPro
+                                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                : isBasic
+                                ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
                             }`}
                           >
-                            {subStatus}
+                            {planName}
+                          </span>
+                          {subStatus && (
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${
+                                STATUS_COLOR[subStatus] ?? ""
+                              }`}
+                            >
+                              {subStatus}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Trial Status Badge */}
+                        {sub?.hasUsedTrial ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-purple-500 shrink-0" />
+                            <span>Pernah Trial</span>
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-md bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center gap-1">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+                            <span>Trial Tersedia</span>
                           </span>
                         )}
                       </div>
@@ -617,6 +696,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
                         hasActiveSubscription={
                           !!subStatus && subStatus !== "EXPIRED" && subStatus !== "CANCELLED"
                         }
+                        hasUsedTrial={!!sub?.hasUsedTrial}
                         hasPassword={hasPassword}
                       />
                     </td>

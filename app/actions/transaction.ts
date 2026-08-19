@@ -10,7 +10,7 @@ import { getUserPlanLimits } from "./subscription";
 import { sendPushToWorkspace } from "./web-push";
 
 export type TransactionFilter = {
-    type?: "INCOME" | "EXPENSE";
+    type?: "INCOME" | "EXPENSE" | "TRANSFER";
     categoryId?: string;
     walletId?: string;
     search?: string;
@@ -34,11 +34,18 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
 
     const { type, categoryId, walletId, search, dateFrom, dateTo, page = 1, limit = 20, sortBy, sortOrder } = filter;
 
-    const where = {
+    const where: Prisma.TransactionWhereInput = {
         workspaceId,
         ...(type ? { type: type as TransactionType } : {}),
         ...(categoryId ? { categoryId } : {}),
-        ...(walletId ? { walletId } : {}),
+        ...(walletId
+            ? {
+                OR: [
+                    { walletId },
+                    { toWalletId: walletId }
+                ]
+            }
+            : {}),
         ...(search
             ? { note: { contains: search, mode: "insensitive" as const } }
             : {}),
@@ -58,6 +65,7 @@ export async function getTransactions(workspaceId: string, filter: TransactionFi
             include: {
                 category: { select: { id: true, name: true, emoji: true, color: true } },
                 wallet: { select: { id: true, name: true, providerCode: true, type: true, holderName: true, accountNumber: true, color: true } },
+                toWallet: { select: { id: true, name: true, providerCode: true, type: true, holderName: true, accountNumber: true, color: true } },
                 createdBy: { select: { id: true, name: true, image: true } },
             },
             orderBy: (() => {
@@ -219,7 +227,7 @@ export async function createTransaction(
         }
     }
 
-    const { amount, note, date, type, categoryId, walletId } = validated.data;
+    const { amount, note, date, type, categoryId, walletId, toWalletId } = validated.data;
 
     const transaction = await prisma.transaction.create({
         data: {
@@ -228,8 +236,9 @@ export async function createTransaction(
             date: new Date(date),
             type: type as TransactionType,
             workspaceId,
-            categoryId,
+            categoryId: type === "TRANSFER" ? null : categoryId,
             walletId: walletId || null,
+            toWalletId: type === "TRANSFER" ? (toWalletId || null) : null,
             createdById: session.user.id,
         },
     });
@@ -240,7 +249,7 @@ export async function createTransaction(
         session.user.id,
         {
             title: "Transaksi Baru",
-            body: `${session.user.name || "Seseorang"} menambahkan transaksi ${type === "INCOME" ? "Pemasukan" : "Pengeluaran"} sebesar Rp${amountStr}`,
+            body: `${session.user.name || "Seseorang"} menambahkan ${type === "TRANSFER" ? "Transfer Saldo" : type === "INCOME" ? "Pemasukan" : "Pengeluaran"} sebesar Rp${amountStr}`,
             url: `/transactions`
         }
     );
@@ -278,7 +287,7 @@ export async function updateTransaction(
     const validated = TransactionSchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
 
-    const { amount, note, date, type, categoryId, walletId } = validated.data;
+    const { amount, note, date, type, categoryId, walletId, toWalletId } = validated.data;
 
     const transaction = await prisma.transaction.update({
         where: { id: transactionId },
@@ -287,8 +296,9 @@ export async function updateTransaction(
             note,
             date: new Date(date),
             type: type as TransactionType,
-            categoryId,
+            categoryId: type === "TRANSFER" ? null : categoryId,
             walletId: walletId || null,
+            toWalletId: type === "TRANSFER" ? (toWalletId || null) : null,
         },
     });
 

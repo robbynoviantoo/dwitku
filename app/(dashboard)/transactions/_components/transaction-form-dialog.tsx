@@ -16,9 +16,9 @@ import {
     Loader2,
     Search,
     ChevronDown,
-    Check,
     Wallet as WalletIcon,
     Tag,
+    ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLenis } from "lenis/react";
@@ -27,6 +27,7 @@ import { getWallets, WalletWithBalance } from "@/app/actions/wallet";
 import { WalletLogo } from "@/components/ui/wallet-logo";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
@@ -36,8 +37,9 @@ type Transaction = {
     note: string | null;
     date: Date;
     type: string;
-    categoryId: string;
+    categoryId?: string | null;
     walletId?: string | null;
+    toWalletId?: string | null;
 };
 
 type Props = {
@@ -64,26 +66,41 @@ function FormWalletSelect({
     wallets,
     value,
     onChange,
+    excludeWalletId,
+    placeholder,
+    align = "left",
+    error,
 }: {
     wallets: WalletWithBalance[];
     value: string;
     onChange: (id: string) => void;
+    excludeWalletId?: string;
+    placeholder?: string;
+    align?: "left" | "right";
+    error?: string;
 }) {
+    const { t } = useLanguage();
+    const defaultPlaceholder = placeholder || t("transactions.selectWallet");
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const availableWallets = useMemo(
+        () => (excludeWalletId ? wallets.filter((w) => w.id !== excludeWalletId) : wallets),
+        [wallets, excludeWalletId]
+    );
+
     const selectedWallet = wallets.find((w) => w.id === value);
 
     const filtered = useMemo(
         () =>
-            wallets.filter((w) =>
+            availableWallets.filter((w) =>
                 w.name.toLowerCase().includes(search.toLowerCase()) ||
                 (w.holderName && w.holderName.toLowerCase().includes(search.toLowerCase())) ||
                 (w.accountNumber && w.accountNumber.includes(search))
             ),
-        [wallets, search]
+        [availableWallets, search]
     );
 
     useEffect(() => {
@@ -110,7 +127,7 @@ function FormWalletSelect({
                 className={cn(
                     "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
                     "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-none",
-                    open && "border-green-500 ring-2 ring-green-100 bg-white"
+                    error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
                 )}
             >
                 {selectedWallet ? (
@@ -129,14 +146,19 @@ function FormWalletSelect({
                 ) : (
                     <div className="flex items-center gap-2 text-zinc-400 text-xs">
                         <WalletIcon className="w-4 h-4" />
-                        <span>Pilih Dompet / Sumber</span>
+                        <span className="truncate">{defaultPlaceholder}</span>
                     </div>
                 )}
                 <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
             </button>
 
             {open && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className={cn(
+                        "absolute top-full mt-1.5 w-[290px] sm:w-[330px] max-w-[calc(100vw-2.5rem)] bg-white border border-zinc-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150",
+                        align === "right" ? "right-0 left-auto" : "left-0 right-auto"
+                    )}
+                >
                     <div className="p-2 border-b border-zinc-100 bg-zinc-50/70">
                         <div className="relative">
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
@@ -144,14 +166,14 @@ function FormWalletSelect({
                                 ref={inputRef}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari dompet, pemilik, rekening..."
+                                placeholder={t("transactions.searchWallet")}
                                 className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
                             />
                         </div>
                     </div>
-                    <div className="max-h-52 overflow-y-auto p-1 space-y-0.5" data-lenis-prevent>
+                    <div className="max-h-56 overflow-y-auto p-1.5 space-y-1" data-lenis-prevent>
                         {filtered.length === 0 ? (
-                            <p className="text-center py-4 text-xs text-zinc-400">Dompet tidak ditemukan</p>
+                            <p className="text-center py-4 text-xs text-zinc-400">{t("transactions.walletNotFound")}</p>
                         ) : (
                             filtered.map((w) => {
                                 const active = w.id === value;
@@ -165,21 +187,28 @@ function FormWalletSelect({
                                             setSearch("");
                                         }}
                                         className={cn(
-                                            "w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer",
-                                            active ? "bg-green-50 text-green-800" : "hover:bg-zinc-50 text-zinc-700"
+                                            "flex items-center justify-between w-full p-2.5 rounded-xl text-left transition-colors cursor-pointer group",
+                                            active
+                                                ? "bg-green-50/90 text-green-950 font-semibold border border-green-200/80"
+                                                : "hover:bg-zinc-50 text-zinc-700"
                                         )}
                                     >
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                            <WalletLogo providerCode={w.providerCode} size="sm" />
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <WalletLogo providerCode={w.providerCode} size="md" className="shrink-0" />
                                             <div className="min-w-0">
-                                                <p className="text-xs font-bold truncate leading-tight">{w.name}</p>
-                                                <p className="text-[10px] text-zinc-400 truncate leading-tight">
-                                                    {w.holderName ? `${w.holderName} · ` : ""}
-                                                    {formatCurrency(w.currentBalance, "IDR")}
+                                                <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
+                                                    {w.name}
+                                                </p>
+                                                <p className="text-[10px] text-zinc-400 truncate leading-tight mt-0.5">
+                                                    {w.holderName ? `${w.holderName}` : ""}
+                                                    {w.holderName && w.accountNumber ? " · " : ""}
+                                                    {w.accountNumber ? `${w.accountNumber}` : ""}
                                                 </p>
                                             </div>
                                         </div>
-                                        {active && <Check className="w-4 h-4 text-green-600 shrink-0 ml-2" />}
+                                        <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 ml-2 whitespace-nowrap">
+                                            {formatCurrency(w.currentBalance, "IDR")}
+                                        </span>
                                     </button>
                                 );
                             })
@@ -187,6 +216,7 @@ function FormWalletSelect({
                     </div>
                 </div>
             )}
+            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -203,20 +233,15 @@ function FormCategorySelect({
     onChange: (id: string) => void;
     error?: string;
 }) {
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const selectedCat = categories.find((c) => c.id === value);
-
-    const filtered = useMemo(
-        () =>
-            categories.filter((c) =>
-                c.name.toLowerCase().includes(search.toLowerCase()) ||
-                c.emoji.includes(search)
-            ),
-        [categories, search]
+    const filtered = categories.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase())
     );
 
     useEffect(() => {
@@ -243,8 +268,7 @@ function FormCategorySelect({
                 className={cn(
                     "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
                     "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-none",
-                    open && "border-green-500 ring-2 ring-green-100 bg-white",
-                    error && "border-red-400 bg-red-50/20"
+                    error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
                 )}
             >
                 {selectedCat ? (
@@ -255,7 +279,7 @@ function FormCategorySelect({
                 ) : (
                     <div className="flex items-center gap-2 text-zinc-400 text-xs">
                         <Tag className="w-4 h-4" />
-                        <span>Pilih Kategori Transaksi</span>
+                        <span>{t("transactions.selectCategory")}</span>
                     </div>
                 )}
                 <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
@@ -270,14 +294,14 @@ function FormCategorySelect({
                                 ref={inputRef}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari nama kategori..."
+                                placeholder={t("transactions.searchCategoryPlaceholder")}
                                 className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
                             />
                         </div>
                     </div>
                     <div className="max-h-52 overflow-y-auto p-1.5 grid grid-cols-2 gap-1" data-lenis-prevent>
                         {filtered.length === 0 ? (
-                            <p className="col-span-2 text-center py-4 text-xs text-zinc-400">Kategori tidak ditemukan</p>
+                            <p className="col-span-2 text-center py-4 text-xs text-zinc-400">{t("transactions.categoryNotFound")}</p>
                         ) : (
                             filtered.map((c) => {
                                 const active = c.id === value;
@@ -319,6 +343,7 @@ function AmountInput({
     onChange: (v: number) => void;
     error?: string;
 }) {
+    const { t } = useLanguage();
     const [display, setDisplay] = useState(
         value && value > 0 ? formatThousands(String(value)) : ""
     );
@@ -342,7 +367,7 @@ function AmountInput({
     return (
         <div>
             <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                Nominal <span className="text-red-500">*</span>
+                {t("transactions.nominal")} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold select-none">
@@ -370,6 +395,7 @@ export function TransactionFormDialog({
     onClose,
     onSuccess,
 }: Props) {
+    const { t } = useLanguage();
     const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
@@ -388,7 +414,6 @@ export function TransactionFormDialog({
         const prevOverflow = document.body.style.overflow;
         const prevPaddingRight = document.body.style.paddingRight;
         
-        // Prevent layout shift from scrollbar disappearing
         const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
         if (scrollBarWidth > 0) {
             document.body.style.paddingRight = `${scrollBarWidth}px`;
@@ -408,9 +433,10 @@ export function TransactionFormDialog({
         amount: number;
         note?: string;
         date: string;
-        type: "INCOME" | "EXPENSE";
-        categoryId: string;
+        type: "INCOME" | "EXPENSE" | "TRANSFER";
+        categoryId?: string;
         walletId?: string;
+        toWalletId?: string;
     }>({
         resolver: zodResolver(TransactionSchema) as any,
         defaultValues: {
@@ -419,20 +445,24 @@ export function TransactionFormDialog({
             date: transaction
                 ? new Date(transaction.date).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
-            type: (transaction?.type as "INCOME" | "EXPENSE") ?? "EXPENSE",
+            type: (transaction?.type as "INCOME" | "EXPENSE" | "TRANSFER") ?? "EXPENSE",
             categoryId: transaction?.categoryId ?? "",
             walletId: transaction?.walletId ?? (defaultWallet?.id || ""),
+            toWalletId: transaction?.toWalletId ?? "",
         },
     });
 
     const watchedType = form.watch("type");
+    const watchedWalletId = form.watch("walletId");
     const filteredCategories = categories.filter((c) => c.type === watchedType);
 
     // Reset categoryId jika ganti tipe
     useEffect(() => {
         const sub = form.watch((value, { name }) => {
             if (name === "type") {
-                form.setValue("categoryId", "");
+                if (value.type === "TRANSFER") {
+                    form.setValue("categoryId", "");
+                }
             }
         });
         return () => sub.unsubscribe();
@@ -478,10 +508,10 @@ export function TransactionFormDialog({
 
             {/* Modal Box */}
             <div className="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md flex flex-col z-10 animate-in zoom-in-95 duration-200">
-                {/* Header — compact */}
+                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/50 rounded-t-3xl shrink-0">
                     <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                        {isEdit ? "Edit Transaksi" : "Tambah Transaksi"}
+                        {isEdit ? t("transactions.editTransaction") : t("transactions.addTransaction")}
                     </h2>
                     <button
                         onClick={onClose}
@@ -491,33 +521,36 @@ export function TransactionFormDialog({
                     </button>
                 </div>
 
-                {/* Form area — compact 0-scroll layout */}
+                {/* Form area */}
                 <form onSubmit={form.handleSubmit(onSubmit)} className="p-5 space-y-3.5 flex-1">
-                    {/* 1. Tipe Transaksi (Pemasukan / Pengeluaran) */}
+                    {/* 1. Tipe Transaksi (Pengeluaran / Pemasukan / Transfer) */}
                     <div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             {[
-                                { value: "EXPENSE", label: "Pengeluaran", icon: TrendingDown, color: "red" },
-                                { value: "INCOME", label: "Pemasukan", icon: TrendingUp, color: "green" },
-                            ].map((t) => {
-                                const Icon = t.icon;
-                                const active = watchedType === t.value;
+                                { value: "EXPENSE", label: t("transactions.expense"), icon: TrendingDown, color: "red" },
+                                { value: "INCOME", label: t("transactions.income"), icon: TrendingUp, color: "green" },
+                                { value: "TRANSFER", label: t("transactions.transfer"), icon: ArrowRightLeft, color: "blue" },
+                            ].map((tItem) => {
+                                const Icon = tItem.icon;
+                                const active = watchedType === tItem.value;
                                 return (
                                     <button
-                                        key={t.value}
+                                        key={tItem.value}
                                         type="button"
-                                        onClick={() => form.setValue("type", t.value as any)}
+                                        onClick={() => form.setValue("type", tItem.value as any)}
                                         className={cn(
-                                            "flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer",
-                                            active && t.color === "red"
+                                            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer",
+                                            active && tItem.color === "red"
                                                 ? "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-500/20"
-                                                : active && t.color === "green"
+                                                : active && tItem.color === "green"
                                                     ? "border-green-500 bg-green-50 text-green-700 ring-2 ring-green-500/20"
-                                                    : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                                                    : active && tItem.color === "blue"
+                                                        ? "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20"
+                                                        : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
                                         )}
                                     >
-                                        <Icon className="w-3.5 h-3.5" />
-                                        {t.label}
+                                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                                        <span>{tItem.label}</span>
                                     </button>
                                 );
                             })}
@@ -537,73 +570,146 @@ export function TransactionFormDialog({
                         )}
                     />
 
-                    {/* 3. Sumber Dana / Dompet & Tanggal (2 Kolom berdampingan) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {/* Sumber Dana / Dompet */}
-                        <div>
-                            <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                                Dompet / Sumber
-                            </label>
-                            <Controller
-                                name="walletId"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormWalletSelect
-                                        wallets={wallets}
-                                        value={field.value || ""}
-                                        onChange={field.onChange}
+                    {/* 3. Input Dompet & Tanggal / Transfer Section */}
+                    {watchedType === "TRANSFER" ? (
+                        <>
+                            {/* Transfer: Dari Dompet & Ke Dompet */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                        {t("transactions.sourceWallet")} <span className="text-red-500">*</span>
+                                    </label>
+                                    <Controller
+                                        name="walletId"
+                                        control={form.control}
+                                        render={({ field, fieldState }) => (
+                                            <FormWalletSelect
+                                                wallets={wallets}
+                                                value={field.value || ""}
+                                                onChange={field.onChange}
+                                                placeholder={t("transactions.selectSourceWallet")}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                        </div>
+                                </div>
 
-                        {/* Tanggal */}
-                        <div>
-                            <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                                Tanggal <span className="text-red-500">*</span>
-                            </label>
-                            <Controller
-                                name="date"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <CalendarPicker
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                        {t("transactions.destWallet")} <span className="text-red-500">*</span>
+                                    </label>
+                                    <Controller
+                                        name="toWalletId"
+                                        control={form.control}
+                                        render={({ field, fieldState }) => (
+                                            <FormWalletSelect
+                                                wallets={wallets}
+                                                value={field.value || ""}
+                                                excludeWalletId={watchedWalletId}
+                                                onChange={field.onChange}
+                                                placeholder={t("transactions.selectDestWallet")}
+                                                align="right"
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                        </div>
-                    </div>
+                                </div>
+                            </div>
 
-                    {/* 4. Kategori (Searchable dropdown) */}
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                            Kategori <span className="text-red-500">*</span>
-                        </label>
-                        <Controller
-                            name="categoryId"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <FormCategorySelect
-                                    categories={filteredCategories}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
+                            {/* Tanggal Transfer */}
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                    {t("transactions.dateHeader")} <span className="text-red-500">*</span>
+                                </label>
+                                <Controller
+                                    name="date"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <CalendarPicker
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </div>
+                            </div>
+
+                            {/* Info note */}
+                            <div className="bg-blue-50/70 border border-blue-200/60 rounded-xl p-2.5 flex items-center gap-2 text-blue-800 text-[11px]">
+                                <ArrowRightLeft className="w-4 h-4 text-blue-600 shrink-0" />
+                                <span>{t("transactions.transferInfo")}</span>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Reguler: Dompet & Tanggal */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                        {t("transactions.walletOrSource")}
+                                    </label>
+                                    <Controller
+                                        name="walletId"
+                                        control={form.control}
+                                        render={({ field }) => (
+                                            <FormWalletSelect
+                                                wallets={wallets}
+                                                value={field.value || ""}
+                                                onChange={field.onChange}
+                                                placeholder={t("transactions.selectWallet")}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                        {t("transactions.dateHeader")} <span className="text-red-500">*</span>
+                                    </label>
+                                    <Controller
+                                        name="date"
+                                        control={form.control}
+                                        render={({ field, fieldState }) => (
+                                            <CalendarPicker
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 4. Kategori */}
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                                    {t("transactions.categoryHeader")} <span className="text-red-500">*</span>
+                                </label>
+                                <Controller
+                                    name="categoryId"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <FormCategorySelect
+                                            categories={filteredCategories}
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </>
+                    )}
 
                     {/* 5. Catatan */}
                     <div>
                         <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
-                            Catatan <span className="text-zinc-400 font-normal lowercase">(opsional)</span>
+                            {t("transactions.notesHeader")} <span className="text-zinc-400 font-normal lowercase">({t("transactions.optional")})</span>
                         </label>
                         <input
                             type="text"
                             {...form.register("note")}
-                            placeholder="Keterangan transaksi..."
+                            placeholder={t("transactions.notePlaceholder")}
                             className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 bg-zinc-50 focus:bg-white transition-colors text-xs text-zinc-900"
                         />
                     </div>
@@ -621,20 +727,28 @@ export function TransactionFormDialog({
                             onClick={onClose}
                             className="flex-1 py-2.5 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 text-xs font-bold transition-colors cursor-pointer"
                         >
-                            Batal
+                            {t("transactions.cancelBtn")}
                         </button>
                         <button
                             type="submit"
                             disabled={isPending}
                             className={cn(
                                 "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-60",
-                                watchedType === "INCOME"
-                                    ? "bg-green-600 hover:bg-green-700"
-                                    : "bg-red-500 hover:bg-red-600"
+                                watchedType === "TRANSFER"
+                                    ? "bg-blue-600 hover:bg-blue-700"
+                                    : watchedType === "INCOME"
+                                        ? "bg-green-600 hover:bg-green-700"
+                                        : "bg-red-500 hover:bg-red-600"
                             )}
                         >
                             {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                            {isEdit ? "Simpan Perubahan" : `Simpan ${watchedType === "INCOME" ? "Pemasukan" : "Pengeluaran"}`}
+                            {isEdit
+                                ? t("transactions.saveChanges")
+                                : watchedType === "TRANSFER"
+                                    ? t("transactions.saveTransfer")
+                                    : watchedType === "INCOME"
+                                        ? t("transactions.saveIncome")
+                                        : t("transactions.saveExpense")}
                         </button>
                     </div>
                 </form>

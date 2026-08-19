@@ -15,6 +15,7 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
   const [formData, setFormData] = useState({
     name: plan.name,
     priceMonthly: plan.priceMonthly,
+    priceYearly: plan.priceYearly ?? 0,
     maxWorkspaces: plan.maxWorkspaces,
     maxTx: plan.maxTx,
     maxMembers: plan.maxMembers ?? -1,
@@ -71,7 +72,7 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
               <span>Konfigurasi Paket: {plan.key.toUpperCase()}</span>
             </h2>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Atur harga, batasan kuota, dan hak akses fitur untuk paket ini
+              Atur harga bulanan & tahunan, kuota, dan hak akses fitur
             </p>
           </div>
           <button
@@ -85,25 +86,26 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
-            {/* Name & Monthly Price */}
+            {/* Name */}
+            <div>
+              <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                Nama Tampilan Paket
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-semibold text-zinc-900 dark:text-zinc-100 transition-all"
+              />
+            </div>
+
+            {/* Monthly & Yearly Prices */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
-                  Nama Tampilan Paket
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-semibold text-zinc-900 dark:text-zinc-100 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
-                  Harga per Bulan (IDR)
+                  Harga Bulanan (Rp / bln)
                 </label>
                 <input
                   type="number"
@@ -111,6 +113,21 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
                   value={formData.priceMonthly}
                   onChange={handleChange}
                   required
+                  min={0}
+                  step={1000}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                  Harga Tahunan (Rp / thn)
+                </label>
+                <input
+                  type="number"
+                  name="priceYearly"
+                  value={formData.priceYearly}
+                  onChange={handleChange}
                   min={0}
                   step={1000}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 transition-all"

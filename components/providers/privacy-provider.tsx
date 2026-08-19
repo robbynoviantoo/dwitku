@@ -14,14 +14,30 @@ const PrivacyContext = createContext<PrivacyContextValue>({
   toggleShowAmount: () => {},
 });
 
-export function PrivacyProvider({ children }: { children: React.ReactNode }) {
-  const [showAmount, setShowAmount] = useState(true);
+export function PrivacyProvider({
+  children,
+  defaultShowAmount = true,
+}: {
+  children: React.ReactNode;
+  defaultShowAmount?: boolean;
+}) {
+  const [showAmount, setShowAmount] = useState(defaultShowAmount);
 
-  // Load from localStorage on mount
+  // Load from cookie / localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) {
-      setShowAmount(JSON.parse(stored));
+    const match = document.cookie.match(/(^| )show_amount=([^;]+)/);
+    if (match) {
+      const val = match[2] === "1" || match[2] === "true";
+      if (val !== showAmount) setShowAmount(val);
+    } else {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored !== null) {
+        const val = JSON.parse(stored);
+        if (val !== showAmount) {
+          setShowAmount(val);
+          document.cookie = `show_amount=${val ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
+        }
+      }
     }
   }, []);
 
@@ -40,6 +56,7 @@ export function PrivacyProvider({ children }: { children: React.ReactNode }) {
     setShowAmount((prev) => {
       const next = !prev;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      document.cookie = `show_amount=${next ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
       return next;
     });
   };

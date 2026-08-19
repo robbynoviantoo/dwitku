@@ -14,10 +14,12 @@ import {
   Copy,
   Check,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import {
   toggleAdminStatus,
   revokeSubscription,
+  resetTrialStatus,
   renameUser,
   adminSendPasswordReset,
   deleteUser,
@@ -32,6 +34,7 @@ interface UserActionsProps {
   isAdmin: boolean;
   isMe: boolean;
   hasActiveSubscription: boolean;
+  hasUsedTrial?: boolean;
   hasPassword: boolean;
 }
 
@@ -42,6 +45,7 @@ export function UserActions({
   isAdmin,
   isMe,
   hasActiveSubscription,
+  hasUsedTrial,
   hasPassword,
 }: UserActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -280,6 +284,23 @@ export function UserActions({
                     <span>Cabut Langganan (Free)</span>
                   </button>
                 </>
+              )}
+
+              {/* Reset Trial */}
+              {hasUsedTrial && (
+                <button
+                  onClick={() =>
+                    handleAction(
+                      () => resetTrialStatus(userId),
+                      `Reset status kuota trial untuk ${userName || userEmail}? Pengguna ini akan dapat mengklaim trial gratis 7 hari kembali di halaman billing.`,
+                      "#004C29"
+                    )
+                  }
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                  <span>Reset Kuota Trial (Bisa Trial Lagi)</span>
+                </button>
               )}
 
               {/* Delete User */}

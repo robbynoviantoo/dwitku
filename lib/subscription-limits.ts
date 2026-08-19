@@ -12,6 +12,7 @@ export interface PlanLimits {
   canBudget: boolean;
   trialDays: number;
   priceMonthly: number;
+  priceYearly: number;
   name: string;
   displayName: string;
 }
@@ -29,6 +30,7 @@ export const PLAN_LIMITS: Record<PlanKey, PlanLimits> = {
     canBudget: false,
     trialDays: 0,
     priceMonthly: 0,
+    priceYearly: 0,
   },
   basic: {
     name: "basic",
@@ -42,6 +44,7 @@ export const PLAN_LIMITS: Record<PlanKey, PlanLimits> = {
     canBudget: false,
     trialDays: 7,
     priceMonthly: 25000,
+    priceYearly: 240000, // Rp 20.000 / bln (Hemat Rp 60.000/thn)
   },
   pro: {
     name: "pro",
@@ -55,6 +58,7 @@ export const PLAN_LIMITS: Record<PlanKey, PlanLimits> = {
     canBudget: true,
     trialDays: 7,
     priceMonthly: 49000,
+    priceYearly: 470000, // Rp 39.166 / bln (Hemat Rp 118.000/thn)
   },
 };
 

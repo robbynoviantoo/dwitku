@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 
 export function LandingPricing() {
   const { locale } = useLanguage();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const isYearly = billingCycle === "yearly";
 
   const plans = [
     {
@@ -26,13 +29,16 @@ export function LandingPricing() {
     },
     {
       name: "Basic",
-      price: "Rp 25.000",
-      period: locale === "en" ? "/ month" : "/ bulan",
+      price: isYearly ? "Rp 240.000" : "Rp 25.000",
+      period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
+      equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 20,000 / mo" : "Setara Rp 20.000 / bulan") : undefined,
       desc: locale === "en" ? "For families, freelancers & micro businesses" : "Untuk keluarga, freelancer & UMKM mikro",
       highlight: true,
       badge: locale === "en" ? "POPULAR" : "POPULER",
-      cta: locale === "en" ? "Try 7 Days Free" : "Coba 7 Hari Gratis",
-      ctaHref: "/register?plan=basic",
+      cta: isYearly
+        ? (locale === "en" ? "Choose Basic (Annual)" : "Pilih Basic Tahunan")
+        : (locale === "en" ? "Try 7 Days Free" : "Coba 7 Hari Gratis"),
+      ctaHref: `/register?plan=basic&billing=${billingCycle}`,
       features: [
         locale === "en" ? "Up to 3 Workspaces" : "Hingga 3 Workspace",
         locale === "en" ? "Up to 500 transactions / month" : "Hingga 500 transaksi / bulan",
@@ -45,12 +51,15 @@ export function LandingPricing() {
     },
     {
       name: "Pro Unlimited",
-      price: "Rp 49.000",
-      period: locale === "en" ? "/ month" : "/ bulan",
+      price: isYearly ? "Rp 470.000" : "Rp 49.000",
+      period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
+      equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 39,166 / mo" : "Setara Rp 39.166 / bulan") : undefined,
       desc: locale === "en" ? "For power users, communities & multi-business" : "Untuk power user, komunitas & multi-bisnis",
       highlight: false,
-      cta: locale === "en" ? "Upgrade to Pro" : "Pilih Paket Pro",
-      ctaHref: "/register?plan=pro",
+      cta: isYearly
+        ? (locale === "en" ? "Choose Pro (Annual)" : "Pilih Pro Tahunan")
+        : (locale === "en" ? "Upgrade to Pro" : "Pilih Paket Pro"),
+      ctaHref: `/register?plan=pro&billing=${billingCycle}`,
       features: [
         locale === "en" ? "Unlimited Workspaces" : "Unlimited Workspace",
         locale === "en" ? "Unlimited Transactions" : "Unlimited Transaksi",
@@ -65,7 +74,7 @@ export function LandingPricing() {
 
   return (
     <section id="pricing" className="py-20 px-4 max-w-7xl mx-auto">
-      <div className="text-center max-w-xl mx-auto mb-14">
+      <div className="text-center max-w-xl mx-auto mb-10">
         <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-widest mb-2">
           {locale === "en" ? "TRANSPARENT PRICING" : "PAKET BERLANGGANAN"}
         </p>
@@ -77,6 +86,37 @@ export function LandingPricing() {
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
           {locale === "en" ? "Upgrade or cancel anytime. No hidden fees." : "Upgrade atau batalkan kapan saja tanpa biaya tersembunyi."}
         </p>
+
+        {/* Monthly vs Yearly Billing Toggle */}
+        <div className="inline-flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-2xl border border-slate-200 dark:border-zinc-700 mt-6">
+          <button
+            type="button"
+            onClick={() => setBillingCycle("monthly")}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              billingCycle === "monthly"
+                ? "bg-white dark:bg-[#161b22] text-zinc-900 dark:text-zinc-100 shadow-xs"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+            }`}
+          >
+            {locale === "en" ? "Monthly" : "Bulanan"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingCycle("yearly")}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              billingCycle === "yearly"
+                ? "bg-green-600 text-white shadow-xs"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+            }`}
+          >
+            <span>{locale === "en" ? "Yearly" : "Tahunan"}</span>
+            <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
+              billingCycle === "yearly" ? "bg-white/20 text-white" : "bg-green-500/15 text-green-700 dark:text-green-300"
+            }`}>
+              {locale === "en" ? "Save 20%" : "Hemat 20%"}
+            </span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
@@ -104,13 +144,20 @@ export function LandingPricing() {
                 {plan.desc}
               </p>
 
-              <div className="flex items-baseline gap-1.5 mb-5 pb-5 border-b border-slate-100 dark:border-zinc-800">
-                <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
-                  {plan.price}
-                </span>
-                <span className="text-xs font-semibold text-zinc-400">
-                  {plan.period}
-                </span>
+              <div className="mb-5 pb-5 border-b border-slate-100 dark:border-zinc-800">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl sm:text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
+                    {plan.price}
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-400">
+                    {plan.period}
+                  </span>
+                </div>
+                {plan.equivalentText && (
+                  <p className="text-[11px] font-bold text-green-600 dark:text-green-400 mt-1">
+                    {plan.equivalentText}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2.5 mb-6">
@@ -141,3 +188,4 @@ export function LandingPricing() {
     </section>
   );
 }
+

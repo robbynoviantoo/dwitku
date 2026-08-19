@@ -237,6 +237,7 @@ export function TypeSelect({
     { value: "", label: t("transactions.allTypes"), emoji: "📊" },
     { value: "INCOME", label: t("transactions.income"), emoji: "↑" },
     { value: "EXPENSE", label: t("transactions.expense"), emoji: "↓" },
+    { value: "TRANSFER", label: "Transfer Saldo", emoji: "⇄" },
   ];
 
   return (
@@ -255,6 +256,8 @@ export function TypeSelect({
                   ? "bg-[#004C29] text-white border-[#004C29]"
                   : o.value === "EXPENSE"
                   ? "bg-red-600 text-white border-red-600"
+                  : o.value === "TRANSFER"
+                  ? "bg-blue-600 text-white border-blue-600"
                   : "bg-zinc-800 text-white border-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100"
                 : "bg-white dark:bg-[#161b22] border-slate-200 dark:border-[#21262d] text-zinc-600 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700"
             )}

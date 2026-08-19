@@ -86,18 +86,10 @@ export function WalletLogo({ providerCode, className, size = "md" }: WalletLogoP
       {hasImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/banks/${provider.code}.png`}
+          src={`/banks/${provider.code}.svg`}
           alt={provider.name}
           className="w-full h-full object-contain"
-          onError={(e) => {
-            // Coba SVG jika PNG tidak ditemukan
-            const target = e.currentTarget;
-            if (target.src.endsWith(".png")) {
-              target.src = `/banks/${provider.code}.svg`;
-            } else {
-              setImgError(true);
-            }
-          }}
+          onError={() => setImgError(true)}
         />
       ) : (
         renderFallbackVisual()

@@ -8,7 +8,7 @@ import {
   createColumnHelper,
   SortingState,
 } from "@tanstack/react-table";
-import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, ArrowRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
 import {
@@ -35,15 +35,22 @@ import { TransactionsFilterPanel } from "./transactions-filter-panel";
 import { TransactionsTable } from "./transactions-table";
 import { TransactionsMobileList } from "./transactions-mobile-list";
 
-type Transaction = {
+// ── Types ──────────────────────────────────────────────────────────────────
+export type TransactionItem = {
   id: string;
-  amount: number | any;
+  amount: number;
   note: string | null;
-  date: Date | string;
+  date: Date;
   type: string;
-  categoryId: string;
-  category: { id: string; name: string; emoji: string; color: string };
+  categoryId?: string | null;
   walletId?: string | null;
+  toWalletId?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    emoji: string;
+    color: string;
+  } | null;
   wallet?: {
     id: string;
     name: string;
@@ -53,8 +60,23 @@ type Transaction = {
     accountNumber: string | null;
     color: string;
   } | null;
-  createdBy: { id: string; name: string | null; image: string | null };
+  toWallet?: {
+    id: string;
+    name: string;
+    providerCode: string | null;
+    type: string;
+    holderName: string | null;
+    accountNumber: string | null;
+    color: string;
+  } | null;
+  createdBy: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
 };
+
+type Transaction = TransactionItem;
 
 type Props = {
   workspaceId: string;
@@ -233,7 +255,7 @@ export function TransactionsClient({
   const columns = useMemo(
     () => [
       col.accessor("date", {
-        header: t("transactions.date"),
+        header: t("transactions.dateHeader"),
         enableSorting: true,
         cell: (info) => (
           <span className="text-zinc-500 dark:text-zinc-400 font-medium whitespace-nowrap">
@@ -242,44 +264,82 @@ export function TransactionsClient({
         ),
       }),
       col.accessor("type", {
-        header: t("transactions.type"),
+        header: t("transactions.typeHeader"),
         enableSorting: false,
         cell: (info) => {
-          const isIncome = info.getValue() === "INCOME";
+          const type = info.getValue();
+          const isTransfer = type === "TRANSFER";
+          const isIncome = type === "INCOME";
           return (
             <span
               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                isIncome
+                isTransfer
+                  ? "bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300"
+                  : isIncome
                   ? "bg-green-50 dark:bg-green-950/80 text-green-700 dark:text-green-300"
                   : "bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300"
               }`}
             >
-              {isIncome ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-              {isIncome ? t("transactions.income") : t("transactions.expense")}
+              {isTransfer ? (
+                <ArrowRightLeft className="w-3 h-3" />
+              ) : isIncome ? (
+                <ArrowDownLeft className="w-3 h-3" />
+              ) : (
+                <ArrowUpRight className="w-3 h-3" />
+              )}
+              {isTransfer ? "Transfer" : isIncome ? t("transactions.income") : t("transactions.expense")}
             </span>
           );
         },
       }),
-      col.accessor((row) => row.category?.name ?? "", {
+      col.accessor((row) => (row.type === "TRANSFER" ? "Pindah Saldo" : row.category?.name ?? ""), {
         id: "category",
-        header: t("sidebar.kategori"),
+        header: t("transactions.categoryHeader"),
         enableSorting: true,
         cell: (info) => {
-          const cat = info.row.original.category;
+          const row = info.row.original;
+          if (row.type === "TRANSFER") {
+            return (
+              <span className="inline-flex items-center gap-1.5 font-semibold text-blue-700 dark:text-blue-300 text-xs">
+                <span>🔄</span>
+                <span className="truncate max-w-[120px]">Pindah Saldo</span>
+              </span>
+            );
+          }
+          const cat = row.category;
           return (
             <span className="inline-flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
-              <span>{cat?.emoji}</span>
-              <span className="truncate max-w-[120px]">{cat?.name}</span>
+              <span>{cat?.emoji || "📁"}</span>
+              <span className="truncate max-w-[120px]">{cat?.name || "-"}</span>
             </span>
           );
         },
       }),
       col.accessor((row) => row.wallet?.name ?? "", {
         id: "wallet",
-        header: "Dompet",
+        header: t("transactions.walletHeader"),
         enableSorting: false,
         cell: (info) => {
-          const w = info.row.original.wallet;
+          const row = info.row.original;
+          const w = row.wallet;
+          const toW = row.toWallet;
+
+          if (row.type === "TRANSFER") {
+            return (
+              <div className="flex items-center gap-1 font-bold text-zinc-700 dark:text-zinc-300 text-xs">
+                <span className="inline-flex items-center gap-1">
+                  <WalletLogo providerCode={w?.providerCode} size="sm" />
+                  <span className="truncate max-w-[70px]">{w?.name ?? "-"}</span>
+                </span>
+                <ArrowRight className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span className="inline-flex items-center gap-1">
+                  <WalletLogo providerCode={toW?.providerCode} size="sm" />
+                  <span className="truncate max-w-[70px]">{toW?.name ?? "-"}</span>
+                </span>
+              </div>
+            );
+          }
+
           if (!w) return <span className="text-zinc-400">-</span>;
           return (
             <span className="inline-flex items-center gap-1.5 font-bold text-zinc-700 dark:text-zinc-300">
@@ -290,7 +350,7 @@ export function TransactionsClient({
         },
       }),
       col.accessor("note", {
-        header: t("transactions.note"),
+        header: t("transactions.notesHeader"),
         enableSorting: false,
         cell: (info) => (
           <span className="text-zinc-600 dark:text-zinc-300 truncate max-w-[160px] block" title={info.getValue() ?? ""}>
@@ -299,17 +359,23 @@ export function TransactionsClient({
         ),
       }),
       col.accessor("amount", {
-        header: t("transactions.amount"),
+        header: t("transactions.amountHeader"),
         enableSorting: true,
         cell: (info) => {
-          const isIncome = info.row.original.type === "INCOME";
+          const type = info.row.original.type;
+          const isTransfer = type === "TRANSFER";
+          const isIncome = type === "INCOME";
           return (
             <span
               className={`font-mono font-extrabold text-xs whitespace-nowrap tabular-nums ${
-                isIncome ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
+                isTransfer
+                  ? "text-blue-600 dark:text-blue-400"
+                  : isIncome
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-500 dark:text-red-400"
               }`}
             >
-              {isIncome ? "+" : "-"}
+              {isTransfer ? "" : isIncome ? "+" : "-"}
               {showAmount ? formatCurrency(info.getValue(), currency) : "••••••"}
             </span>
           );
@@ -317,7 +383,7 @@ export function TransactionsClient({
       }),
       col.accessor((row) => row.createdBy?.name ?? "", {
         id: "createdBy",
-        header: t("transactions.creator"),
+        header: t("transactions.createdByHeader"),
         enableSorting: false,
         cell: (info) => {
           const user = info.row.original.createdBy;
@@ -395,9 +461,24 @@ export function TransactionsClient({
           month: "long",
           year: "numeric",
         }),
-        Tipe: tx.type === "INCOME" ? "Pemasukan" : "Pengeluaran",
-        Kategori: `${tx.category.emoji} ${tx.category.name}`,
-        Dompet: tx.wallet ? tx.wallet.name : "-",
+        Tipe:
+          tx.type === "TRANSFER"
+            ? "Transfer Saldo"
+            : tx.type === "INCOME"
+            ? "Pemasukan"
+            : "Pengeluaran",
+        Kategori:
+          tx.type === "TRANSFER"
+            ? "Pindah Saldo"
+            : tx.category
+            ? `${tx.category.emoji} ${tx.category.name}`
+            : "-",
+        Dompet:
+          tx.type === "TRANSFER"
+            ? `${tx.wallet?.name ?? "-"} → ${tx.toWallet?.name ?? "-"}`
+            : tx.wallet
+            ? tx.wallet.name
+            : "-",
         Catatan: tx.note ?? "-",
         Nominal: Number(tx.amount),
         "Mata Uang": currency,

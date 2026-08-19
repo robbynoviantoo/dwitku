@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
@@ -41,13 +42,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("locale")?.value;
+  const initialLocale: "id" | "en" =
+    cookieLocale === "en" || cookieLocale === "id" ? cookieLocale : "id";
+
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang={initialLocale} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -61,7 +67,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <SessionProvider>
-            <LanguageProvider>
+            <LanguageProvider defaultLocale={initialLocale}>
             <LenisProvider>
               {children}
             </LenisProvider>

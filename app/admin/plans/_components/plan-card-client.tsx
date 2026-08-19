@@ -31,14 +31,21 @@ export function PlanCardClient({ plan }: { plan: any }) {
                   {plan.key}
                 </span>
               </div>
-              <p className="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-100 mt-1">
-                {plan.priceMonthly === 0
-                  ? "Gratis"
-                  : formatCurrency(plan.priceMonthly, "IDR")}
-                {plan.priceMonthly > 0 && (
-                  <span className="text-xs text-zinc-400 font-normal ml-1">/ bln</span>
+              <div className="mt-1">
+                <p className="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-100">
+                  {plan.priceMonthly === 0
+                    ? "Gratis"
+                    : formatCurrency(plan.priceMonthly, "IDR")}
+                  {plan.priceMonthly > 0 && (
+                    <span className="text-xs text-zinc-400 font-normal ml-1">/ bln</span>
+                  )}
+                </p>
+                {plan.priceYearly > 0 && (
+                  <p className="text-[11px] font-mono text-green-700 dark:text-green-400 font-bold">
+                    {formatCurrency(plan.priceYearly, "IDR")} / thn
+                  </p>
                 )}
-              </p>
+              </div>
             </div>
 
             <div className="flex flex-col items-end gap-2 shrink-0">

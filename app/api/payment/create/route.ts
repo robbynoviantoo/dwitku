@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { planKey } = await req.json();
+  const { planKey, billingCycle = "monthly" } = await req.json();
   if (!planKey || !["basic", "pro"].includes(planKey)) {
     return NextResponse.json({ error: "Plan tidak valid" }, { status: 400 });
   }
@@ -30,12 +30,66 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
   }
 
-  const orderId = `DWITKU-${planKey.toUpperCase()}-${session.user.id.slice(-6)}-${Date.now()}`;
+  const isYearly = billingCycle === "yearly";
+  const rawPrice = isYearly
+    ? plan.priceYearly > 0
+      ? plan.priceYearly
+      : plan.priceMonthly * 10
+    : plan.priceMonthly;
+
+  // Cek apakah user saat ini sedang aktif paket BASIC dan ingin UPGRADE ke PRO
+  const existingSub = await prisma.subscription.findUnique({
+    where: { userId: session.user.id },
+    include: { plan: true },
+  });
+
+  const isUpgrade =
+    existingSub &&
+    existingSub.status === "ACTIVE" &&
+    existingSub.plan?.key === "basic" &&
+    planKey === "pro";
+
+  let price = rawPrice;
+  let itemName = `Dwitku ${plan.name} — ${isYearly ? "1 Tahun (Tahunan)" : "1 Bulan"}`;
+
+  if (isUpgrade) {
+    const basicPlan = existingSub.plan;
+    const now = Date.now();
+    const periodEndMs = existingSub.currentPeriodEnd
+      ? new Date(existingSub.currentPeriodEnd).getTime()
+      : now;
+    const msRemaining = Math.max(0, periodEndMs - now);
+    const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+
+    // Nilai harian paket Basic
+    const isBasicYearly =
+      daysRemaining > 31 ||
+      (existingSub.midtransOrderId && existingSub.midtransOrderId.includes("YEARLY"));
+    const basicDailyRate = isBasicYearly
+      ? (basicPlan.priceYearly > 0
+          ? basicPlan.priceYearly
+          : basicPlan.priceMonthly * 10) / 365
+      : basicPlan.priceMonthly / 30;
+
+    // Kredit sisa Basic yang belum terpakai
+    const unusedCredit = Math.min(
+      Math.round(daysRemaining * basicDailyRate),
+      rawPrice - 1000
+    );
+
+    // Harga upgrade setelah dipotong sisa kredit Basic
+    const proratedPrice = rawPrice - unusedCredit;
+    price = Math.max(proratedPrice, 1000);
+
+    itemName = `Upgrade ke Pro (${isYearly ? "1 Tahun" : "30 Hari"} — Kredit Basic ${daysRemaining} hari: -Rp ${unusedCredit.toLocaleString("id-ID")})`;
+  }
+
+  const orderId = `DWITKU-${isUpgrade ? "UPGRADE-PRO" : planKey.toUpperCase()}-${isYearly ? "YEARLY" : "MONTHLY"}-${session.user.id.slice(-6)}-${Date.now()}`;
 
   const parameter = {
     transaction_details: {
       order_id: orderId,
-      gross_amount: plan.priceMonthly,
+      gross_amount: price,
     },
     customer_details: {
       first_name: user.name ?? "Pengguna",
@@ -43,14 +97,14 @@ export async function POST(req: NextRequest) {
     },
     item_details: [
       {
-        id: plan.key,
-        name: `Dwitku ${plan.name} — 1 Bulan`,
-        price: plan.priceMonthly,
+        id: `${plan.key}-${isYearly ? "yearly" : "monthly"}${isUpgrade ? "-upgrade" : ""}`,
+        name: itemName,
+        price: price,
         quantity: 1,
       },
     ],
     callbacks: {
-      finish: `${process.env.NEXTAUTH_URL}/billing?status=finish`,
+      finish: `${process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/billing?status=finish`,
     },
   };
 
@@ -65,15 +119,15 @@ export async function POST(req: NextRequest) {
     if (existingSub) {
       await prisma.subscription.update({
         where: { id: existingSub.id },
-        data: { midtransOrderId: orderId, midtransToken: transaction.token },
+        data: { planId: plan.id, midtransOrderId: orderId, midtransToken: transaction.token },
       });
       await prisma.payment.upsert({
         where: { orderId },
-        update: { amount: plan.priceMonthly },
+        update: { amount: price },
         create: {
           subscriptionId: existingSub.id,
           orderId,
-          amount: plan.priceMonthly,
+          amount: price,
           status: "PENDING",
         },
       });
@@ -91,7 +145,7 @@ export async function POST(req: NextRequest) {
         data: {
           subscriptionId: newSub.id,
           orderId,
-          amount: plan.priceMonthly,
+          amount: price,
           status: "PENDING",
         },
       });

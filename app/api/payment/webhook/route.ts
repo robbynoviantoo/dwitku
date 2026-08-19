@@ -34,9 +34,14 @@ export async function POST(req: NextRequest) {
       data: { status: "SUCCESS", paidAt: new Date(), midtransData: body },
     });
 
-    // Aktifkan subscription 30 hari dari sekarang
+    // Aktifkan subscription (1 tahun jika YEARLY, atau 30 hari jika bulanan)
+    const isYearly = order_id.includes("YEARLY") || payment.amount > 100000;
     const periodEnd = new Date();
-    periodEnd.setDate(periodEnd.getDate() + 30);
+    if (isYearly) {
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    } else {
+      periodEnd.setDate(periodEnd.getDate() + 30);
+    }
 
     await prisma.subscription.update({
       where: { id: payment.subscriptionId },

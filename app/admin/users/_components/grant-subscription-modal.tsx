@@ -21,6 +21,7 @@ export function GrantSubscriptionModal({
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "pro">("pro");
   const [selectedDuration, setSelectedDuration] = useState<number>(12); // months (-1 = lifetime)
+  const [sendNotificationEmail, setSendNotificationEmail] = useState<boolean>(true);
 
   const durations = [
     { label: "1 Bulan", value: 1 },
@@ -34,13 +35,18 @@ export function GrantSubscriptionModal({
     e.preventDefault();
     setLoading(true);
 
-    const res = await grantPremium(userId, selectedPlan, selectedDuration);
+    const res = await grantPremium(
+      userId,
+      selectedPlan,
+      selectedDuration,
+      sendNotificationEmail
+    );
     setLoading(false);
 
     if (res.success) {
       Swal.fire({
         title: "Akses Berhasil Diberikan!",
-        text: `Paket ${selectedPlan.toUpperCase()} telah diaktifkan untuk ${userName || userEmail}.`,
+        text: `Paket ${selectedPlan.toUpperCase()} telah diaktifkan untuk ${userName || userEmail}.${sendNotificationEmail ? " Email notifikasi telah dikirim ke pengguna." : ""}`,
         icon: "success",
         confirmButtonColor: "#004C29",
         customClass: { popup: "!rounded-2xl" },
@@ -151,6 +157,19 @@ export function GrantSubscriptionModal({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Email Notification Option */}
+          <div className="pt-2">
+            <label className="flex items-center gap-2.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={sendNotificationEmail}
+                onChange={(e) => setSendNotificationEmail(e.target.checked)}
+                className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800"
+              />
+              <span>Kirim email notifikasi aktivasi langganan ke pengguna</span>
+            </label>
           </div>
 
           {/* Footer */}

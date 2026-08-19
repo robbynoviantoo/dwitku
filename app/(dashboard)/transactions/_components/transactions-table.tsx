@@ -56,7 +56,7 @@ export function TransactionsTable({
                     <th
                       key={h.id}
                       className={cn(
-                        "text-left px-4 py-3 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider whitespace-nowrap",
+                        "text-left px-4 py-3 text-xs font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-wide whitespace-nowrap",
                         isSortable &&
                           "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                       )}

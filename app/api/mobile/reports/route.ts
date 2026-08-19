@@ -47,16 +47,18 @@ export async function GET(req: NextRequest) {
       if (tx.type === "EXPENSE") totalExpense += amt;
 
       const catId = tx.categoryId;
-      if (!categoryTotals[catId]) {
-        categoryTotals[catId] = {
-          name: tx.category.name,
-          emoji: tx.category.emoji,
-          color: tx.category.color,
-          amount: 0,
-          type: tx.type,
-        };
+      if (catId && tx.category) {
+        if (!categoryTotals[catId]) {
+          categoryTotals[catId] = {
+            name: tx.category.name,
+            emoji: tx.category.emoji,
+            color: tx.category.color,
+            amount: 0,
+            type: tx.type,
+          };
+        }
+        categoryTotals[catId].amount += amt;
       }
-      categoryTotals[catId].amount += amt;
     });
 
     return jsonResponse({

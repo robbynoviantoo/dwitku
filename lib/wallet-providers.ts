@@ -68,6 +68,17 @@ export const WALLET_PROVIDERS: WalletProvider[] = [
     iconType: "bank",
   },
   {
+    code: "bws",
+    name: "Bank Woori Saudara",
+    shortName: "BWS",
+    type: "BANK",
+    category: "Bank",
+    color: "#33475b",
+    logoBg: "#33475b",
+    logoColor: "#ffffff",
+    iconType: "bank",
+  },
+  {
     code: "jago",
     name: "Bank Jago",
     shortName: "Jago",

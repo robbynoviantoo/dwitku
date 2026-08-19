@@ -165,7 +165,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           </div>
 
           {/* Kolom Kanan: Transaksi Terbaru + Quick Wallets (5/12) */}
-          <div className="lg:col-span-5 flex flex-col gap-3.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
+          <div className="lg:col-span-5 flex flex-col justify-between gap-3.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
             <DashboardRecentTransactions
               transactions={recentTx as any}
               workspaceId={workspaceId}

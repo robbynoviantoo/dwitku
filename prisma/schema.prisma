@@ -149,9 +149,10 @@ model Wallet {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy    User          @relation(fields: [createdById], references: [id])
-  transactions Transaction[]
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy         User          @relation(fields: [createdById], references: [id])
+  transactions      Transaction[] @relation("SourceWallet")
+  receivedTransfers Transaction[] @relation("DestWallet")
 }
 
 // ─── INVITE ──────────────────────────────────────────────────────────────────
@@ -221,21 +222,24 @@ model Transaction {
   date        DateTime
   type        TransactionType
   workspaceId String
-  categoryId  String
+  categoryId  String?
   walletId    String?
+  toWalletId  String?
   createdById String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  category  Category  @relation(fields: [categoryId], references: [id])
-  wallet    Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  category  Category? @relation(fields: [categoryId], references: [id])
+  wallet    Wallet?   @relation("SourceWallet", fields: [walletId], references: [id], onDelete: SetNull)
+  toWallet  Wallet?   @relation("DestWallet", fields: [toWalletId], references: [id], onDelete: SetNull)
   createdBy User      @relation(fields: [createdById], references: [id])
 }
 
 enum TransactionType {
   INCOME
   EXPENSE
+  TRANSFER
 }
 
 // ─── PENJUALAN ───────────────────────────────────────────────────────────────
@@ -286,7 +290,8 @@ model Plan {
   id            String   @id @default(cuid())
   key           String   @unique  // "free" | "basic" | "pro"
   name          String
-  priceMonthly  Int      @default(0)  // dalam rupiah
+  priceMonthly  Int      @default(0)  // dalam rupiah per bulan
+  priceYearly   Int      @default(0)  // dalam rupiah per tahun
   maxWorkspaces Int      @default(2)  // -1 = unlimited
   maxMembers    Int      @default(5)  // -1 = unlimited
   maxTx         Int      @default(200) // -1 = unlimited
@@ -307,6 +312,7 @@ model Subscription {
   userId           String             @unique
   planId           String
   status           SubscriptionStatus @default(TRIAL)
+  hasUsedTrial     Boolean            @default(false)
   midtransOrderId  String?            @unique
   midtransToken    String?
   startedAt        DateTime           @default(now())

@@ -111,6 +111,7 @@ export async function seedPlans() {
       update: {
         name: limits.displayName,
         priceMonthly: limits.priceMonthly,
+        priceYearly: limits.priceYearly,
         maxWorkspaces: limits.maxWorkspaces,
         maxMembers: limits.maxMembers,
         maxTx: limits.maxTx,
@@ -123,6 +124,7 @@ export async function seedPlans() {
         key,
         name: limits.displayName,
         priceMonthly: limits.priceMonthly,
+        priceYearly: limits.priceYearly,
         maxWorkspaces: limits.maxWorkspaces,
         maxMembers: limits.maxMembers,
         maxTx: limits.maxTx,
@@ -157,3 +159,71 @@ export async function cancelSubscription() {
   revalidatePath("/billing");
   return { success: true };
 }
+
+/** Klaim masa uji coba (Free Trial) */
+export async function claimFreeTrial(planKey: string = "pro") {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const userId = session.user.id;
+
+  // Cek apakah user sudah pernah klaim trial
+  const existingSub = await prisma.subscription.findUnique({
+    where: { userId },
+    include: { plan: true },
+  });
+
+  if (existingSub?.hasUsedTrial) {
+    return { error: "Akun Anda sudah pernah menggunakan masa uji coba (trial) gratis." };
+  }
+
+  // Jika sedang aktif paket berbayar
+  const now = new Date();
+  if (
+    existingSub &&
+    existingSub.status === "ACTIVE" &&
+    existingSub.currentPeriodEnd &&
+    existingSub.currentPeriodEnd > now
+  ) {
+    return { error: "Anda sedang memiliki paket langganan aktif." };
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { key: planKey },
+  });
+
+  if (!plan) {
+    return { error: "Paket trial tidak ditemukan." };
+  }
+
+  const trialDays = plan.trialDays > 0 ? plan.trialDays : 7;
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+  await prisma.subscription.upsert({
+    where: { userId },
+    update: {
+      planId: plan.id,
+      status: "TRIAL",
+      trialEndsAt,
+      currentPeriodEnd: trialEndsAt,
+      hasUsedTrial: true,
+      cancelledAt: null,
+    },
+    create: {
+      userId,
+      planId: plan.id,
+      status: "TRIAL",
+      trialEndsAt,
+      currentPeriodEnd: trialEndsAt,
+      hasUsedTrial: true,
+    },
+  });
+
+  revalidatePath("/billing");
+  revalidatePath("/dashboard");
+  revalidatePath("/workspaces");
+
+  return { success: true, trialDays, planName: plan.name };
+}
+

@@ -26,6 +26,7 @@ export async function updatePlan(planId: string, data: any) {
       data: {
         name: data.name,
         priceMonthly: parseInt(data.priceMonthly),
+        priceYearly: parseInt(data.priceYearly ?? "0"),
         maxWorkspaces: parseInt(data.maxWorkspaces),
         maxTx: parseInt(data.maxTx),
         maxMembers: parseInt(data.maxMembers ?? "-1"),
@@ -85,7 +86,8 @@ export async function toggleAdminStatus(userId: string, isNowAdmin: boolean) {
 export async function grantPremium(
   userId: string,
   planKey: string = "pro",
-  durationMonths: number = 12
+  durationMonths: number = 12,
+  sendNotificationEmail: boolean = true
 ) {
   try {
     await requireAdmin();
@@ -143,28 +145,30 @@ export async function grantPremium(
       },
     });
 
-    // Kirim email notifikasi aktivasi langganan ke user (non-blocking jika error)
-    try {
-      const { sendEmail } = await import("@/lib/resend");
-      const { buildSubscriptionActivatedEmail } = await import("@/lib/email-templates");
+    // Kirim email notifikasi aktivasi langganan jika diaktifkan admin
+    if (sendNotificationEmail) {
+      try {
+        const { sendEmail } = await import("@/lib/resend");
+        const { buildSubscriptionActivatedEmail } = await import("@/lib/email-templates");
 
-      const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-      const dashboardLink = `${baseUrl}/dashboard`;
+        const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+        const dashboardLink = `${baseUrl}/dashboard`;
 
-      await sendEmail({
-        to: targetUser.email,
-        subject: `👑 Paket ${plan.name} Kamu Telah Aktif! — Dwitku`,
-        html: buildSubscriptionActivatedEmail({
-          userName: targetUser.name || "Pengguna Dwitku",
-          planName: plan.name,
-          planKey: plan.key,
-          durationLabel,
-          expiryDate: expiryDateStr,
-          dashboardLink,
-        }),
-      });
-    } catch (emailErr) {
-      console.warn("[Admin] Gagal mengirim email notifikasi langganan ke user:", emailErr);
+        await sendEmail({
+          to: targetUser.email,
+          subject: `👑 Paket ${plan.name} Kamu Telah Aktif! — Dwitku`,
+          html: buildSubscriptionActivatedEmail({
+            userName: targetUser.name || "Pengguna Dwitku",
+            planName: plan.name,
+            planKey: plan.key,
+            durationLabel,
+            expiryDate: expiryDateStr,
+            dashboardLink,
+          }),
+        });
+      } catch (emailErr) {
+        console.warn("[Admin] Gagal mengirim email notifikasi langganan ke user:", emailErr);
+      }
     }
 
     revalidatePath("/admin/users");
@@ -192,6 +196,33 @@ export async function revokeSubscription(userId: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Gagal mencabut langganan." };
+  }
+}
+
+export async function resetTrialStatus(userId: string) {
+  try {
+    await requireAdmin();
+
+    const freePlan = await prisma.plan.findUnique({ where: { key: "free" } });
+
+    await prisma.subscription.upsert({
+      where: { userId },
+      update: {
+        hasUsedTrial: false,
+      },
+      create: {
+        userId,
+        planId: freePlan?.id || "",
+        status: "EXPIRED",
+        hasUsedTrial: false,
+      },
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/billing");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Gagal mereset status trial pengguna." };
   }
 }
 

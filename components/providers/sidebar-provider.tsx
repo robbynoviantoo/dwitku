@@ -16,19 +16,38 @@ const SidebarContext = createContext<SidebarContextValue>({
   setMobileOpen: () => { },
 });
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+export function SidebarProvider({
+  children,
+  defaultCollapsed = false,
+}: {
+  children: React.ReactNode;
+  defaultCollapsed?: boolean;
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("sidebar-collapsed");
-    if (stored === "true") setCollapsed(true);
+    const match = document.cookie.match(/(^| )sidebar_collapsed=([^;]+)/);
+    if (match) {
+      const val = match[2] === "1" || match[2] === "true";
+      if (val !== collapsed) setCollapsed(val);
+    } else {
+      const stored = localStorage.getItem("sidebar-collapsed");
+      if (stored === "true" || stored === "false") {
+        const val = stored === "true";
+        if (val !== collapsed) {
+          setCollapsed(val);
+          document.cookie = `sidebar_collapsed=${val ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
+        }
+      }
+    }
   }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem("sidebar-collapsed", String(next));
+      document.cookie = `sidebar_collapsed=${next ? "1" : "0"}; path=/; max-age=31536000; SameSite=Lax`;
       return next;
     });
   };

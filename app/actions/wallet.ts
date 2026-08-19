@@ -53,6 +53,12 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
           type: true,
         },
       },
+      receivedTransfers: {
+        select: {
+          amount: true,
+          type: true,
+        },
+      },
     },
     orderBy: [
       { isDefault: "desc" },
@@ -64,10 +70,18 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
     let totalIncome = 0;
     let totalExpense = 0;
 
+    // Transaksi keluar / reguler dari dompet ini
     for (const t of w.transactions) {
       const amt = Number(t.amount);
       if (t.type === TransactionType.INCOME) totalIncome += amt;
       else if (t.type === TransactionType.EXPENSE) totalExpense += amt;
+      else if (t.type === TransactionType.TRANSFER) totalExpense += amt;
+    }
+
+    // Transfer masuk ke dompet ini
+    for (const t of w.receivedTransfers) {
+      const amt = Number(t.amount);
+      if (t.type === TransactionType.TRANSFER) totalIncome += amt;
     }
 
     const initBal = Number(w.initialBalance);
@@ -87,7 +101,7 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
       totalIncome,
       totalExpense,
       currentBalance,
-      transactionsCount: w.transactions.length,
+      transactionsCount: w.transactions.length + w.receivedTransfers.length,
       createdBy: w.createdBy,
       createdAt: w.createdAt,
       updatedAt: w.updatedAt,

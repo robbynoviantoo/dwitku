@@ -147,10 +147,10 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
             </div>
             <div>
               <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                {isEdit ? "Edit Dompet / Rekening" : "Tambah Dompet / Rekening"}
+                {isEdit ? t("wallets.editWallet") : t("wallets.addWallet")}
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Hubungkan rekening bank, e-wallet, atau dompet tunai
+                {t("wallets.connectSubtitle")}
               </p>
             </div>
           </div>
@@ -173,14 +173,14 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
           {/* 1. Tipe Dompet (Pills) */}
           <div>
             <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5 uppercase tracking-wider">
-              Tipe Akun Keuangan
+              {t("wallets.accountType")}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {[
-                { type: "BANK", label: "Bank", icon: Building2 },
-                { type: "EWALLET", label: "E-Wallet", icon: WalletIcon },
-                { type: "CASH", label: "Tunai", icon: Banknote },
-                { type: "OTHER", label: "Lainnya", icon: CreditCard },
+                { type: "BANK", label: t("wallets.bank"), icon: Building2 },
+                { type: "EWALLET", label: t("wallets.ewallet"), icon: WalletIcon },
+                { type: "CASH", label: t("wallets.cash"), icon: Banknote },
+                { type: "OTHER", label: t("wallets.other"), icon: CreditCard },
               ].map((item) => {
                 const Icon = item.icon;
                 const isSelected = selectedType === item.type;
@@ -207,7 +207,7 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
           {/* 2. Pilihan Logo / Preset Provider */}
           <div>
             <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-1.5 uppercase tracking-wider">
-              Pilih Institusi / Provider
+              {t("wallets.selectProvider")}
             </label>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-40 overflow-y-auto p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/50">
               {availableProviders.map((p) => {
@@ -237,12 +237,12 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
           {/* 3. Nama Dompet / Rekening */}
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Nama Dompet / Rekening <span className="text-red-500">*</span>
+              {t("wallets.walletName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               {...form.register("name")}
-              placeholder="Contoh: BCA Tabungan, GoPay Robby"
+              placeholder={t("wallets.walletNamePlaceholder")}
               className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             {form.formState.errors.name && (
@@ -254,23 +254,23 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                Nama Pemilik Akun
+                {t("wallets.holderName")}
               </label>
               <input
                 type="text"
                 {...form.register("holderName")}
-                placeholder="Contoh: Robby Noviantoo"
+                placeholder={t("wallets.holderNamePlaceholder")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                Nomor Rekening / HP
+                {t("wallets.accountNumber")}
               </label>
               <input
                 type="text"
                 {...form.register("accountNumber")}
-                placeholder="Contoh: 1234567890 / 08123456"
+                placeholder={t("wallets.accountNumberPlaceholder")}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
@@ -279,7 +279,7 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
           {/* 5. Saldo Awal */}
           <div>
             <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-              Saldo Awal (Saat Mendaftar)
+              {t("wallets.initialBalance")}
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">
@@ -300,7 +300,7 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
               />
             </div>
             <p className="text-[11px] text-zinc-400 mt-1">
-              Saldo awal ini akan menjadi dasar perhitungan saldo bersih dompetmu.
+              {t("wallets.initialBalanceHelp")}
             </p>
           </div>
 
@@ -313,7 +313,7 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
               className="w-4 h-4 text-green-600 rounded border-zinc-300 focus:ring-green-500 cursor-pointer"
             />
             <label htmlFor="isDefault" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
-              Jadikan dompet utama (default untuk transaksi baru)
+              {t("wallets.setAsDefault")}
             </label>
           </div>
 
@@ -327,10 +327,10 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menyimpan...</span>
+                  <span>{t("wallets.saving")}</span>
                 </>
               ) : (
-                <span>{isEdit ? "Perbarui Dompet" : "Simpan Dompet"}</span>
+                <span>{isEdit ? t("wallets.updateWallet") : t("wallets.saveWallet")}</span>
               )}
             </button>
           </div>

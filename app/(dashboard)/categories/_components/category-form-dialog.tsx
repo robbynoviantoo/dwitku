@@ -10,6 +10,7 @@ import { EmojiPickerButton } from "@/components/ui/emoji-picker";
 import { X, Loader2, Palette } from "lucide-react";
 import { broadcastInvalidate } from "@/components/providers/query-provider";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const PRESET_COLORS = [
     "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }: Props) {
+    const { t } = useLanguage();
     const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
@@ -82,11 +84,11 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
                     <h2 className="text-lg font-semibold text-zinc-900">
-                        {isEdit ? "Edit Kategori" : "Buat Kategori Baru"}
+                        {isEdit ? t("categories.editCategory") : t("categories.createCategory")}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -103,24 +105,24 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                             {watchedEmoji}
                         </div>
                         <div>
-                            <p className="font-semibold text-zinc-900">{form.watch("name") || "Nama Kategori"}</p>
+                            <p className="font-semibold text-zinc-900">{form.watch("name") || t("categories.categoryName")}</p>
                             <p className="text-xs text-zinc-400">
-                                {form.watch("type") === "INCOME" ? "Pemasukan" : "Pengeluaran"}
+                                {form.watch("type") === "INCOME" ? t("categories.income") : t("categories.expense")}
                             </p>
                         </div>
                     </div>
 
                     {/* Type */}
                     <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">Tipe</label>
+                        <label className="block text-sm font-medium text-zinc-700 mb-2">{t("categories.type")}</label>
                         <div className="grid grid-cols-2 gap-2">
                             {[
-                                { value: "EXPENSE", label: "🔴 Pengeluaran" },
-                                { value: "INCOME", label: "🟢 Pemasukan" },
-                            ].map((t) => (
+                                { value: "EXPENSE", label: `🔴 ${t("categories.expense")}` },
+                                { value: "INCOME", label: `🟢 ${t("categories.income")}` },
+                            ].map((item) => (
                                 <label
-                                    key={t.value}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-colors ${form.watch("type") === t.value
+                                    key={item.value}
+                                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer text-sm font-medium transition-colors ${form.watch("type") === item.value
                                         ? "border-green-500 bg-green-50 text-green-700"
                                         : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                                         }`}
@@ -128,10 +130,10 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                     <input
                                         type="radio"
                                         className="sr-only"
-                                        value={t.value}
+                                        value={item.value}
                                         {...form.register("type")}
                                     />
-                                    {t.label}
+                                    {item.label}
                                 </label>
                             ))}
                         </div>
@@ -140,7 +142,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                     {/* Emoji + Name */}
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Emoji & Nama
+                            {t("categories.emojiAndName")}
                         </label>
                         <div className="flex gap-3">
                             <EmojiPickerButton
@@ -150,7 +152,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                             <div className="flex-1">
                                 <input
                                     {...form.register("name")}
-                                    placeholder="Nama kategori..."
+                                    placeholder={t("categories.namePlaceholder")}
                                     className="w-full h-12 px-4 border-2 border-zinc-200 rounded-xl focus:outline-none focus:border-green-400 bg-zinc-50 focus:bg-white transition-colors text-zinc-900"
                                 />
                                 {form.formState.errors.name && (
@@ -166,7 +168,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 mb-2 flex items-center gap-1.5">
                             <Palette className="w-3.5 h-3.5" />
-                            Warna
+                            {t("categories.color")}
                         </label>
                         <div className="flex flex-wrap gap-2 mb-2">
                             {PRESET_COLORS.map((c) => (
@@ -174,7 +176,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                     key={c}
                                     type="button"
                                     onClick={() => form.setValue("color", c)}
-                                    className="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110"
+                                    className="w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
                                     style={{
                                         backgroundColor: c,
                                         borderColor: watchedColor === c ? "#1e1b4b" : "transparent",
@@ -193,7 +195,7 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                                 value={watchedColor}
                                 onChange={(e) => form.setValue("color", e.target.value)}
                                 className="w-full h-8 rounded-lg cursor-pointer border border-zinc-200"
-                                title="Pilih warna custom"
+                                title={t("categories.customColorTitle")}
                             />
                         </div>
                     </div>
@@ -208,17 +210,17 @@ export function CategoryFormDialog({ workspaceId, category, onClose, onSuccess }
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2.5 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 text-sm font-medium transition-colors"
+                            className="flex-1 px-4 py-2.5 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 text-sm font-medium transition-colors cursor-pointer"
                         >
-                            Batal
+                            {t("categories.cancel")}
                         </button>
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60 cursor-pointer"
                         >
                             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                            {isEdit ? "Simpan" : "Buat Kategori"}
+                            {isEdit ? t("categories.save") : t("categories.submitCreate")}
                         </button>
                     </div>
                 </form>
