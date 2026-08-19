@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* ─── Recharts Focus Outline Removal ──────── */
+.recharts-surface:focus,
+.recharts-layer:focus,
+.recharts-sector:focus,
+.recharts-pie:focus,
+.recharts-pie-sector:focus,
+.recharts-area:focus,
+.recharts-bar-rectangle:focus,
+svg:focus,
+path:focus {
+  outline: none !important;
+}
+
 /* ─── Tailwind v4 Theme Color Overrides ──────── */
 @theme {
   --color-green-50: #e6f3ec;

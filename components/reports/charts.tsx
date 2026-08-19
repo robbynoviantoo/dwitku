@@ -23,13 +23,13 @@ type CategoryData = { name: string; emoji: string; color: string; value: number 
 function MonthlyTooltip({ active, payload, label, currency }: any) {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-white border border-zinc-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-            <p className="font-semibold text-zinc-700 mb-2">{label}</p>
+        <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] rounded-xl px-3.5 py-2.5 text-xs shadow-none">
+            <p className="font-bold text-zinc-900 dark:text-zinc-100 mb-1.5">{label}</p>
             {payload.map((p: any) => (
-                <div key={p.name} className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.fill }} />
+                <div key={p.name} className="flex items-center gap-2 my-0.5">
+                    <span className="w-2 h-2 rounded-full" style={{ background: p.fill }} />
                     <span className="text-zinc-500 capitalize">{p.name === "income" ? "Pemasukan" : "Pengeluaran"}:</span>
-                    <span className="font-medium">{formatCurrency(p.value, currency)}</span>
+                    <span className="font-bold font-mono text-zinc-800 dark:text-zinc-200">{formatCurrency(p.value, currency)}</span>
                 </div>
             ))}
         </div>
@@ -39,7 +39,7 @@ function MonthlyTooltip({ active, payload, label, currency }: any) {
 export function MonthlyBarChart({ data, currency }: { data: MonthlyData[]; currency: string }) {
     if (data.every((d) => d.income === 0 && d.expense === 0)) {
         return (
-            <div className="flex items-center justify-center h-52 text-zinc-400 text-sm">
+            <div className="flex items-center justify-center h-52 text-zinc-400 text-xs font-semibold">
                 Belum ada data transaksi.
             </div>
         );
@@ -48,23 +48,23 @@ export function MonthlyBarChart({ data, currency }: { data: MonthlyData[]; curre
     return (
         <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data} barCategoryGap="35%" barGap={4}>
-                <CartesianGrid vertical={false} stroke="#f0f0f0" />
+                <CartesianGrid vertical={false} stroke="rgba(148, 163, 184, 0.15)" strokeDasharray="3 3" />
                 <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 11, fill: "#a1a1aa" }}
+                    tick={{ fontSize: 10, fill: "#94a3b8" }}
                     axisLine={false}
                     tickLine={false}
                 />
                 <YAxis
-                    tickFormatter={(v) => `${v / 1000}K`}
-                    tick={{ fontSize: 11, fill: "#a1a1aa" }}
+                    tickFormatter={(v) => `${v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'k'}`}
+                    tick={{ fontSize: 10, fill: "#94a3b8" }}
                     axisLine={false}
                     tickLine={false}
-                    width={42}
+                    width={45}
                 />
                 <Tooltip content={<MonthlyTooltip currency={currency} />} />
-                <Bar dataKey="income" fill="#22c55e" radius={[4, 4, 0, 0]} name="income" />
-                <Bar dataKey="expense" fill="#f97316" radius={[4, 4, 0, 0]} name="expense" />
+                <Bar dataKey="income" fill="#004C29" radius={[4, 4, 0, 0]} name="income" />
+                <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} name="expense" />
             </BarChart>
         </ResponsiveContainer>
     );
@@ -76,11 +76,11 @@ function CategoryTooltip({ active, payload, currency }: any) {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload;
     return (
-        <div className="bg-white border border-zinc-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-            <p className="font-semibold text-zinc-700">
-                {d.emoji} {d.name}
+        <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] rounded-xl px-3.5 py-2 text-xs shadow-none">
+            <p className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                <span>{d.emoji}</span> <span>{d.name}</span>
             </p>
-            <p className="text-zinc-500 mt-1">{formatCurrency(d.value, currency)}</p>
+            <p className="font-mono font-bold text-zinc-700 dark:text-zinc-300 mt-1">{formatCurrency(d.value, currency)}</p>
         </div>
     );
 }
@@ -96,14 +96,14 @@ export function CategoryDonutChart({
 
     if (data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-52 text-zinc-400 text-sm">
-                Belum ada pengeluaran bulan ini.
+            <div className="flex items-center justify-center h-52 text-zinc-400 text-xs font-semibold">
+                Belum ada pengeluaran pada periode ini.
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
             <ResponsiveContainer width={180} height={180}>
                 <PieChart>
                     <Pie
@@ -124,14 +124,14 @@ export function CategoryDonutChart({
             </ResponsiveContainer>
 
             {/* Legend */}
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2 w-full">
                 {data.slice(0, 6).map((d) => (
                     <div key={d.name} className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color }} />
-                        <span className="text-xs text-zinc-500 truncate flex-1">
+                        <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate flex-1">
                             {d.emoji} {d.name}
                         </span>
-                        <span className="text-xs font-medium text-zinc-700 shrink-0">
+                        <span className="text-xs font-bold font-mono text-zinc-800 dark:text-zinc-200 shrink-0">
                             {total > 0 ? Math.round((d.value / total) * 100) : 0}%
                         </span>
                     </div>

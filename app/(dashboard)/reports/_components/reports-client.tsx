@@ -2,62 +2,28 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getTransactionSummary } from "@/app/actions/transaction";
 import {
   getMonthlyChart,
   getCategoryChart,
-  getMonthComparison,
+  getDetailedReportSummary,
 } from "@/app/actions/report";
-import {
-  MonthlyBarChart,
-  CategoryDonutChart,
-} from "@/components/reports/charts";
-import { CalendarPicker } from "@/components/ui/calendar-picker";
-import { formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  BarChart2,
-} from "lucide-react";
+import { BarChart2 } from "lucide-react";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { useLanguage } from "@/components/providers/language-provider";
+import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
+import { DateRange } from "@/components/ui/date-range-picker";
+
+import { ReportsHeader } from "./reports-header";
+import { ReportsSummaryCards } from "./reports-summary-cards";
+import { ReportsChartsSection } from "./reports-charts-section";
+import { ReportsDeepInsights } from "./reports-deep-insights";
 
 interface ReportsClientProps {
   workspaceId: string;
   workspaceName: string;
   isPersonal: boolean;
   currency: string;
-}
-
-function ChangeIndicator({
-  current,
-  previous,
-}: {
-  current: number;
-  previous: number;
-}) {
-  const { t } = useLanguage();
-  if (previous === 0) return null;
-  const pct = Math.round(((current - previous) / Math.abs(previous)) * 100);
-  const up = pct >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        up ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
-      }`}
-    >
-      {up ? (
-        <ArrowUpRight className="w-3 h-3" />
-      ) : (
-        <ArrowDownRight className="w-3 h-3" />
-      )}
-      {Math.abs(pct)}% {t("reports.vsLastMonth")}
-    </span>
-  );
 }
 
 export function ReportsClient({
@@ -68,163 +34,164 @@ export function ReportsClient({
 }: ReportsClientProps) {
   const { showAmount } = usePrivacy();
   const { t } = useLanguage();
-  const [dateFilter, setDateFilter] = useState<string>("");
+
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: "",
+    endDate: "",
+  });
 
   // Queries
-  const { data: summary, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ["transaction-summary", workspaceId, dateFilter],
-    queryFn: () => getTransactionSummary(workspaceId, dateFilter, dateFilter),
+  const {
+    data: summary,
+    isLoading: isLoadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
+    queryKey: ["report-detailed-summary", workspaceId, dateRange],
+    queryFn: () =>
+      getDetailedReportSummary(
+        workspaceId,
+        dateRange.startDate || undefined,
+        dateRange.endDate || undefined
+      ),
+    enabled: !!workspaceId,
   });
 
-  const { data: monthlyData = [], isLoading: isLoadingMonthly } = useQuery({
+  const {
+    data: monthlyData = [],
+    isLoading: isLoadingMonthly,
+    refetch: refetchMonthly,
+  } = useQuery({
     queryKey: ["report-monthly", workspaceId],
     queryFn: () => getMonthlyChart(workspaceId),
+    enabled: !!workspaceId,
   });
 
-  const { data: categoryData = [], isLoading: isLoadingCategory } = useQuery({
-    queryKey: ["report-category", workspaceId, dateFilter],
-    queryFn: () => getCategoryChart(workspaceId, dateFilter, dateFilter),
+  const {
+    data: categoryData = [],
+    isLoading: isLoadingCategory,
+    refetch: refetchCategory,
+  } = useQuery({
+    queryKey: ["report-category", workspaceId, dateRange],
+    queryFn: () =>
+      getCategoryChart(
+        workspaceId,
+        dateRange.startDate || undefined,
+        dateRange.endDate || undefined
+      ),
+    enabled: !!workspaceId,
   });
 
-  const { data: comparison, isLoading: isLoadingComparison } = useQuery({
-    queryKey: ["report-comparison", workspaceId],
-    queryFn: () => getMonthComparison(workspaceId),
+  const {
+    data: topTransactions = [],
+    isLoading: isLoadingTopTx,
+    refetch: refetchTopTx,
+  } = useQuery({
+    queryKey: ["report-top-transactions", workspaceId, dateRange],
+    queryFn: async () => {
+      const { getTopTransactions } = await import("@/app/actions/report");
+      return getTopTransactions(
+        workspaceId,
+        dateRange.startDate || undefined,
+        dateRange.endDate || undefined
+      );
+    },
+    enabled: !!workspaceId,
+  });
+
+  const {
+    data: walletDistribution = [],
+    isLoading: isLoadingWallets,
+    refetch: refetchWallets,
+  } = useQuery({
+    queryKey: ["report-wallet-distribution", workspaceId, dateRange],
+    queryFn: async () => {
+      const { getWalletDistribution } = await import("@/app/actions/report");
+      return getWalletDistribution(
+        workspaceId,
+        dateRange.startDate || undefined,
+        dateRange.endDate || undefined
+      );
+    },
+    enabled: !!workspaceId,
   });
 
   const isLoading =
     isLoadingSummary ||
     isLoadingMonthly ||
     isLoadingCategory ||
-    isLoadingComparison;
+    isLoadingTopTx ||
+    isLoadingWallets;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchSummary(),
+      refetchMonthly(),
+      refetchCategory(),
+      refetchTopTx(),
+      refetchWallets(),
+    ]);
+  };
 
   if (isLoading && !summary) {
     return (
-      <ReportsSkeleton workspaceName={workspaceName} isPersonal={isPersonal} />
+      <ReportsSkeleton
+        workspaceName={workspaceName}
+        isPersonal={isPersonal}
+      />
     );
   }
 
-  const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
+  const fallbackSummary = {
+    totalIncome: 0,
+    totalExpense: 0,
+    netCashflow: 0,
+    savingsRate: 0,
+    incomeCount: 0,
+    expenseCount: 0,
+    totalTransactions: 0,
+    avgIncome: 0,
+    avgExpense: 0,
+    dailyAvgExpense: 0,
+    dailyAvgIncome: 0,
+    daySpan: 30,
+  };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5 tracking-tight">
-            <BarChart2 className="w-6 h-6 text-green-600 dark:text-green-400" />
-            {t("reports.financialReport")}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
-            {isPersonal ? t("reports.personalFinance") : `Workspace "${workspaceName}"`}
-          </p>
-        </div>
-        <div className="w-full sm:w-64 shrink-0">
-          <CalendarPicker
-            value={dateFilter}
-            onChange={setDateFilter}
-            placeholder={t("reports.selectDate")}
-            allowClear
-            align="right"
-          />
-        </div>
-      </div>
+    <PullToRefreshWrapper onRefresh={handleRefresh}>
+      <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto space-y-4">
+        {/* ── 1. Header with Range Picker ─────────────────── */}
+        <ReportsHeader
+          workspaceName={workspaceName}
+          isPersonal={isPersonal}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {[
-          {
-            label: t("dashboard.totalIncome"),
-            value: currentSummary.income,
-            current: comparison?.current.income ?? 0,
-            previous: comparison?.previous.income ?? 0,
-            icon: TrendingUp,
-            color: "text-green-600 dark:text-green-400",
-            iconBg: "bg-green-50 dark:bg-green-950/60",
-            valueBg: "text-green-600 dark:text-green-400",
-          },
-          {
-            label: t("dashboard.totalExpense"),
-            value: currentSummary.expense,
-            current: comparison?.current.expense ?? 0,
-            previous: comparison?.previous.expense ?? 0,
-            icon: TrendingDown,
-            color: "text-red-500 dark:text-red-400",
-            iconBg: "bg-red-50 dark:bg-red-950/60",
-            valueBg: "text-red-500 dark:text-red-400",
-          },
-          {
-            label: t("dashboard.netBalance"),
-            value: currentSummary.net,
-            current: comparison?.current.net ?? 0,
-            previous: comparison?.previous.net ?? 0,
-            icon: Wallet,
-            color: currentSummary.net >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500 dark:text-red-400",
-            iconBg: currentSummary.net >= 0 ? "bg-blue-50 dark:bg-blue-950/60" : "bg-red-50 dark:bg-red-950/60",
-            valueBg: currentSummary.net >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500 dark:text-red-400",
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-9 h-9 rounded-xl ${card.iconBg} flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 ${card.color}`} />
-                  </div>
-                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    {card.label}
-                  </span>
-                </div>
-                <ChangeIndicator
-                  current={card.current}
-                  previous={card.previous}
-                />
-              </div>
-              <p className={`text-2xl font-bold font-mono ${card.valueBg}`}>
-                {showAmount ? formatCurrency(card.value, currency) : "••••••••"}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+        {/* ── 2. Comprehensive Metric Summary Cards ────────── */}
+        <ReportsSummaryCards
+          summary={summary || fallbackSummary}
+          currency={currency}
+          showAmount={showAmount}
+        />
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Bar Chart */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-6">
-          <div className="mb-4">
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              {t("reports.monthlyTrend")}
-            </h2>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-              {t("reports.last6Months")}
-            </p>
-          </div>
-          <MonthlyBarChart
-            data={monthlyData}
-            currency={currency}
-            showAmount={showAmount}
-          />
-        </div>
+        {/* ── 3. Interactive Analytics & Visual Charts ─────── */}
+        <ReportsChartsSection
+          monthlyData={monthlyData}
+          categoryData={categoryData}
+          currency={currency}
+          showAmount={showAmount}
+          dateRange={dateRange}
+        />
 
-        {/* Category Donut Chart */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-6">
-          <div className="mb-4">
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              {t("reports.expenseByCategory")}
-            </h2>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-              {dateFilter ? dateFilter : t("reports.allTime")}
-            </p>
-          </div>
-          <CategoryDonutChart
-            data={categoryData}
-            currency={currency}
-            showAmount={showAmount}
-          />
-        </div>
+        {/* ── 4. Deep Insights: Top Expenses & Wallet Share ── */}
+        <ReportsDeepInsights
+          topTransactions={topTransactions}
+          walletDistribution={walletDistribution}
+          currency={currency}
+          showAmount={showAmount}
+        />
       </div>
-    </div>
+    </PullToRefreshWrapper>
   );
 }
 
@@ -237,33 +204,35 @@ function ReportsSkeleton({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <Skeleton className="h-3 w-16 mb-2" />
-          <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
+            <BarChart2 className="w-6 h-6 text-green-600" />
+            {t("reports.financialReport")}
+          </h1>
           <p className="text-zinc-400 text-sm mt-1">
             {isPersonal ? t("reports.personalFinance") : `Workspace "${workspaceName}"`}
           </p>
         </div>
-        <Skeleton className="h-10 w-48 rounded-xl" />
+        <Skeleton className="h-10 w-64 rounded-xl" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
-              <Skeleton className="h-9 w-9 rounded-xl" />
-              <Skeleton className="h-4 w-16" />
-            </div>
-            <Skeleton className="h-8 w-36 mt-2" />
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {[1, 2, 3, 4].map((n) => (
+          <Skeleton key={n} className="h-28 rounded-2xl" />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-80 rounded-2xl" />
-        <Skeleton className="h-80 rounded-2xl" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        {[1, 2, 3, 4].map((n) => (
+          <Skeleton key={n} className="h-16 rounded-2xl" />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Skeleton className="h-72 rounded-2xl" />
+        <Skeleton className="h-72 rounded-2xl" />
       </div>
     </div>
   );
