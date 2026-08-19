@@ -159,7 +159,13 @@ export async function createWallet(
   revalidatePath("/transactions");
   revalidatePath("/dashboard");
 
-  return { success: true, wallet };
+  return {
+    success: true,
+    wallet: {
+      ...wallet,
+      initialBalance: Number(wallet.initialBalance),
+    },
+  };
 }
 
 /** Update dompet */
@@ -208,7 +214,13 @@ export async function updateWallet(
   revalidatePath("/transactions");
   revalidatePath("/dashboard");
 
-  return { success: true, wallet };
+  return {
+    success: true,
+    wallet: {
+      ...wallet,
+      initialBalance: Number(wallet.initialBalance),
+    },
+  };
 }
 
 /** Hapus dompet */
