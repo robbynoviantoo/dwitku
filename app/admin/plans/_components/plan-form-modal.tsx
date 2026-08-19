@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Sparkles, Check, HelpCircle } from "lucide-react";
 import { updatePlan } from "@/app/actions/admin";
 import Swal from "sweetalert2";
 
@@ -17,6 +17,9 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
     priceMonthly: plan.priceMonthly,
     maxWorkspaces: plan.maxWorkspaces,
     maxTx: plan.maxTx,
+    maxMembers: plan.maxMembers ?? -1,
+    maxCategories: plan.maxCategories ?? -1,
+    trialDays: plan.trialDays ?? 0,
     canExport: plan.canExport,
     canReport: plan.canReport,
     isActive: plan.isActive,
@@ -39,10 +42,10 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
 
     if (res.success) {
       Swal.fire({
-        title: "Tersimpan",
-        text: "Paket berhasil diperbarui.",
+        title: "Tersimpan!",
+        text: `Paket ${plan.name} berhasil diperbarui.`,
         icon: "success",
-        confirmButtonColor: "#16a34a",
+        confirmButtonColor: "#004C29",
         customClass: { popup: "!rounded-2xl" },
       });
       onClose();
@@ -51,134 +54,208 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
         title: "Gagal",
         text: res.error,
         icon: "error",
-        confirmButtonColor: "#16a34a",
+        confirmButtonColor: "#ef4444",
         customClass: { popup: "!rounded-2xl" },
       });
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-4 border-b border-zinc-100 shrink-0">
-          <h2 className="font-bold text-zinc-900">Edit Paket: {plan.key.toUpperCase()}</h2>
-          <button onClick={onClose} className="p-1 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#161b22] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-[#21262d] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+          <div>
+            <h2 className="font-extrabold text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Konfigurasi Paket: {plan.key.toUpperCase()}</span>
+            </h2>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Atur harga, batasan kuota, dan hak akses fitur untuk paket ini
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-5 flex-1 overflow-y-auto space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-zinc-700 mb-1.5 block">Nama Paket</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm transition-all"
-              />
+          <div className="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
+            {/* Name & Monthly Price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                  Nama Tampilan Paket
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-semibold text-zinc-900 dark:text-zinc-100 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                  Harga per Bulan (IDR)
+                </label>
+                <input
+                  type="number"
+                  name="priceMonthly"
+                  value={formData.priceMonthly}
+                  onChange={handleChange}
+                  required
+                  min={0}
+                  step={1000}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 transition-all"
+                />
+              </div>
             </div>
 
+            {/* Quotas: Workspaces & Transactions */}
+            <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-zinc-800/40 border border-slate-200/80 dark:border-zinc-800 space-y-3">
+              <p className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+                <span>Batasan Kuota (Gunakan -1 untuk Unlimited)</span>
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-medium text-zinc-600 dark:text-zinc-400 mb-1 block">
+                    Max Workspaces
+                  </label>
+                  <input
+                    type="number"
+                    name="maxWorkspaces"
+                    value={formData.maxWorkspaces}
+                    onChange={handleChange}
+                    required
+                    min={-1}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-medium text-zinc-600 dark:text-zinc-400 mb-1 block">
+                    Max Transaksi / Bulan
+                  </label>
+                  <input
+                    type="number"
+                    name="maxTx"
+                    value={formData.maxTx}
+                    onChange={handleChange}
+                    required
+                    min={-1}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-medium text-zinc-600 dark:text-zinc-400 mb-1 block">
+                    Max Anggota / Tim
+                  </label>
+                  <input
+                    type="number"
+                    name="maxMembers"
+                    value={formData.maxMembers}
+                    onChange={handleChange}
+                    required
+                    min={-1}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-medium text-zinc-600 dark:text-zinc-400 mb-1 block">
+                    Max Kategori Kustom
+                  </label>
+                  <input
+                    type="number"
+                    name="maxCategories"
+                    value={formData.maxCategories}
+                    onChange={handleChange}
+                    required
+                    min={-1}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Trial Days */}
             <div>
-              <label className="text-xs font-semibold text-zinc-700 mb-1.5 block">Harga per Bulan (Rp)</label>
+              <label className="font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 block">
+                Masa Percobaan Gratis (Hari Trial)
+              </label>
               <input
                 type="number"
-                name="priceMonthly"
-                value={formData.priceMonthly}
+                name="trialDays"
+                value={formData.trialDays}
                 onChange={handleChange}
                 required
                 min={0}
-                className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm transition-all"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 outline-none focus:border-green-500 text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-zinc-700 mb-1.5 block">Max Workspace</label>
-                <input
-                  type="number"
-                  name="maxWorkspaces"
-                  value={formData.maxWorkspaces}
-                  onChange={handleChange}
-                  required
-                  min={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm transition-all"
-                  title="Gunakan -1 untuk Unlimited"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-zinc-700 mb-1.5 block">Max Transaksi</label>
-                <input
-                  type="number"
-                  name="maxTx"
-                  value={formData.maxTx}
-                  onChange={handleChange}
-                  required
-                  min={-1}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm transition-all"
-                  title="Gunakan -1 untuk Unlimited"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
+            {/* Feature Toggles */}
+            <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <label className="flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   name="canExport"
                   checked={formData.canExport}
                   onChange={handleChange}
-                  className="rounded border-zinc-300 text-green-600 focus:ring-green-500"
+                  className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-green-600 focus:ring-green-500"
                 />
-                Dapat Meng-export Laporan (Excel)
+                <span className="font-semibold">Bisa Ekspor Laporan ke Excel & CSV (XLSX)</span>
               </label>
-            </div>
-            
-            <div>
-              <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
+
+              <label className="flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   name="canReport"
                   checked={formData.canReport}
                   onChange={handleChange}
-                  className="rounded border-zinc-300 text-green-600 focus:ring-green-500"
+                  className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-green-600 focus:ring-green-500"
                 />
-                Akses Laporan Lanjutan
+                <span className="font-semibold">Akses Laporan Lanjutan & Deep Analytics</span>
               </label>
-            </div>
 
-            <div className="pt-2 border-t border-zinc-100">
-              <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-zinc-900">
+              <label className="flex items-center gap-2.5 text-zinc-900 dark:text-zinc-100 cursor-pointer select-none pt-2">
                 <input
                   type="checkbox"
                   name="isActive"
                   checked={formData.isActive}
                   onChange={handleChange}
-                  className="rounded border-zinc-300 text-green-600 focus:ring-green-500"
+                  className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-green-600 focus:ring-green-500"
                 />
-                Paket Tersedia / Aktif
+                <span className="font-bold">Paket Berstatus Aktif & Dapat Dibeli</span>
               </label>
-              <p className="text-xs text-zinc-500 mt-1">Jika dimatikan, paket ini tidak akan bisa dibeli lagi oleh pengguna.</p>
             </div>
           </div>
 
-          <div className="p-4 border-t border-zinc-100 flex gap-3 justify-end shrink-0 bg-zinc-50/50">
+          {/* Footer Actions */}
+          <div className="p-4 border-t border-slate-100 dark:border-zinc-800 flex gap-3 justify-end shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl font-bold text-zinc-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors flex items-center gap-2 disabled:opacity-70"
+              className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-all flex items-center gap-2 disabled:opacity-70 cursor-pointer active:scale-95"
             >
-              {loading ? "Menyimpan..." : <><Save className="w-4 h-4" /> Simpan</>}
+              {loading ? "Menyimpan..." : <><Save className="w-4 h-4" /> Simpan Perubahan</>}
             </button>
           </div>
         </form>
@@ -186,3 +263,4 @@ export function PlanFormModal({ plan, onClose }: PlanFormModalProps) {
     </div>
   );
 }
+

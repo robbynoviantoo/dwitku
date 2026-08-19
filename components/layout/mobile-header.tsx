@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { useSidebar } from "@/components/providers/sidebar-provider";
@@ -10,6 +11,11 @@ export function MobileHeader() {
   const { setMobileOpen } = useSidebar();
   const { showAmount, toggleShowAmount } = usePrivacy();
   const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="md:hidden flex items-center justify-between h-14 px-3.5 sticky top-0 z-30 bg-white/85 dark:bg-[#0d1117]/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-zinc-800/80 transition-colors">
@@ -55,7 +61,7 @@ export function MobileHeader() {
           aria-label="Ganti tema"
           title="Ganti tema"
         >
-          {theme === "dark" ? (
+          {mounted && theme === "dark" ? (
             <Sun className="w-4 h-4 text-amber-400" />
           ) : (
             <Moon className="w-4 h-4" />

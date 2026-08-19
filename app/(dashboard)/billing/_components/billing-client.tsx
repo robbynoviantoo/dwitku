@@ -223,7 +223,8 @@ export function BillingClient({ subscription, user }: BillingClientProps) {
               <ul className="space-y-2 mb-6 flex-1 text-sm">
                 {[
                   limits.maxWorkspaces === -1 ? "Unlimited workspace" : `${limits.maxWorkspaces} workspace`,
-                  limits.maxTx === -1 ? "Unlimited transaksi" : `${limits.maxTx} transaksi`,
+                  limits.maxTx === -1 ? "Unlimited transaksi" : `${limits.maxTx} transaksi/bulan`,
+                  limits.maxMembers === -1 ? "Unlimited anggota tim" : `${limits.maxMembers} anggota tim`,
                   limits.maxCategories === -1 ? "Unlimited kategori custom" : `${limits.maxCategories} kategori custom`,
                   ...(limits.canExport ? ["Export Excel & CSV"] : []),
                   ...(limits.canReport ? ["Laporan & grafik lanjutan"] : []),

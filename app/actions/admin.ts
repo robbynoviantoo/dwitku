@@ -28,6 +28,9 @@ export async function updatePlan(planId: string, data: any) {
         priceMonthly: parseInt(data.priceMonthly),
         maxWorkspaces: parseInt(data.maxWorkspaces),
         maxTx: parseInt(data.maxTx),
+        maxMembers: parseInt(data.maxMembers ?? "-1"),
+        maxCategories: parseInt(data.maxCategories ?? "-1"),
+        trialDays: parseInt(data.trialDays ?? "0"),
         canExport: data.canExport === true || data.canExport === "true",
         canReport: data.canReport === true || data.canReport === "true",
         isActive: data.isActive === true || data.isActive === "true",
@@ -35,10 +38,24 @@ export async function updatePlan(planId: string, data: any) {
     });
 
     revalidatePath("/admin/plans");
+    revalidatePath("/admin");
     revalidatePath("/billing");
     return { success: true, plan };
   } catch (error: any) {
     return { error: error.message || "Gagal memperbarui paket." };
+  }
+}
+
+export async function resetDefaultPlans() {
+  try {
+    await requireAdmin();
+    const { seedPlans } = await import("./subscription");
+    const res = await seedPlans();
+    revalidatePath("/admin/plans");
+    revalidatePath("/billing");
+    return res;
+  } catch (error: any) {
+    return { error: error.message || "Gagal mereset default plans." };
   }
 }
 
@@ -58,28 +75,37 @@ export async function toggleAdminStatus(userId: string, isNowAdmin: boolean) {
     });
 
     revalidatePath("/admin/users");
+    revalidatePath("/admin");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Gagal mengubah role admin." };
   }
 }
 
-export async function grantPremium(userId: string, planKey: string = "pro") {
+export async function grantPremium(
+  userId: string,
+  planKey: string = "pro",
+  durationMonths: number = 12
+) {
   try {
     await requireAdmin();
 
     const plan = await prisma.plan.findUnique({ where: { key: planKey } });
     if (!plan) throw new Error("Paket tidak ditemukan");
 
-    // Force expired existing payment if any
+    // Force expired existing pending payment
     await prisma.payment.updateMany({
       where: { subscription: { userId }, status: "PENDING" },
-      data: { status: "FAILED" }
+      data: { status: "FAILED" },
     });
 
-    // 1 Tahun
     const currentPeriodEnd = new Date();
-    currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+    if (durationMonths === -1) {
+      // Lifetime access (100 tahun)
+      currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 100);
+    } else {
+      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + durationMonths);
+    }
 
     await prisma.subscription.upsert({
       where: { userId },
@@ -88,6 +114,7 @@ export async function grantPremium(userId: string, planKey: string = "pro") {
         status: "ACTIVE",
         currentPeriodEnd,
         trialEndsAt: null,
+        cancelledAt: null,
       },
       create: {
         userId,
@@ -98,9 +125,10 @@ export async function grantPremium(userId: string, planKey: string = "pro") {
     });
 
     revalidatePath("/admin/users");
+    revalidatePath("/admin");
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || "Gagal memberikan akses premium." };
+    return { error: error.message || "Gagal memberikan akses paket langganan." };
   }
 }
 
@@ -190,5 +218,56 @@ export async function adminSendPasswordReset(userId: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Gagal mengirim email reset password." };
+  }
+}
+
+export async function deleteUser(userId: string) {
+  try {
+    const me = await requireAdmin();
+
+    if (userId === me.id) {
+      throw new Error("Anda tidak dapat menghapus akun Anda sendiri.");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        memberships: {
+          include: {
+            workspace: {
+              include: {
+                members: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error("Pengguna tidak ditemukan.");
+    }
+
+    // Workspaces where this user is the only member
+    const soloWorkspaces = user.memberships
+      .filter((m) => m.workspace.members.length === 1)
+      .map((m) => m.workspaceId);
+
+    if (soloWorkspaces.length > 0) {
+      await prisma.workspace.deleteMany({
+        where: { id: { in: soloWorkspaces } },
+      });
+    }
+
+    // Delete user
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || "Gagal menghapus pengguna." };
   }
 }

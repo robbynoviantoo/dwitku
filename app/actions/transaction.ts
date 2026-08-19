@@ -204,6 +204,21 @@ export async function createTransaction(
     const validated = TransactionSchema.safeParse(values);
     if (!validated.success) return { error: "Data tidak valid" };
 
+    const limits = await getUserPlanLimits();
+    if (limits && limits.maxTx !== -1) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const count = await prisma.transaction.count({
+            where: {
+                workspaceId,
+                date: { gte: startOfMonth }
+            }
+        });
+        if (count >= limits.maxTx) {
+            return { error: `Batas transaksi tercapai (Maksimal ${limits.maxTx} transaksi/bulan untuk paket saat ini). Silakan upgrade paket langganan.` };
+        }
+    }
+
     const { amount, note, date, type, categoryId, walletId } = validated.data;
 
     const transaction = await prisma.transaction.create({

@@ -87,10 +87,10 @@ export async function getUserPlanLimits() {
 
   // Failsafe
   return {
-    maxWorkspaces: 2,
-    maxMembers: 5,
-    maxTx: 200,
-    maxCategories: 1,
+    maxWorkspaces: 1,
+    maxMembers: 1,
+    maxTx: 50,
+    maxCategories: 3,
     canExport: false,
     canReport: false,
     canBudget: false,
