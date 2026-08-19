@@ -533,7 +533,7 @@ export function UsersTableClient({ users, currentUserId }: UsersTableClientProps
                     {/* Verification */}
                     <td className="px-6 py-3.5">
                       {isEmailVerified ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-green-600 dark:text-green-400 font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi
                         </span>
                       ) : (

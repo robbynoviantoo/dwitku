@@ -9,7 +9,7 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { prisma } from "@/lib/prisma";
 
 import { generateVerificationToken, generatePasswordResetToken } from "@/lib/tokens";
-import { resend } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { buildVerificationEmail, buildResetPasswordEmail } from "@/lib/email-templates";
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
@@ -23,7 +23,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 
     // Cek jika user sudah ada
     const existingUser = await prisma.user.findUnique({
-        where: { email },
+        where: { email }
     });
 
     if (existingUser) {
@@ -48,8 +48,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
         const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
 
-        await resend.emails.send({
-            from: "Dwitku <no-reply@dwitku.my.id>",
+        await sendEmail({
             to: email,
             subject: "Verifikasi Email Dwitku",
             html: buildVerificationEmail({ userName: name, verificationLink }),
@@ -131,26 +130,24 @@ export const requestPasswordReset = async (values: z.infer<typeof ForgotPassword
         // Demi keamanan, kembalikan success meskipun email tidak terdaftar
         return { success: "Jika email terdaftar, instruksi reset password telah dikirim." };
     }
-
     const resetToken = await generatePasswordResetToken(email);
 
     // Kirim email reset password via Resend
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     const resetLink = `${baseUrl}/new-password?token=${resetToken.token}`;
 
-    try {
-        await resend.emails.send({
-            from: "Dwitku <no-reply@dwitku.my.id>",
-            to: email,
-            subject: "Atur Ulang Password Dwitku",
-            html: buildResetPasswordEmail({
-                userName: existingUser.name || "Pengguna Dwitku",
-                resetLink,
-            }),
-        });
-    } catch (error) {
-        console.error("Gagal mengirim email reset password:", error);
-        return { error: "Gagal mengirim email. Silakan coba lagi nanti." };
+    const sendRes = await sendEmail({
+        to: email,
+        subject: "Atur Ulang Password Dwitku",
+        html: buildResetPasswordEmail({
+            userName: existingUser.name || "Pengguna Dwitku",
+            resetLink,
+        }),
+    });
+
+    if (sendRes.error) {
+        console.error("Gagal mengirim email reset password:", sendRes.error);
+        return { error: sendRes.error || "Gagal mengirim email. Silakan coba lagi nanti." };
     }
 
     return { success: "Instruksi reset password telah dikirim ke email Anda." };
@@ -223,6 +220,12 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
         return { error: "Email atau password salah!" };
     }
 
+    const passwordsMatch = await bcrypt.compare(password, existingUser.password);
+
+    if (!passwordsMatch) {
+        return { error: "Email atau password salah!" };
+    }
+
     try {
         await signIn("credentials", {
             email,
@@ -239,7 +242,7 @@ export const login = async (values: z.infer<typeof LoginSchema>, callbackUrl?: s
                 case "CredentialsSignin":
                     return { error: "Email atau password salah!" };
                 default:
-                    return { error: "Terjadi kesalahan sistem." };
+                    return { error: "Terjadi kesalahan saat masuk!" };
             }
         }
 
@@ -253,10 +256,10 @@ export const resendVerificationEmail = async () => {
 
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { email: true, name: true, emailVerified: true }
+        select: { email: true, name: true, emailVerified: true },
     });
 
-    if (!user?.email) return { error: "User tidak ditemukan" };
+    if (!user) return { error: "Pengguna tidak ditemukan" };
     if (user.emailVerified) return { error: "Email sudah diverifikasi" };
 
     try {
@@ -264,22 +267,21 @@ export const resendVerificationEmail = async () => {
         const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
         const verificationLink = `${baseUrl}/new-verification?token=${verificationToken.token}`;
 
-        const { error: emailError } = await resend.emails.send({
-            from: "Dwitku <no-reply@dwitku.my.id>",
+        const sendRes = await sendEmail({
             to: user.email,
             subject: "Verifikasi Email Dwitku",
             html: buildVerificationEmail({ userName: user.name || "Pengguna Dwitku", verificationLink }),
         });
 
-        if (emailError) {
-            console.error("Resend error:", emailError);
-            return { error: "Gagal mengirim email. Coba lagi nanti." };
+        if (sendRes.error) {
+            console.error("Resend error:", sendRes.error);
+            return { error: sendRes.error || "Gagal mengirim email. Coba lagi nanti." };
         }
 
         return { success: "Email verifikasi telah dikirim ulang!" };
-    } catch (e) {
+    } catch (e: any) {
         console.error("resendVerificationEmail error:", e);
-        return { error: "Gagal mengirim email. Coba lagi nanti." };
+        return { error: e.message || "Gagal mengirim email. Coba lagi nanti." };
     }
 };
 

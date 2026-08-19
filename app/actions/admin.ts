@@ -90,8 +90,13 @@ export async function grantPremium(
   try {
     await requireAdmin();
 
-    const plan = await prisma.plan.findUnique({ where: { key: planKey } });
+    const [plan, targetUser] = await Promise.all([
+      prisma.plan.findUnique({ where: { key: planKey } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } }),
+    ]);
+
     if (!plan) throw new Error("Paket tidak ditemukan");
+    if (!targetUser) throw new Error("Pengguna tidak ditemukan");
 
     // Force expired existing pending payment
     await prisma.payment.updateMany({
@@ -100,11 +105,25 @@ export async function grantPremium(
     });
 
     const currentPeriodEnd = new Date();
+    let durationLabel = `${durationMonths} Bulan`;
+    let expiryDateStr: string | undefined = undefined;
+
     if (durationMonths === -1) {
       // Lifetime access (100 tahun)
       currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 100);
+      durationLabel = "Akses Seumur Hidup (Lifetime)";
     } else {
       currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + durationMonths);
+      if (durationMonths === 1) durationLabel = "1 Bulan";
+      else if (durationMonths === 3) durationLabel = "3 Bulan";
+      else if (durationMonths === 6) durationLabel = "6 Bulan";
+      else if (durationMonths === 12) durationLabel = "1 Tahun (12 Bulan)";
+
+      expiryDateStr = currentPeriodEnd.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
     }
 
     await prisma.subscription.upsert({
@@ -123,6 +142,30 @@ export async function grantPremium(
         currentPeriodEnd,
       },
     });
+
+    // Kirim email notifikasi aktivasi langganan ke user (non-blocking jika error)
+    try {
+      const { sendEmail } = await import("@/lib/resend");
+      const { buildSubscriptionActivatedEmail } = await import("@/lib/email-templates");
+
+      const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+      const dashboardLink = `${baseUrl}/dashboard`;
+
+      await sendEmail({
+        to: targetUser.email,
+        subject: `👑 Paket ${plan.name} Kamu Telah Aktif! — Dwitku`,
+        html: buildSubscriptionActivatedEmail({
+          userName: targetUser.name || "Pengguna Dwitku",
+          planName: plan.name,
+          planKey: plan.key,
+          durationLabel,
+          expiryDate: expiryDateStr,
+          dashboardLink,
+        }),
+      });
+    } catch (emailErr) {
+      console.warn("[Admin] Gagal mengirim email notifikasi langganan ke user:", emailErr);
+    }
 
     revalidatePath("/admin/users");
     revalidatePath("/admin");
@@ -197,11 +240,10 @@ export async function adminSendPasswordReset(userId: string) {
     const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
     const resetLink = `${baseUrl}/new-password?token=${resetToken.token}`;
 
-    const { resend } = await import("@/lib/resend");
+    const { sendEmail } = await import("@/lib/resend");
     const { buildResetPasswordEmail } = await import("@/lib/email-templates");
 
-    const { error: emailError } = await resend.emails.send({
-      from: "Dwitku <no-reply@dwitku.my.id>",
+    const sendRes = await sendEmail({
       to: user.email,
       subject: "Atur Ulang Password — Dwitku",
       html: buildResetPasswordEmail({
@@ -210,9 +252,9 @@ export async function adminSendPasswordReset(userId: string) {
       }),
     });
 
-    if (emailError) {
-      console.error("[Admin] Reset password email gagal:", emailError);
-      return { success: true, warning: `Email gagal dikirim. Reset link: ${resetLink}`, resetLink };
+    if (sendRes.error) {
+      console.error("[Admin] Reset password email gagal:", sendRes.error);
+      return { success: true, warning: `Email gagal dikirim (${sendRes.error}). Reset link: ${resetLink}`, resetLink };
     }
 
     return { success: true };

@@ -7,7 +7,7 @@ import { WorkspaceRole, InviteStatus } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { addDays } from "date-fns";
 import * as z from "zod";
-import { resend } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import { buildInviteEmail } from "@/lib/email-templates";
 
 /** Base URL aplikasi — bisa dari AUTH_URL atau NEXTAUTH_URL atau fallback */
@@ -85,8 +85,7 @@ export async function sendInvite(
     // Kirim email via Resend
     let emailSent = false;
     try {
-        const { error: emailError } = await resend.emails.send({
-            from: "Dwitku <no-reply@dwitku.my.id>", // ganti dengan domain kamu saat produksi
+        const sendRes = await sendEmail({
             to: email,
             subject: `${invite.sender.name ?? "Seseorang"} mengundangmu ke "${invite.workspace.name}"`,
             html: buildInviteEmail({
@@ -98,8 +97,8 @@ export async function sendInvite(
             }),
         });
 
-        if (emailError) {
-            console.error("[Invite] Email gagal (Resend error object):", JSON.stringify(emailError));
+        if (sendRes.error) {
+            console.error("[Invite] Email gagal:", sendRes.error);
         } else {
             emailSent = true;
         }
