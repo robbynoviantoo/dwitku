@@ -155,6 +155,16 @@ const translations: Record<Locale, Record<string, string>> = {
     "reports.presets.allTime": "Semua Waktu",
     "reports.presets.startHint": "Pilih tanggal akhir untuk menyelesaikan rentang",
     "reports.presets.defaultHint": "Klik tanggal awal dan tanggal akhir untuk rentang waktu",
+    // Workspaces
+    "workspaces.title": "Daftar Workspace",
+    "workspaces.subtitle": "Pilih workspace untuk mulai mencatat keuangan bersama atau sendiri.",
+    "workspaces.createNew": "Buat Workspace Baru",
+    "workspaces.emptyTitle": "Belum Ada Workspace",
+    "workspaces.emptySubtitle": "Buat workspace pertama Anda untuk mulai mencatat dan mengelola keuangan.",
+    "workspaces.enterWorkspace": "Klik untuk masuk",
+    "workspaces.verifiedAlertTitle": "Perhatian",
+    "workspaces.verifiedAlertText": "Kamu harus memverifikasi alamat emailmu terlebih dahulu sebelum bisa membuat workspace baru. Silakan cek inbox emailmu atau klik Kirim Ulang pada banner di atas.",
+    "workspaces.understood": "Mengerti",
     // Transactions
     "transactions.transactionsHeader": "Transaksi",
     "transactions.add": "Tambah",
@@ -457,6 +467,16 @@ const translations: Record<Locale, Record<string, string>> = {
     "reports.presets.allTime": "All Time",
     "reports.presets.startHint": "Click an end date to complete the range",
     "reports.presets.defaultHint": "Click start and end date to select date range",
+    // Workspaces
+    "workspaces.title": "Workspaces",
+    "workspaces.subtitle": "Select a workspace to start tracking personal or collaborative finances.",
+    "workspaces.createNew": "Create New Workspace",
+    "workspaces.emptyTitle": "No Workspaces Yet",
+    "workspaces.emptySubtitle": "Create your first workspace to start tracking and organizing your money.",
+    "workspaces.enterWorkspace": "Click to open",
+    "workspaces.verifiedAlertTitle": "Verification Needed",
+    "workspaces.verifiedAlertText": "You must verify your email address before creating a new workspace. Please check your inbox or resend verification from the banner.",
+    "workspaces.understood": "Got it",
     // Transactions
     "transactions.transactionsHeader": "Transactions",
     "transactions.add": "Add",
