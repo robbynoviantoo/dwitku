@@ -3,17 +3,21 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getTransactionSummary, getTransactions } from "@/app/actions/transaction";
 import { getMonthComparison, getMonthlyChart } from "@/app/actions/report";
+import { getWallets, getWalletsTotalSummary } from "@/app/actions/wallet";
+import { WalletLogo } from "@/components/ui/wallet-logo";
 import {
   ArrowLeftRight,
   TrendingUp,
   TrendingDown,
   Wallet,
+  CreditCard,
   Building2,
   LayoutGrid,
   ArrowDownLeft,
   ArrowUpRight,
   BarChart2,
   ChevronRight,
+  Plus,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
@@ -57,6 +61,18 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
       workspaceId
         ? getTransactionSummary(workspaceId)
         : Promise.resolve({ income: 0, expense: 0, net: 0 }),
+    enabled: !!workspaceId,
+  });
+
+  const { data: walletSummary } = useQuery({
+    queryKey: ["wallets-summary", workspaceId],
+    queryFn: () => (workspaceId ? getWalletsTotalSummary(workspaceId) : null),
+    enabled: !!workspaceId,
+  });
+
+  const { data: wallets = [] } = useQuery({
+    queryKey: ["wallets", workspaceId],
+    queryFn: () => (workspaceId ? getWallets(workspaceId) : []),
     enabled: !!workspaceId,
   });
 
@@ -123,6 +139,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
   }
 
   const currentSummary = summary ?? { income: 0, expense: 0, net: 0 };
+  const totalWalletBalance = walletSummary?.totalBalance ?? currentSummary.net;
   const recentTx = recentTxResult?.items ?? [];
   const comparison = monthComparison;
 
@@ -161,33 +178,36 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
     <PullToRefreshWrapper onRefresh={handleRefresh}>
       <div className="p-3 md:p-5 max-w-7xl lg:max-w-full mx-auto space-y-3.5 h-[calc(100vh-2rem)] md:h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
 
-        {/* ── Compact Header ─────────────────────────── */}
-        <div className="flex items-center justify-between gap-2 flex-wrap shrink-0">
+        {/* ── Top Header (Consistent with Wallets & Transactions) ─────────────────── */}
+        <div className="flex items-center justify-between gap-4 flex-wrap shrink-0">
           <div>
-            <h1 className="text-lg md:text-xl font-bold text-zinc-900 leading-tight">
-              {greeting}, {initialUser?.name?.split(" ")[0] ?? t("greeting.friend")} 👋
-              <span className="text-xs font-normal text-zinc-500 ml-2">
-                • <span className="font-medium text-green-600">"{activeWs?.name ?? "..."}"</span>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 tracking-tight">
+              <Sparkles className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <span>{greeting}, {initialUser?.name?.split(" ")[0] ?? t("greeting.friend")}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300">
+                {activeWs?.name ?? "..."}
               </span>
             </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">{t("dashboard.subtitle")}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
+              {t("dashboard.subtitle")}
+            </p>
           </div>
           <Link
             href={`/transactions?workspaceId=${workspaceId}`}
             onClick={handleCreateTx}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer"
           >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
+            <ArrowLeftRight className="w-4 h-4" />
             Catat Transaksi
           </Link>
         </div>
 
         {/* ── Hero Balance Card (Extra Grand & Luxurious) ─── */}
-        <div className="relative overflow-hidden rounded-3xl bg-zinc-200 text-white p-6 md:p-8 shadow-xl border border-white/10 shrink-0">
+        <div className="relative overflow-hidden rounded-3xl bg-zinc-900 text-white p-6 md:p-8 shadow-xl border border-zinc-800 shrink-0">
           {/* Modern Premium Decoration: Mesh Glow & Subtle Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-700 to-teal-950 opacity-95" />
-          <div className="absolute -top-[30%] -right-[10%] w-[60%] h-[140%] bg-emerald-400/30 blur-[80px] rounded-full animate-pulse" />
-          <div className="absolute -bottom-[30%] -left-[10%] w-[50%] h-[120%] bg-green-500/30 blur-[80px] rounded-full" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#004C29] via-[#00381e] to-zinc-950 opacity-95" />
+          <div className="absolute -top-[30%] -right-[10%] w-[60%] h-[140%] bg-emerald-400/20 blur-[80px] rounded-full animate-pulse" />
+          <div className="absolute -bottom-[30%] -left-[10%] w-[50%] h-[120%] bg-emerald-600/20 blur-[80px] rounded-full" />
           
           <div 
             className="absolute inset-0 opacity-[0.09]" 
@@ -199,7 +219,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           />
           
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            {/* Net Balance (Extra Large) */}
+            {/* Net Balance (Extra Large) - Diambil dari Total Saldo Wallet */}
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15">
                 <Sparkles className="w-4 h-4 text-green-300" />
@@ -209,7 +229,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
               </div>
               <p className="text-4xl md:text-6xl font-black tracking-tight leading-none text-white drop-shadow-sm">
                 {showAmount
-                  ? formatCurrency(currentSummary.net, currency)
+                  ? formatCurrency(totalWalletBalance, currency)
                   : <span className="tracking-widest text-3xl md:text-5xl">••••••••</span>}
               </p>
             </div>
@@ -251,68 +271,122 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
             <DashboardCalendar workspaceId={workspaceId} currency={currency} />
           </div>
 
-          {/* Transaksi Terbaru (5/12) */}
-          <div className="lg:col-span-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm">
-                {t("dashboard.recentTransactions")}
-              </p>
-              <Link
-                href={`/transactions?workspaceId=${workspaceId}`}
-                className="flex items-center gap-1 text-[11px] sm:text-xs text-green-600 hover:text-green-700 font-medium transition-colors"
-              >
-                {t("dashboard.viewAll")} <ChevronRight className="w-3 h-3" />
-              </Link>
+          {/* Kolom Kanan: Transaksi Terbaru + Quick Wallets (5/12) */}
+          <div className="lg:col-span-5 flex flex-col gap-3.5 h-full min-h-0 overflow-hidden">
+            
+            {/* ── 1. Transaksi Terbaru (Atas) ──────────────── */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+                <p className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm flex items-center gap-1.5">
+                  <ArrowLeftRight className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  {t("dashboard.recentTransactions")}
+                </p>
+                <Link
+                  href={`/transactions?workspaceId=${workspaceId}`}
+                  className="flex items-center gap-1 text-[11px] text-green-600 dark:text-green-400 hover:text-green-700 font-semibold transition-colors"
+                >
+                  {t("dashboard.viewAll")} <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="divide-y divide-zinc-50 dark:divide-zinc-800/60 overflow-y-auto flex-1 p-1">
+                {recentTx.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full py-6 text-zinc-400">
+                    <ArrowLeftRight className="w-5 h-5 mb-1 opacity-20" />
+                    <p className="text-xs">{t("dashboard.noTransactions")}</p>
+                    <Link
+                      href={`/transactions?workspaceId=${workspaceId}`}
+                      className="mt-1.5 text-[11px] text-green-600 hover:underline font-medium"
+                    >
+                      {t("dashboard.recordFirstTransaction")} →
+                    </Link>
+                  </div>
+                ) : (
+                  recentTx.slice(0, 4).map((tx) => {
+                    const isIncome = tx.type === "INCOME";
+                    return (
+                      <div key={tx.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 rounded-xl transition-colors">
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? "bg-green-50 dark:bg-green-950/60" : "bg-red-50 dark:bg-red-950/60"}`}>
+                          {tx.category?.emoji ? (
+                            <span className="text-xs">{tx.category.emoji}</span>
+                          ) : isIncome ? (
+                            <ArrowDownLeft className="w-3.5 h-3.5 text-green-500" />
+                          ) : (
+                            <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                            {tx.note || tx.category?.name || (isIncome ? t("dashboard.pemasukan") : t("dashboard.pengeluaran"))}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 truncate">
+                            {tx.wallet && <span className="font-semibold text-zinc-600 dark:text-zinc-300 mr-1">[{tx.wallet.name}]</span>}
+                            {new Date(tx.date).toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                          </p>
+                        </div>
+                        <p className={`text-xs font-bold font-mono shrink-0 tabular-nums ${isIncome ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                          {isIncome ? "+" : "-"}{showAmount ? formatCurrency(tx.amount, currency) : "••••••"}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <div className="divide-y divide-zinc-50 dark:divide-zinc-800/60 overflow-y-auto flex-1 p-1">
-              {recentTx.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-8 text-zinc-400">
-                  <ArrowLeftRight className="w-6 h-6 mb-1.5 opacity-20" />
-                  <p className="text-xs">{t("dashboard.noTransactions")}</p>
-                  <Link
-                    href={`/transactions?workspaceId=${workspaceId}`}
-                    className="mt-2 text-[11px] text-green-600 hover:underline font-medium"
-                  >
-                    {t("dashboard.recordFirstTransaction")} →
-                  </Link>
-                </div>
-              ) : (
-                recentTx.map((tx) => {
-                  const isIncome = tx.type === "INCOME";
-                  return (
-                    <div key={tx.id} className="flex items-center gap-2.5 px-3 py-2.5 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 rounded-xl transition-colors">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isIncome ? "bg-green-50 dark:bg-green-950/60" : "bg-red-50 dark:bg-red-950/60"}`}>
-                        {tx.category?.emoji ? (
-                          <span className="text-sm">{tx.category.emoji}</span>
-                        ) : isIncome ? (
-                          <ArrowDownLeft className="w-3.5 h-3.5 text-green-500" />
-                        ) : (
-                          <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
-                          {tx.note || tx.category?.name || (isIncome ? t("dashboard.pemasukan") : t("dashboard.pengeluaran"))}
-                        </p>
-                        <p className="text-[10px] text-zinc-400">
-                          {tx.category?.name && (
-                            <span className="mr-1">{tx.category.name} ·</span>
-                          )}
-                          {new Date(tx.date).toLocaleDateString(locale === "en" ? "en-US" : "id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                          })}
-                        </p>
-                      </div>
-                      <p className={`text-xs font-bold font-mono shrink-0 ${isIncome ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                        {isIncome ? "+" : "-"}{showAmount ? formatCurrency(tx.amount, currency) : "••••••"}
-                      </p>
-                    </div>
-                  );
-                })
-              )}
+            {/* ── 2. Quick Wallets (Bawah) ──────────────────── */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col shrink-0 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+                <p className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  Dompet Saya
+                </p>
+                <Link
+                  href={`/wallets?workspaceId=${workspaceId}`}
+                  className="flex items-center gap-1 text-[11px] text-green-600 dark:text-green-400 hover:text-green-700 font-semibold transition-colors"
+                >
+                  Kelola <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="p-3">
+                {wallets.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-xs text-zinc-400">Belum ada dompet/rekening terdaftar.</p>
+                    <Link
+                      href={`/wallets?workspaceId=${workspaceId}`}
+                      className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-green-600 hover:underline"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Tambah Dompet
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {wallets.slice(0, 4).map((w) => (
+                      <Link
+                        key={w.id}
+                        href={`/wallets?workspaceId=${workspaceId}`}
+                        className="group flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 hover:border-green-300 dark:hover:border-green-800 bg-zinc-50/50 dark:bg-zinc-800/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-all"
+                      >
+                        <WalletLogo providerCode={w.providerCode} size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                            {w.name}
+                          </p>
+                          <p className="text-[11px] font-extrabold font-mono text-zinc-900 dark:text-zinc-100 truncate tabular-nums">
+                            {showAmount ? formatCurrency(w.currentBalance, currency) : "••••••"}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+
           </div>
         </div>
 

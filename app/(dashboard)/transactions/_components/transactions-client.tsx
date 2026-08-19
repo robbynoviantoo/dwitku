@@ -927,13 +927,15 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
 
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
-    <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
+    <div className="p-3 md:p-5 max-w-7xl lg:max-w-full mx-auto h-[calc(100vh-2rem)] md:h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden space-y-3">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap shrink-0">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">Keuangan</p>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">{t("transactions.transactionsHeader")}</h1>
-          <p className="text-zinc-400 text-sm mt-1 font-normal">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5 tracking-tight">
+            <ArrowLeftRight className="w-6 h-6 text-green-600 dark:text-green-400" />
+            {t("transactions.transactionsHeader")}
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
             {total.toLocaleString("id-ID")} {t("transactions.found")}
           </p>
         </div>
@@ -981,24 +983,28 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       </div>
 
       {/* Filter Summary Bar */}
-      <FilterSummaryBar
-        income={visibleSummary?.income ?? 0}
-        expense={visibleSummary?.expense ?? 0}
-        net={visibleSummary?.net ?? 0}
-        currency={currency}
-        showAmount={showAmount}
-        isLoading={hasActiveFilter ? isLoadingFilteredSummary : isLoadingSummary}
-      />
+      <div className="shrink-0">
+        <FilterSummaryBar
+          income={visibleSummary?.income ?? 0}
+          expense={visibleSummary?.expense ?? 0}
+          net={visibleSummary?.net ?? 0}
+          currency={currency}
+          showAmount={showAmount}
+          isLoading={hasActiveFilter ? isLoadingFilteredSummary : isLoadingSummary}
+        />
+      </div>
 
       {/* Filter Panel */}
-      <FilterPanel
-        filter={filter}
-        search={search}
-        categories={categories}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onReset={handleReset}
-      />
+      <div className="shrink-0">
+        <FilterPanel
+          filter={filter}
+          search={search}
+          categories={categories}
+          onFilterChange={handleFilterChange}
+          onSearch={handleSearch}
+          onReset={handleReset}
+        />
+      </div>
 
       {/* Error */}
       {error && (
@@ -1163,16 +1169,16 @@ export function TransactionsClient({ workspaceId, currency, canEdit, canExport =
       {/* Desktop Table (hidden on mobile) */}
       <div
         className={cn(
-          "hidden md:block bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden",
+          "hidden md:flex flex-col flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden",
           (isPlaceholderData || deleteMutation.isPending) &&
           "opacity-50 pointer-events-none transition-opacity",
         )}
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-auto flex-1">
           <table className="w-full">
-            <thead>
+            <thead className="sticky top-0 z-10">
               {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-zinc-100 bg-zinc-50">
+                <tr key={hg.id} className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80">
                   {hg.headers.map((h) => {
                     const isSortable = h.column.getCanSort();
                     const sortDirection = h.column.getIsSorted();

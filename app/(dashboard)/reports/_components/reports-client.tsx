@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactionSummary } from "@/app/actions/transaction";
 import {
@@ -21,9 +21,7 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  Minus,
   BarChart2,
-  FileDown,
 } from "lucide-react";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { useLanguage } from "@/components/providers/language-provider";
@@ -49,7 +47,7 @@ function ChangeIndicator({
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        up ? "text-green-600" : "text-red-500"
+        up ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"
       }`}
     >
       {up ? (
@@ -112,9 +110,11 @@ export function ReportsClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600 mb-1">{t("reports.analytics")}</p>
-          <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5 tracking-tight">
+            <BarChart2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+            {t("reports.financialReport")}
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
             {isPersonal ? t("reports.personalFinance") : `Workspace "${workspaceName}"`}
           </p>
         </div>
@@ -138,9 +138,9 @@ export function ReportsClient({
             current: comparison?.current.income ?? 0,
             previous: comparison?.previous.income ?? 0,
             icon: TrendingUp,
-            color: "text-green-600",
-            iconBg: "bg-green-50",
-            valueBg: "text-green-600",
+            color: "text-green-600 dark:text-green-400",
+            iconBg: "bg-green-50 dark:bg-green-950/60",
+            valueBg: "text-green-600 dark:text-green-400",
           },
           {
             label: t("dashboard.totalExpense"),
@@ -148,9 +148,9 @@ export function ReportsClient({
             current: comparison?.current.expense ?? 0,
             previous: comparison?.previous.expense ?? 0,
             icon: TrendingDown,
-            color: "text-red-500",
-            iconBg: "bg-red-50",
-            valueBg: "text-red-500",
+            color: "text-red-500 dark:text-red-400",
+            iconBg: "bg-red-50 dark:bg-red-950/60",
+            valueBg: "text-red-500 dark:text-red-400",
           },
           {
             label: t("dashboard.netBalance"),
@@ -158,152 +158,72 @@ export function ReportsClient({
             current: comparison?.current.net ?? 0,
             previous: comparison?.previous.net ?? 0,
             icon: Wallet,
-            color: currentSummary.net >= 0 ? "text-blue-600" : "text-red-500",
-            iconBg: currentSummary.net >= 0 ? "bg-blue-50" : "bg-red-50",
-            valueBg: currentSummary.net >= 0 ? "text-blue-600" : "text-red-500",
+            color: currentSummary.net >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500 dark:text-red-400",
+            iconBg: currentSummary.net >= 0 ? "bg-blue-50 dark:bg-blue-950/60" : "bg-red-50 dark:bg-red-950/60",
+            valueBg: currentSummary.net >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-500 dark:text-red-400",
           },
         ].map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
+            <div key={card.label} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className={`w-9 h-9 rounded-xl ${card.iconBg} flex items-center justify-center`}>
-                    <Icon className={`w-4 h-4 ${card.color}`} />
+                    <Icon className={`w-5 h-5 ${card.color}`} />
                   </div>
-                  <p className="text-xs font-medium text-zinc-500">{card.label}</p>
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    {card.label}
+                  </span>
                 </div>
-                <ChangeIndicator current={card.current} previous={card.previous} />
+                <ChangeIndicator
+                  current={card.current}
+                  previous={card.previous}
+                />
               </div>
-              <p className={`text-2xl font-extrabold mb-1 ${card.valueBg}`}>
-                {showAmount ? formatCurrency(card.value, currency) : "••••••"}
-              </p>
-              <p className="text-xs text-zinc-400">
-                {t("reports.thisMonth")}: {showAmount ? formatCurrency(card.current, currency) : "••••••"}
+              <p className={`text-2xl font-bold font-mono ${card.valueBg}`}>
+                {showAmount ? formatCurrency(card.value, currency) : "••••••••"}
               </p>
             </div>
           );
         })}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="font-semibold text-zinc-900 text-sm">{t("reports.incomeVsExpense")}</h2>
-              <p className="text-xs text-zinc-400 mt-0.5">{t("reports.last6Months")}</p>
-            </div>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Bar Chart */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-6">
+          <div className="mb-4">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+              {t("reports.monthlyTrend")}
+            </h2>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+              {t("reports.last6Months")}
+            </p>
           </div>
-          <MonthlyBarChart data={monthlyData} currency={currency} />
+          <MonthlyBarChart
+            data={monthlyData}
+            currency={currency}
+            showAmount={showAmount}
+          />
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
-          <div className="mb-5">
-            <h2 className="font-semibold text-zinc-900 text-sm">{t("reports.expenseByCategory")}</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">{dateFilter ? `${t("reports.date")} ${new Date(dateFilter).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : t("reports.thisMonth")}</p>
+        {/* Category Donut Chart */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-6">
+          <div className="mb-4">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+              {t("reports.expenseByCategory")}
+            </h2>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+              {dateFilter ? dateFilter : t("reports.allTime")}
+            </p>
           </div>
-          <CategoryDonutChart data={categoryData} currency={currency} />
+          <CategoryDonutChart
+            data={categoryData}
+            currency={currency}
+            showAmount={showAmount}
+          />
         </div>
       </div>
-
-      {/* Comparison Table */}
-      {comparison && (
-        <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-6">
-          <h2 className="font-semibold text-zinc-900 text-sm mb-5">{t("reports.comparisonTitle")}</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100">
-                  <th className="text-left py-2 text-xs text-zinc-500 font-medium w-40">
-                    {t("reports.metric")}
-                  </th>
-                  <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    {t("reports.thisMonth")}
-                  </th>
-                  <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    {t("reports.lastMonth")}
-                  </th>
-                  <th className="text-right py-2 text-xs text-zinc-500 font-medium">
-                    {t("reports.change")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  {
-                    label: t("dashboard.pemasukan"),
-                    cur: comparison.current.income,
-                    prev: comparison.previous.income,
-                    colorClass: "text-green-600",
-                  },
-                  {
-                    label: t("dashboard.pengeluaran"),
-                    cur: comparison.current.expense,
-                    prev: comparison.previous.expense,
-                    colorClass: "text-red-500",
-                  },
-                  {
-                    label: t("dashboard.netBalance"),
-                    cur: comparison.current.net,
-                    prev: comparison.previous.net,
-                    colorClass:
-                      comparison.current.net >= 0
-                        ? "text-green-600"
-                        : "text-red-500",
-                  },
-                ].map((row) => {
-                  const diff = row.cur - row.prev;
-                  const pct =
-                    row.prev !== 0
-                      ? Math.round((diff / Math.abs(row.prev)) * 100)
-                      : null;
-                  return (
-                    <tr
-                      key={row.label}
-                      className="border-b border-zinc-50 hover:bg-zinc-50 transition-colors"
-                    >
-                      <td className="py-3 font-medium text-zinc-700">
-                        {row.label}
-                      </td>
-                      <td
-                        className={`py-3 text-right font-semibold ${row.colorClass}`}
-                      >
-                        {showAmount
-                          ? formatCurrency(row.cur, currency)
-                          : "******"}
-                      </td>
-                      <td className="py-3 text-right text-zinc-400">
-                        {showAmount
-                          ? formatCurrency(row.prev, currency)
-                          : "******"}
-                      </td>
-                      <td className="py-3 text-right">
-                        {pct !== null ? (
-                          <span
-                            className={`inline-flex items-center gap-0.5 text-xs font-medium ${diff >= 0 ? "text-green-600" : "text-red-500"}`}
-                          >
-                            {diff >= 0 ? (
-                              <ArrowUpRight className="w-3 h-3" />
-                            ) : (
-                              <ArrowDownRight className="w-3 h-3" />
-                            )}
-                            {Math.abs(pct)}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-zinc-300 flex items-center justify-end gap-0.5">
-                            <Minus className="w-3 h-3" /> —
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -318,21 +238,33 @@ function ReportsSkeleton({
   const { t } = useLanguage();
   return (
     <div className="p-4 md:p-8 max-w-7xl lg:max-w-full mx-auto">
-      <div className="mb-8">
-        <Skeleton className="h-3 w-16 mb-2" />
-        <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
-        <Skeleton className="h-4 w-48 mt-2" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+        <div>
+          <Skeleton className="h-3 w-16 mb-2" />
+          <h1 className="text-2xl font-bold text-zinc-900">{t("reports.financialReport")}</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            {isPersonal ? t("reports.personalFinance") : `Workspace "${workspaceName}"`}
+          </p>
+        </div>
+        <Skeleton className="h-10 w-48 rounded-xl" />
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32 rounded-2xl" />
+          <div key={i} className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-9 w-9 rounded-xl" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="h-8 w-36 mt-2" />
+          </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <Skeleton className="lg:col-span-3 h-[300px] rounded-2xl" />
-        <Skeleton className="lg:col-span-2 h-[300px] rounded-2xl" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Skeleton className="h-80 rounded-2xl" />
+        <Skeleton className="h-80 rounded-2xl" />
       </div>
-      <Skeleton className="h-64 rounded-2xl" />
     </div>
   );
 }
