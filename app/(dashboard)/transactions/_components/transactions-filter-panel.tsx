@@ -31,8 +31,8 @@ export function TransactionsFilterPanel({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const hasAdvancedFilter = Boolean(
-    filter.startDate ||
-      filter.endDate ||
+    filter.dateFrom ||
+      filter.dateTo ||
       filter.type ||
       filter.categoryId ||
       filter.walletId
@@ -135,8 +135,8 @@ export function TransactionsFilterPanel({
               {t("transactions.date")}
             </label>
             <CalendarPicker
-              value={filter.startDate ?? ""}
-              onChange={(date) => onFilterChange({ startDate: date || undefined, endDate: date || undefined })}
+              value={filter.dateFrom ?? ""}
+              onChange={(date) => onFilterChange({ dateFrom: date || undefined, dateTo: date || undefined })}
               placeholder={t("transactions.selectDate")}
               allowClear
             />
