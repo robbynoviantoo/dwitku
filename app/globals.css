@@ -13,7 +13,6 @@ path:focus {
   outline: none !important;
 }
 
-/* ─── Tailwind v4 Theme Color Overrides ──────── */
 @theme {
   --color-green-50: #e6f3ec;
   --color-green-100: #c2e2d0;
@@ -26,6 +25,9 @@ path:focus {
   --color-green-800: #00301a;
   --color-green-900: #002413;
   --color-green-950: #00150b;
+
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono), "DM Mono", "Roboto Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 /* Configure dark mode to use the 'dark' class on <html> */
@@ -135,21 +137,30 @@ html.dark {
 body {
   background: var(--bg-main);
   color: var(--text-primary);
-  font-family: var(--font-inter, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* Inter stylistic sets */
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
-/* Tabular numbers for financial data */
+/* Financial numbers and currency data use crisp monospace */
 .font-mono,
 .tabular-nums,
 [class*="amount"],
 [class*="currency"] {
-  font-family: var(--font-dm-mono, "DM Mono", "Roboto Mono", monospace);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* SweetAlert2 Modal Global Font */
+.swal2-popup,
+.swal2-title,
+.swal2-html-container,
+.swal2-confirm,
+.swal2-cancel {
+  font-family: var(--font-sans) !important;
 }
 
 /* ─── Scrollbar ──────────────────────────────── */

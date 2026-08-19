@@ -37,7 +37,7 @@ export function DashboardRecentTransactions({
   const { t, locale } = useLanguage();
 
   return (
-    <div className="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] flex flex-col lg:flex-1 lg:min-h-0 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-[#21262d] shrink-0">
         <p className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm flex items-center gap-1.5">
           <ArrowLeftRight className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -51,7 +51,7 @@ export function DashboardRecentTransactions({
         </Link>
       </div>
 
-      <div className="divide-y divide-slate-100 dark:divide-[#21262d]/80 overflow-y-auto flex-1 p-1">
+      <div className="divide-y divide-slate-100 dark:divide-[#21262d]/80 overflow-y-auto max-h-72 lg:max-h-none lg:flex-1 p-1">
         {transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-8 text-zinc-400">
             <ArrowLeftRight className="w-6 h-6 mb-1.5 opacity-20" />

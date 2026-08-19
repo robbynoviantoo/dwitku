@@ -141,6 +141,7 @@
 }
 
 .flow-pill {
+  font-family: var(--font-dm-mono, "DM Mono", monospace);
   font-size: 0.65rem;
   font-weight: 700;
   border-radius: 0.375rem;

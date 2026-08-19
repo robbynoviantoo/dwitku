@@ -139,7 +139,7 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
 
   return (
     <PullToRefreshWrapper onRefresh={handleRefresh}>
-      <div className="p-3 md:p-5 max-w-7xl lg:max-w-full mx-auto space-y-3.5 h-[calc(100vh-2rem)] md:h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
+      <div className="p-3 md:p-5 max-w-7xl lg:max-w-full mx-auto space-y-3.5 min-h-0 lg:h-[calc(100vh-3.5rem)] flex flex-col lg:overflow-hidden pb-10 lg:pb-0">
         {/* ── 1. Top Header ────────────────────────────────────── */}
         <DashboardHeader
           greeting={greeting}
@@ -157,15 +157,15 @@ export function DashboardClient({ initialUser, isEmailVerified }: DashboardClien
           currency={currency}
         />
 
-        {/* ── 3. Main 100vh Grid: Calendar & Side Panel ────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 flex-1 min-h-0">
+        {/* ── 3. Main Grid: Calendar & Side Panel ────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 lg:flex-1 lg:min-h-0">
           {/* Kalender Keuangan (7/12) */}
-          <div className="lg:col-span-7 h-full overflow-y-auto">
+          <div className="lg:col-span-7 lg:h-full lg:overflow-y-auto">
             <DashboardCalendar workspaceId={workspaceId} currency={currency} />
           </div>
 
           {/* Kolom Kanan: Transaksi Terbaru + Quick Wallets (5/12) */}
-          <div className="lg:col-span-5 flex flex-col gap-3.5 h-full min-h-0 overflow-hidden">
+          <div className="lg:col-span-5 flex flex-col gap-3.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
             <DashboardRecentTransactions
               transactions={recentTx as any}
               workspaceId={workspaceId}

@@ -1,22 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, DM_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
 const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -57,7 +57,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className={`${inter.variable} ${dmMono.variable} antialiased`}
+        className={`${plusJakartaSans.variable} ${dmMono.variable} antialiased`}
       >
         <QueryProvider>
           <SessionProvider>
