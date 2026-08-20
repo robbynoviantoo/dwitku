@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Download,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 
@@ -52,7 +53,13 @@ interface GuideCategory {
   steps: TutorialStep[];
 }
 
-export function GuideClient({ userName }: { userName: string }) {
+export function GuideClient({
+  userName,
+  dbGuideImages,
+}: {
+  userName: string;
+  dbGuideImages?: Record<string, string>;
+}) {
   const { locale } = useLanguage();
   const isEn = locale === "en";
 
@@ -92,7 +99,7 @@ export function GuideClient({ userName }: { userName: string }) {
               id: "Setiap workspace memiliki data dompet dan transaksi yang terisolasi secara mandiri.",
               en: "Each workspace maintains strictly isolated wallets and transaction records.",
             },
-            imageSrc: "/icon-512.png",
+            imageSrc: "https://ik.imagekit.io/veezqt/1.png",
             imageAlt: { id: "Tampilan pembuatan workspace", en: "Workspace creation interface" },
             imageCaption: {
               id: "Dialog pembuatan workspace dengan pilihan mata uang dan tipe pembukuan.",
@@ -111,7 +118,7 @@ export function GuideClient({ userName }: { userName: string }) {
               id: "Untuk berpindah pembukuan, klik nama workspace yang sedang aktif di sidebar sebelah kiri, lalu pilih workspace lain yang ingin Anda kelola. Seluruh ringkasan transaksi dan dompet akan otomatis berubah mengikuti workspace terpilih.",
               en: "To switch books, click the active workspace name on the left sidebar, then select any workspace you want to view. All transactions and wallet balances will immediately switch.",
             },
-            imageSrc: "/icon-512.png",
+            imageSrc: "https://ik.imagekit.io/veezqt/2.png",
             imageAlt: { id: "Menu navigasi workspace", en: "Workspace dropdown navigation" },
             imageCaption: {
               id: "Dropdown pemilihan workspace pada sidebar aplikasi.",
@@ -719,23 +726,22 @@ export function GuideClient({ userName }: { userName: string }) {
                   </div>
                 )}
 
-                {/* ── Tutorial Image Box Container ────────────── */}
-                <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900/60 group">
-                  <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full flex items-center justify-center p-6 bg-gradient-to-b from-transparent to-slate-200/50 dark:to-black/30">
-                    <Image
-                      src={step.imageSrc || "/icon-512.png"}
-                      alt={step.imageAlt[locale] || step.imageAlt.id}
-                      width={480}
-                      height={240}
-                      className="max-h-48 sm:max-h-56 w-auto object-contain drop-shadow-md group-hover:scale-[1.02] transition-transform duration-300"
-                    />
+                {/* ── Tutorial Image Box Container with Skeleton & Max Width ── */}
+                {(() => {
+                  const activeImageSrc =
+                    (dbGuideImages && dbGuideImages[step.id]) ||
+                    step.imageSrc ||
+                    "/icon-512.png";
 
-                    {/* Zoom Click Button */}
-                    <button
-                      type="button"
-                      onClick={() =>
+                  return (
+                    <TutorialImageCard
+                      src={activeImageSrc}
+                      alt={step.imageAlt[locale] || step.imageAlt.id}
+                      caption={step.imageCaption?.[locale] || step.imageCaption?.id}
+                      isEn={isEn}
+                      onZoom={() =>
                         setPreviewImage({
-                          src: step.imageSrc || "/icon-512.png",
+                          src: activeImageSrc,
                           caption:
                             step.imageCaption?.[locale] ||
                             step.imageCaption?.id ||
@@ -743,25 +749,9 @@ export function GuideClient({ userName }: { userName: string }) {
                             step.title.id,
                         })
                       }
-                      className="absolute right-3 top-3 p-2 rounded-xl bg-white/90 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-200 shadow-md hover:bg-green-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
-                      title={isEn ? "Click to view full image" : "Klik untuk memperbesar gambar"}
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Caption */}
-                  {step.imageCaption && (
-                    <div className="p-3 bg-white/80 dark:bg-[#161b22]/80 border-t border-slate-200 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center justify-between gap-2">
-                      <span className="truncate">
-                        📸 {step.imageCaption[locale] || step.imageCaption.id}
-                      </span>
-                      <span className="text-[10px] text-green-600 dark:text-green-400 font-bold shrink-0">
-                        {isEn ? "Tutorial Screenshot" : "Gambar Tutorial"}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    />
+                  );
+                })()}
 
                 {step.actionLink && (
                   <div className="pt-2 sm:hidden">
@@ -780,39 +770,342 @@ export function GuideClient({ userName }: { userName: string }) {
         </div>
       </div>
 
-      {/* ── Image Lightbox Modal ──────────────────────────── */}
+      {/* ── High-Res Image Lightbox Modal ──────────────────────────── */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200 cursor-zoom-out"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 cursor-zoom-out"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl w-full bg-white dark:bg-[#161b22] rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 cursor-default space-y-3"
+            className="relative max-w-6xl w-full bg-white dark:bg-[#161b22] rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-zinc-800 cursor-default space-y-3 max-h-[92vh] flex flex-col"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
-              <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                {previewImage.caption}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3 shrink-0">
+              <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate pr-4">
+                📸 {previewImage.caption}
               </p>
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="relative aspect-[16/9] w-full flex items-center justify-center bg-slate-50 dark:bg-zinc-900 rounded-2xl overflow-hidden p-4">
+            <div className="relative flex-1 min-h-[300px] w-full flex items-center justify-center bg-slate-900/5 dark:bg-zinc-950/60 rounded-2xl overflow-hidden p-2 sm:p-4">
               <Image
                 src={previewImage.src}
                 alt="Zoomed Tutorial Preview"
-                width={800}
-                height={450}
-                className="max-h-[65vh] w-auto object-contain drop-shadow-lg"
+                width={1920}
+                height={1080}
+                unoptimized={previewImage.src.startsWith("http")}
+                className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl drop-shadow-xl"
               />
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TutorialImageCard({
+  src,
+  alt,
+  caption,
+  isEn,
+  onZoom,
+}: {
+  src: string;
+  alt: string;
+  caption?: string;
+  isEn: boolean;
+  onZoom: () => void;
+}) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [renderedImgSize, setRenderedImgSize] = useState({ width: 800, height: 450 });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const lensRef = useRef<HTMLDivElement>(null);
+  const zoomBoxRef = useRef<HTMLDivElement>(null);
+  const zoomedImgRef = useRef<HTMLImageElement>(null);
+  const coordTextRef = useRef<HTMLSpanElement>(null);
+
+  const ZOOM_SCALE = 2.5;
+  const ZOOM_BOX_W = 320;
+  const ZOOM_BOX_H = 240;
+  const LENS_W = ZOOM_BOX_W / ZOOM_SCALE; // 128px
+  const LENS_H = ZOOM_BOX_H / ZOOM_SCALE; // 96px
+
+  const targetState = useRef({
+    cursorImgX: 0,
+    cursorImgY: 0,
+    lensContainerX: 0,
+    lensContainerY: 0,
+    containerW: 800,
+    containerH: 450,
+    imgW: 800,
+    imgH: 450,
+    xPercent: 50,
+  });
+
+  const currentState = useRef({
+    lensX: 0,
+    lensY: 0,
+    boxX: 0,
+    boxY: 0,
+    transX: 0,
+    transY: 0,
+  });
+
+  const animFrameId = useRef<number | null>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || !imgRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const imgRect = imgRef.current.getBoundingClientRect();
+
+    if (!imgRect.width || !imgRect.height) return;
+
+    // Track mouse position strictly within the rendered image bounds
+    const cursorImgX = Math.max(0, Math.min(imgRect.width, e.clientX - imgRect.left));
+    const cursorImgY = Math.max(0, Math.min(imgRect.height, e.clientY - imgRect.top));
+
+    // Calculate lens position relative to container
+    const lensContainerX = (imgRect.left - containerRect.left) + cursorImgX;
+    const lensContainerY = (imgRect.top - containerRect.top) + cursorImgY;
+
+    const xPercent = (cursorImgX / imgRect.width) * 100;
+
+    targetState.current = {
+      cursorImgX,
+      cursorImgY,
+      lensContainerX,
+      lensContainerY,
+      containerW: containerRect.width,
+      containerH: containerRect.height,
+      imgW: imgRect.width,
+      imgH: imgRect.height,
+      xPercent,
+    };
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsHovered(true);
+    if (!containerRef.current || !imgRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const imgRect = imgRef.current.getBoundingClientRect();
+
+    setRenderedImgSize({ width: imgRect.width, height: imgRect.height });
+
+    const cursorImgX = Math.max(0, Math.min(imgRect.width, e.clientX - imgRect.left));
+    const cursorImgY = Math.max(0, Math.min(imgRect.height, e.clientY - imgRect.top));
+    const lensContainerX = (imgRect.left - containerRect.left) + cursorImgX;
+    const lensContainerY = (imgRect.top - containerRect.top) + cursorImgY;
+    const xPercent = (cursorImgX / imgRect.width) * 100;
+
+    targetState.current = {
+      cursorImgX,
+      cursorImgY,
+      lensContainerX,
+      lensContainerY,
+      containerW: containerRect.width,
+      containerH: containerRect.height,
+      imgW: imgRect.width,
+      imgH: imgRect.height,
+      xPercent,
+    };
+
+    currentState.current = {
+      lensX: lensContainerX,
+      lensY: lensContainerY,
+      boxX: xPercent > 50 ? lensContainerX - ZOOM_BOX_W - 20 : lensContainerX + 20,
+      boxY: lensContainerY - ZOOM_BOX_H / 2,
+      transX: -(cursorImgX * ZOOM_SCALE) + ZOOM_BOX_W / 2,
+      transY: -(cursorImgY * ZOOM_SCALE) + ZOOM_BOX_H / 2,
+    };
+  };
+
+  // Pixel-Perfect Physics Animation Loop
+  useEffect(() => {
+    let isRunning = true;
+
+    const animate = () => {
+      if (!isRunning) return;
+
+      const { cursorImgX, cursorImgY, lensContainerX, lensContainerY, containerW, containerH, xPercent } = targetState.current;
+
+      const lensLerp = 0.28;
+      const boxLerp = 0.18;
+
+      // 1. Smooth Lens position
+      currentState.current.lensX += (lensContainerX - currentState.current.lensX) * lensLerp;
+      currentState.current.lensY += (lensContainerY - currentState.current.lensY) * lensLerp;
+
+      // 2. Smooth Zoom Box position
+      const isRightHalf = xPercent > 50;
+      const desiredBoxX = isRightHalf ? lensContainerX - ZOOM_BOX_W - 20 : lensContainerX + 20;
+      const clampedBoxX = Math.max(10, Math.min(containerW - ZOOM_BOX_W - 10, desiredBoxX));
+      const desiredBoxY = lensContainerY - ZOOM_BOX_H / 2;
+      const clampedBoxY = Math.max(10, Math.min(containerH - ZOOM_BOX_H - 10, desiredBoxY));
+
+      currentState.current.boxX += (clampedBoxX - currentState.current.boxX) * boxLerp;
+      currentState.current.boxY += (clampedBoxY - currentState.current.boxY) * boxLerp;
+
+      // 3. Pixel-Perfect Zoomed Image translation (100% exact match with lens center)
+      const targetTransX = -(cursorImgX * ZOOM_SCALE) + (ZOOM_BOX_W / 2);
+      const targetTransY = -(cursorImgY * ZOOM_SCALE) + (ZOOM_BOX_H / 2);
+
+      currentState.current.transX += (targetTransX - currentState.current.transX) * lensLerp;
+      currentState.current.transY += (targetTransY - currentState.current.transY) * lensLerp;
+
+      // GPU Transform updates
+      if (lensRef.current) {
+        lensRef.current.style.transform = `translate3d(${currentState.current.lensX}px, ${currentState.current.lensY}px, 0) translate(-50%, -50%)`;
+      }
+      if (zoomBoxRef.current) {
+        zoomBoxRef.current.style.transform = `translate3d(${currentState.current.boxX}px, ${currentState.current.boxY}px, 0)`;
+      }
+      if (zoomedImgRef.current) {
+        zoomedImgRef.current.style.transform = `translate3d(${currentState.current.transX}px, ${currentState.current.transY}px, 0)`;
+      }
+      if (coordTextRef.current) {
+        coordTextRef.current.textContent = `${Math.round(xPercent)}%`;
+      }
+
+      animFrameId.current = requestAnimationFrame(animate);
+    };
+
+    animFrameId.current = requestAnimationFrame(animate);
+
+    return () => {
+      isRunning = false;
+      if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
+    };
+  }, []);
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/70 group shadow-xs">
+      <div
+        ref={containerRef}
+        onClick={onZoom}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsHovered(false)}
+        onMouseMove={handleMouseMove}
+        className="relative w-full min-h-[220px] sm:min-h-[340px] flex items-center justify-center p-2 sm:p-4 bg-gradient-to-b from-transparent to-slate-200/40 dark:to-black/30 cursor-crosshair overflow-hidden select-none"
+      >
+        {/* Animated Skeleton Loader */}
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-zinc-800 dark:via-zinc-700/60 dark:to-zinc-800 animate-pulse">
+            <div className="w-12 h-12 rounded-2xl bg-white/60 dark:bg-zinc-700/80 flex items-center justify-center text-slate-400 dark:text-zinc-400 shadow-xs">
+              <ImageIcon className="w-6 h-6 animate-pulse" />
+            </div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+              {isEn ? "Loading tutorial preview..." : "Memuat gambar panduan..."}
+            </p>
+          </div>
+        )}
+
+        {/* Main Base Image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          onLoad={(e) => {
+            setIsLoading(false);
+            const target = e.currentTarget;
+            setRenderedImgSize({ width: target.clientWidth, height: target.clientHeight });
+          }}
+          className={`w-full h-auto max-h-[550px] object-contain rounded-xl drop-shadow-md pointer-events-none transition-opacity duration-300 ${
+            isLoading ? "opacity-0 scale-95" : "opacity-100"
+          }`}
+        />
+
+        {/* ── Lens Rectangle Box (1:1 Aspect Ratio with Zoom Box) ── */}
+        {isHovered && !isLoading && (
+          <div
+            ref={lensRef}
+            style={{
+              top: 0,
+              left: 0,
+              width: `${LENS_W}px`,
+              height: `${LENS_H}px`,
+              willChange: "transform",
+            }}
+            className="absolute pointer-events-none rounded-xl border-2 border-emerald-500/90 bg-emerald-500/20 backdrop-blur-[1px] shadow-lg hidden sm:block z-20"
+          />
+        )}
+
+        {/* ── Dynamic Floating Follower Zoom Box (100% Pixel-Exact) ── */}
+        {isHovered && !isLoading && (
+          <div
+            ref={zoomBoxRef}
+            style={{
+              top: 0,
+              left: 0,
+              width: `${ZOOM_BOX_W}px`,
+              height: `${ZOOM_BOX_H}px`,
+              willChange: "transform",
+            }}
+            className="absolute z-30 hidden sm:flex flex-col rounded-2xl border-2 border-slate-300 dark:border-zinc-700 bg-white dark:bg-[#161b22] shadow-2xl overflow-hidden pointer-events-none"
+          >
+            {/* Header tag */}
+            <div className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-bold tracking-wider uppercase flex items-center justify-between border-b border-slate-800 shrink-0">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <ZoomIn className="w-3 h-3" />
+                <span>{isEn ? "Live Lens Zoom (2.5x)" : "Zoom Detail Lensa (2.5x)"}</span>
+              </span>
+              <span ref={coordTextRef} className="text-zinc-400">50%</span>
+            </div>
+
+            {/* Pixel-Exact High-Res Zoom Viewport */}
+            <div className="relative w-full flex-1 bg-slate-100 dark:bg-zinc-950 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                ref={zoomedImgRef}
+                src={src}
+                alt="Zoom detail"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: `${renderedImgSize.width * ZOOM_SCALE}px`,
+                  height: `${renderedImgSize.height * ZOOM_SCALE}px`,
+                  maxWidth: "none",
+                  maxHeight: "none",
+                  willChange: "transform",
+                }}
+                className="pointer-events-none"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Fullscreen Button Overlay */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onZoom();
+          }}
+          className="absolute right-4 bottom-4 p-2.5 rounded-xl bg-white/90 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-200 shadow-md hover:bg-green-600 hover:text-white transition-all opacity-0 group-hover:opacity-100 cursor-pointer backdrop-blur-sm z-20"
+          title={isEn ? "Click to view fullscreen lightbox" : "Klik untuk memperbesar layar penuh"}
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Caption Footer */}
+      {caption && (
+        <div className="p-3.5 bg-white dark:bg-[#161b22] border-t border-slate-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 flex items-center justify-between gap-3">
+          <span className="truncate font-medium">📸 {caption}</span>
+          <span className="text-[11px] text-green-600 dark:text-green-400 font-bold shrink-0 bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20">
+            {isEn ? "Tutorial Screenshot" : "Gambar Tutorial"}
+          </span>
         </div>
       )}
     </div>

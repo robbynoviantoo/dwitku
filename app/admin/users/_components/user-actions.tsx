@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   MoreVertical,
   ShieldAlert,
@@ -9,7 +10,6 @@ import {
   Ban,
   KeyRound,
   Pencil,
-  ArrowUpRight,
   Loader2,
   Copy,
   Check,
@@ -53,18 +53,6 @@ export function UserActions({
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
   const [resetLink, setResetLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close menu on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const close = () => setIsOpen(false);
 
@@ -190,141 +178,164 @@ export function UserActions({
           </div>
         )}
 
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            disabled={loading}
-            className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
-          </button>
+        <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
+          <DropdownMenu.Trigger asChild>
+            <button
+              disabled={loading}
+              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MoreVertical className="w-4 h-4" />
+              )}
+            </button>
+          </DropdownMenu.Trigger>
 
-          {isOpen && (
-            <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] shadow-xl rounded-2xl py-1 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={4}
+              className="w-56 bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] shadow-2xl rounded-2xl py-1 z-[100] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
+            >
               {/* Grant Subscription Button */}
-              <button
-                onClick={() => {
-                  close();
-                  setIsGrantModalOpen(true);
-                }}
-                className="w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-950/40 text-green-700 dark:text-green-300 transition-colors cursor-pointer"
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span>Atur / Beri Langganan</span>
-              </button>
+              <DropdownMenu.Item asChild>
+                <button
+                  onClick={() => {
+                    close();
+                    setIsGrantModalOpen(true);
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-950/40 text-green-700 dark:text-green-300 transition-colors cursor-pointer outline-none focus:bg-green-50 dark:focus:bg-green-950/40"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Atur / Beri Langganan</span>
+                </button>
+              </DropdownMenu.Item>
 
-              <div className="border-t border-slate-100 dark:border-zinc-800 my-1" />
+              <DropdownMenu.Separator className="border-t border-slate-100 dark:border-zinc-800 my-1" />
 
               {/* Rename */}
-              <button
-                onClick={handleRename}
-                className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Ganti Nama User</span>
-              </button>
+              <DropdownMenu.Item asChild>
+                <button
+                  onClick={handleRename}
+                  className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer outline-none focus:bg-slate-50 dark:focus:bg-zinc-800"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Ganti Nama User</span>
+                </button>
+              </DropdownMenu.Item>
 
               {/* Reset password */}
               {hasPassword && (
-                <button
-                  onClick={() =>
-                    handleAction(
-                      () => adminSendPasswordReset(userId),
-                      `Kirim email link reset password ke ${userEmail}?`
-                    )
-                  }
-                  className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>Kirim Reset Password</span>
-                </button>
+                <DropdownMenu.Item asChild>
+                  <button
+                    onClick={() =>
+                      handleAction(
+                        () => adminSendPasswordReset(userId),
+                        `Kirim email link reset password ke ${userEmail}?`
+                      )
+                    }
+                    className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer outline-none focus:bg-blue-50 dark:focus:bg-blue-950/40"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Kirim Reset Password</span>
+                  </button>
+                </DropdownMenu.Item>
               )}
 
               {/* Toggle admin */}
               {!isMe && (
-                <button
-                  onClick={() =>
-                    handleAction(
-                      () => toggleAdminStatus(userId, !isAdmin),
-                      `${isAdmin ? "Cabut hak Super Admin dari" : "Jadikan Super Admin untuk"} user ini?`,
-                      isAdmin ? "#ef4444" : "#004C29"
-                    )
-                  }
-                  className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-                >
-                  {isAdmin ? (
-                    <>
-                      <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Cabut Hak Admin</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Jadikan Super Admin</span>
-                    </>
-                  )}
-                </button>
+                <DropdownMenu.Item asChild>
+                  <button
+                    onClick={() =>
+                      handleAction(
+                        () => toggleAdminStatus(userId, !isAdmin),
+                        `${isAdmin ? "Cabut hak Super Admin dari" : "Jadikan Super Admin untuk"} user ini?`,
+                        isAdmin ? "#ef4444" : "#004C29"
+                      )
+                    }
+                    className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer outline-none focus:bg-slate-50 dark:focus:bg-zinc-800"
+                  >
+                    {isAdmin ? (
+                      <>
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Cabut Hak Admin</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Jadikan Super Admin</span>
+                      </>
+                    )}
+                  </button>
+                </DropdownMenu.Item>
               )}
 
               {/* Revoke subscription */}
               {hasActiveSubscription && (
                 <>
-                  <div className="border-t border-slate-100 dark:border-zinc-800 my-1" />
-                  <button
-                    onClick={() =>
-                      handleAction(
-                        () => revokeSubscription(userId),
-                        "Cabut akses langganan berbayar user ini dan kembalikan ke paket Gratis?",
-                        "#ef4444"
-                      )
-                    }
-                    className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
-                  >
-                    <Ban className="w-3.5 h-3.5" />
-                    <span>Cabut Langganan (Free)</span>
-                  </button>
+                  <DropdownMenu.Separator className="border-t border-slate-100 dark:border-zinc-800 my-1" />
+                  <DropdownMenu.Item asChild>
+                    <button
+                      onClick={() =>
+                        handleAction(
+                          () => revokeSubscription(userId),
+                          "Cabut akses langganan berbayar user ini dan kembalikan ke paket Gratis?",
+                          "#ef4444"
+                        )
+                      }
+                      className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer outline-none focus:bg-red-50 dark:focus:bg-red-950/40"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                      <span>Cabut Langganan (Free)</span>
+                    </button>
+                  </DropdownMenu.Item>
                 </>
               )}
 
               {/* Reset Trial */}
               {hasUsedTrial && (
-                <button
-                  onClick={() =>
-                    handleAction(
-                      () => resetTrialStatus(userId),
-                      `Reset status kuota trial untuk ${userName || userEmail}? Pengguna ini akan dapat mengklaim trial gratis 7 hari kembali di halaman billing.`,
-                      "#004C29"
-                    )
-                  }
-                  className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                  <span>Reset Kuota Trial (Bisa Trial Lagi)</span>
-                </button>
+                <DropdownMenu.Item asChild>
+                  <button
+                    onClick={() =>
+                      handleAction(
+                        () => resetTrialStatus(userId),
+                        `Reset status kuota trial untuk ${userName || userEmail}? Pengguna ini akan dapat mengklaim trial gratis 7 hari kembali di halaman billing.`,
+                        "#004C29"
+                      )
+                    }
+                    className="w-full px-3.5 py-2 text-left text-xs font-medium flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors cursor-pointer outline-none focus:bg-purple-50 dark:focus:bg-purple-950/40"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Reset Kuota Trial (Bisa Trial Lagi)</span>
+                  </button>
+                </DropdownMenu.Item>
               )}
 
               {/* Delete User */}
               {!isMe && (
                 <>
-                  <div className="border-t border-slate-100 dark:border-zinc-800 my-1" />
-                  <button
-                    onClick={() =>
-                      handleAction(
-                        () => deleteUser(userId),
-                        `Hapus pengguna ${userName || userEmail} secara permanen? Semua data yang terkait akan dihapus dan tindakan ini tidak dapat dibatalkan.`,
-                        "#dc2626"
-                      )
-                    }
-                    className="w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Hapus Pengguna</span>
-                  </button>
+                  <DropdownMenu.Separator className="border-t border-slate-100 dark:border-zinc-800 my-1" />
+                  <DropdownMenu.Item asChild>
+                    <button
+                      onClick={() =>
+                        handleAction(
+                          () => deleteUser(userId),
+                          `Hapus pengguna ${userName || userEmail} secara permanen? Semua data yang terkait akan dihapus dan tindakan ini tidak dapat dibatalkan.`,
+                          "#dc2626"
+                        )
+                      }
+                      className="w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 transition-colors cursor-pointer outline-none focus:bg-red-50 dark:focus:bg-red-950/40"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus Pengguna</span>
+                    </button>
+                  </DropdownMenu.Item>
                 </>
               )}
-            </div>
-          )}
-        </div>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
 
       {isGrantModalOpen && (
@@ -338,4 +349,3 @@ export function UserActions({
     </>
   );
 }
-

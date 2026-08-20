@@ -4,6 +4,7 @@ import { LandingHero } from "./_components/landing-hero";
 import { LandingPreview } from "./_components/landing-preview";
 import { LandingFeatures } from "./_components/landing-features";
 import { LandingPricing } from "./_components/landing-pricing";
+import { LandingPrivacyCommitment } from "./_components/landing-privacy-commitment";
 import { LandingFooter } from "./_components/landing-footer";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +31,13 @@ export default async function LandingPage() {
       {/* ── 4. Key Features ── */}
       <LandingFeatures />
 
-      {/* ── 5. Pricing Plans ── */}
+      {/* ── 5. Financial Privacy Commitment CTA ── */}
+      <LandingPrivacyCommitment />
+
+      {/* ── 6. Pricing Plans ── */}
       <LandingPricing dbPlans={dbPlans} />
 
-      {/* ── 6. Footer ── */}
+      {/* ── 7. Footer ── */}
       <LandingFooter />
     </div>
   );

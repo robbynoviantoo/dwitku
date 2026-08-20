@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CreditCard, Users, Shield, ArrowLeft, Bot } from "lucide-react";
+import { LayoutDashboard, CreditCard, Users, Shield, ArrowLeft, Bot, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { DatabaseExportModal } from "./database-export-modal";
@@ -23,6 +23,7 @@ export function AdminNav({ user }: AdminNavProps) {
     { href: "/admin/plans", label: "Kelola Paket", icon: CreditCard },
     { href: "/admin/users", label: "Pengguna & Hak Akses", icon: Users },
     { href: "/admin/telegram", label: "Telegram Bot", icon: Bot },
+    { href: "/admin/guide", label: "Buku Panduan", icon: BookOpen },
   ];
 
   return (

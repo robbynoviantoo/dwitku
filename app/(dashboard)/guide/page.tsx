@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { getGuideImages } from "@/app/actions/guide";
 import { GuideClient } from "./_components/guide-client";
 
 export const metadata = {
@@ -13,5 +14,12 @@ export default async function GuidePage() {
     redirect("/login");
   }
 
-  return <GuideClient userName={session.user.name || "Pengguna Dwitku"} />;
+  const dbGuideImages = await getGuideImages();
+
+  return (
+    <GuideClient
+      userName={session.user.name || "Pengguna Dwitku"}
+      dbGuideImages={dbGuideImages}
+    />
+  );
 }
