@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 import { resetPassword } from "@/app/actions/auth";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { Lock, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 export function NewPasswordForm() {
     const searchParams = useSearchParams();
@@ -16,6 +16,7 @@ export function NewPasswordForm() {
 
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
+    const [showPassword, setShowPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
 
     const form = useForm<z.infer<typeof NewPasswordSchema>>({
@@ -73,13 +74,23 @@ export function NewPasswordForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Password Baru</label>
-                    <input
-                        {...form.register("password")}
-                        disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
-                        placeholder="••••••••"
-                        type="password"
-                    />
+                    <div className="relative">
+                        <input
+                            {...form.register("password")}
+                            disabled={isPending}
+                            className="w-full pl-4 pr-10 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
+                            placeholder="Min. 6 karakter"
+                            type={showPassword ? "text" : "password"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            disabled={isPending}
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    </div>
                     {form.formState.errors.password && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.password.message}</p>
                     )}

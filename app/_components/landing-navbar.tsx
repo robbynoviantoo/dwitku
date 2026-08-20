@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 
@@ -12,9 +13,14 @@ export function LandingNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-[#004C29] flex items-center justify-center font-black text-white text-sm">
-            D
-          </div>
+          <Image
+            src="/icon-512.png"
+            alt="Dwitku Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-xl object-contain group-hover:scale-105 transition-transform"
+            priority
+          />
           <span className="font-extrabold text-lg tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">
             Dwitku<span className="text-green-600 dark:text-green-400">.</span>
           </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutGrid,
@@ -24,8 +25,7 @@ import {
   CreditCard,
   ShieldCheck,
   ReceiptText,
-  ShoppingBag,
-  TrendingUp,
+  BookOpen,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn, getInitials } from "@/lib/utils";
@@ -56,10 +56,9 @@ const getTranslationKey = (label: string) => {
     case "Laporan": return "sidebar.laporan";
     case "Pengaturan": return "sidebar.pengaturan";
     case "Anggota": return "sidebar.anggota";
-    case "Penjualan": return "sidebar.penjualan";
-    case "Laporan Penjualan": return "sidebar.laporanPenjualan";
     case "Langganan": return "sidebar.langganan";
     case "Riwayat Order": return "sidebar.riwayatOrder";
+    case "Buku Panduan": return "sidebar.bukuPanduan";
     default: return label;
   }
 };
@@ -82,18 +81,11 @@ const WORKSPACE_NAV = [
   { href: "/settings/members", label: "Anggota", icon: Users },
 ];
 
-const SALES_NAV = [
-  { href: "/sales", label: "Penjualan", icon: ShoppingBag },
-  { href: "/categories", label: "Kategori", icon: Tag },
-  { href: "/sales-reports", label: "Laporan", icon: TrendingUp },
-  { href: "/settings", label: "Pengaturan", icon: Settings },
-  { href: "/settings/members", label: "Anggota", icon: Users },
-];
-
 // Global nav (not workspace-specific)
 const GLOBAL_NAV = [
   { href: "/billing", label: "Langganan", icon: CreditCard },
   { href: "/billing/history", label: "Riwayat Order", icon: ReceiptText },
+  { href: "/guide", label: "Buku Panduan", icon: BookOpen },
 ];
 
 import Swal from "sweetalert2";
@@ -134,20 +126,28 @@ const activeWs = workspaces.find((w) => w.id === activeWsId);
       {/* Header */}
       <div style={{ borderBottom: "1px solid var(--sidebar-border)" }} className="shrink-0 py-3 px-2">
         {collapsed ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center font-bold text-white shadow-md">
-              <span className="relative z-10 text-base">D</span>
-            </div>
+          <div className="flex flex-col items-center gap-1">
+            <Image
+              src="/icon-512.png"
+              alt="Dwitku Logo"
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-xl object-contain"
+            />
             <button onClick={toggleCollapsed} style={{ color: "var(--sidebar-text)" }} className="p-1.5 rounded-lg hover:bg-(--sidebar-item-bg-hover) transition-colors" title="Perluas Sidebar">
               <PanelLeftOpen className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <Link href="/workspaces" className="flex items-center gap-2.5 min-w-0 group">
-              <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center font-bold text-white shadow-md group-hover:rotate-12 transition-transform duration-300 shrink-0">
-                <span className="relative z-10 text-[10px]">D</span>
-              </div>
+            <Link href="/workspaces" className="flex items-center gap-1 min-w-0 group">
+              <Image
+                src="/icon-512.png"
+                alt="Dwitku Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-lg object-contain group-hover:rotate-6 transition-transform duration-300 shrink-0"
+              />
               <span style={{ color: "var(--sidebar-text-header)" }} className="font-bold text-lg tracking-tight">Dwitku</span>
             </Link>
             <button onClick={toggleCollapsed} style={{ color: "var(--sidebar-text)" }} className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--sidebar-item-bg-hover)] transition-colors shrink-0">

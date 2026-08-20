@@ -15,7 +15,7 @@ export function MainContent({ children, className }: { children: React.ReactNode
         minHeight: "100vh",
       }}
       className={cn(
-        "flex-1 max-w-full overflow-x-hidden",
+        "flex-1 max-w-full overflow-x-clip",
         "ml-0 ",
         collapsed
           ? "md:ml-(--sidebar-collapsed-width)"

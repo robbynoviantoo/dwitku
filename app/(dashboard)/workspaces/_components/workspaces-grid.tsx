@@ -54,14 +54,14 @@ export function WorkspacesGrid({ workspaces, handleCreateNew }: WorkspacesGridPr
         <p className="text-xs text-zinc-400 mb-5 max-w-sm mx-auto">
           {t("workspaces.emptySubtitle")}
         </p>
-        <Link
+        {/* <Link
           href="/onboarding"
           onClick={handleCreateNew}
           className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all text-xs cursor-pointer active:scale-95"
         >
           <Plus className="w-4 h-4" />
           {t("workspaces.createNew")}
-        </Link>
+        </Link> */}
       </div>
     );
   }

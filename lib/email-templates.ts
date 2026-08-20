@@ -313,7 +313,7 @@ export function buildSubscriptionActivatedEmail({
             "Unlimited Transaksi & Kategori",
             "Ekspor Data ke Excel & CSV (XLSX)",
             "Deep Insights & Proyeksi Arus Kas",
-            "Mode Penjualan / Kasir (Sales) & Multi-Dompet",
+            "Integrasi Bot Telegram & Multi-Dompet",
             "Dukungan Prioritas VIP & Cloud Backup",
         ]
         : [
@@ -322,7 +322,7 @@ export function buildSubscriptionActivatedEmail({
             "Kolaborasi hingga 5 Anggota Tim",
             "15 Kategori Kustom",
             "Ekspor Data ke Excel & CSV",
-            "Akses Mode Penjualan / Kasir (Sales)",
+            "Integrasi Bot Telegram Cepat",
         ];
 
     return `<!DOCTYPE html>

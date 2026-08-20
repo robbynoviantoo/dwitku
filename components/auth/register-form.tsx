@@ -113,7 +113,7 @@ export function RegisterForm() {
                 <button
                     disabled={isPending}
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full cursor-pointer bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                     {isPending
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Mendaftarkan...</>
@@ -133,7 +133,7 @@ export function RegisterForm() {
                 disabled={isPending}
                 // Gunakan client action NextAuth untuk provider
                 onClick={() => signIn("google", { callbackUrl: callbackUrl || "/workspaces" })}
-                className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
+                className="mt-6 w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 rounded-lg transition-colors"
             >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path

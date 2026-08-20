@@ -77,9 +77,6 @@ export function LandingPricing({ dbPlans }: LandingPricingProps) {
         if (p.canBudget) {
           features.push(locale === "en" ? "Budgeting & Financial Targets" : "Target & Anggaran Keuangan (Budget)");
         }
-        if (isBasic) {
-          features.push(locale === "en" ? "Sales & Cashier mode access" : "Akses mode penjualan / kasir (Sales)");
-        }
         if (isPro) {
           features.push(locale === "en" ? "VIP Priority Support & Cloud Backup" : "Dukungan Prioritas VIP & Backup Cloud");
         }
@@ -133,7 +130,6 @@ export function LandingPricing({ dbPlans }: LandingPricingProps) {
             locale === "en" ? "15 Custom categories" : "15 Kategori kustom",
             locale === "en" ? "Excel & CSV data export" : "Ekspor data ke Excel & CSV (XLSX)",
             locale === "en" ? "Interactive monthly charts & analytics" : "Grafik & analitik keuangan bulanan",
-            locale === "en" ? "Sales & Cashier mode access" : "Akses mode penjualan / kasir (Sales)",
           ],
         },
         {

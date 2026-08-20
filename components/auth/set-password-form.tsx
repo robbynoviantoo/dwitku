@@ -26,6 +26,7 @@ export function SetPasswordForm() {
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -97,13 +98,23 @@ export function SetPasswordForm() {
 
                 <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Konfirmasi Password</label>
-                    <input
-                        {...form.register("confirmPassword")}
-                        disabled={isPending}
-                        className="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
-                        placeholder="Ulangi password"
-                        type={showPassword ? "text" : "password"}
-                    />
+                    <div className="relative">
+                        <input
+                            {...form.register("confirmPassword")}
+                            disabled={isPending}
+                            className="w-full pl-4 pr-10 py-2 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
+                            placeholder="Ulangi password"
+                            type={showConfirmPassword ? "text" : "password"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                            disabled={isPending}
+                        >
+                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    </div>
                     {form.formState.errors.confirmPassword && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.confirmPassword.message}</p>
                     )}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useLanguage } from "@/components/providers/language-provider";
 
 export function LandingFooter() {
@@ -11,9 +12,13 @@ export function LandingFooter() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#004C29] flex items-center justify-center font-black text-white text-xs">
-            D
-          </div>
+          <Image
+            src="/icon-512.png"
+            alt="Dwitku Logo"
+            width={28}
+            height={28}
+            className="w-7 h-7 rounded-lg object-contain"
+          />
           <span className="font-extrabold text-base text-zinc-900 dark:text-zinc-100">
             Dwitku<span className="text-green-600">.</span>
           </span>
