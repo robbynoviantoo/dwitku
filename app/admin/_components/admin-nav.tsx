@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, CreditCard, Users, Shield, ArrowLeft, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { DatabaseExportModal } from "./database-export-modal";
+
 interface AdminNavProps {
   user: {
     name?: string | null;
@@ -90,15 +92,17 @@ export function AdminNav({ user }: AdminNavProps) {
           </nav>
         </div>
 
-        {/* User Info */}
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
+        {/* Right Section: Database Export + User Info */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <DatabaseExportModal variant="nav" />
+
+          <div className="text-right hidden md:block border-l border-slate-200 dark:border-zinc-800 pl-3">
             <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-none">
               {user.name || "Administrator"}
             </p>
             <p className="text-[10px] text-zinc-400 mt-0.5">{user.email}</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold ring-2 ring-green-600/20">
+          <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold ring-2 ring-green-600/20 shrink-0">
             {user.name?.charAt(0).toUpperCase() || "A"}
           </div>
         </div>

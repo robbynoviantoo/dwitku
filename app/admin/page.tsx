@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
+import { DatabaseExportModal } from "./_components/database-export-modal";
+
 export const metadata = {
   title: "Admin Dashboard — Dwitku",
 };
@@ -126,7 +128,9 @@ export default async function AdminPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DatabaseExportModal variant="button" />
+
           <Link
             href="/admin/plans"
             className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all flex items-center gap-1.5 shadow-xs"
@@ -291,6 +295,26 @@ export default async function AdminPage() {
             );
           })}
         </div>
+      </div>
+
+      {/* Database Management & Backup Card */}
+      <div className="bg-white dark:bg-[#161b22] p-5 rounded-2xl border border-slate-200 dark:border-[#21262d] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Database Maintenance
+            </span>
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Neon Postgres</span>
+          </div>
+          <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+            Cadangkan & Ekspor Seluruh Database
+          </h2>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+            Unduh salinan lengkap data Dwitku (Users, Workspaces, Wallets, Transaksi, Penjualan, Subscriptions) dalam format JSON Snapshot atau SQL Dump yang siap di-restore sewaktu-waktu.
+          </p>
+        </div>
+
+        <DatabaseExportModal variant="button" buttonClassName="shrink-0 font-bold bg-green-600 hover:bg-green-700" />
       </div>
 
       {/* Recent Subscriptions Table */}
