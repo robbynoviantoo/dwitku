@@ -56,6 +56,7 @@
 - **Form & Validation**: `react-hook-form`, `@hookform/resolvers`, **Zod 4**
 
 ### 💳 Integrasi Pihak Ketiga & Komunikasi
+- **Telegram Bot API**: Integrasi bot Telegram interaktif untuk pencatatan transaksi cepat (*quick natural language recording*), pilihan kategori dinamis (*inline keyboard*), cek saldo dompet, dan ringkasan kas bulanan.
 - **Payment Gateway**: **Midtrans Snap API** (`midtrans-client`) untuk langganan paket Pro & Basic.
 - **Email Service**: **Resend API** (`resend`) untuk verifikasi email, reset password, dan undangan workspace.
 - **Push Notification**: **Web Push Protocol** (`web-push`, Service Worker) untuk notifikasi real-time ke perangkat user.
@@ -73,25 +74,33 @@
 
 2. **Pencatatan Keuangan (Dompet & Transaksi)**:
    - Manajemen multi-dompet: Rekening Bank (BCA, Mandiri, BRI, BNI, BSI, Jago, SeaBank), E-Wallet (GoPay, OVO, DANA, ShopeePay), Cash, dll.
+   - Fitur **Drag & Drop Reordering**: Mengatur urutan prioritas dompet secara visual.
    - Perekaman transaksi: Pemasukan (*Income*), Pengeluaran (*Expense*), dan Pindah Saldo (*Transfer Antar Dompet*).
    - Kustomisasi kategori transaksi dengan ikon emoji dan warna.
 
-3. **Modul Penjualan & Perhitungan HPP (Sales & Cost of Goods Sold)**:
+3. **Integrasi Telegram Bot Interaktif**:
+   - Pencatatan transaksi kilat via chat Telegram (cth: `lapor pengeluaran 15000 beli kopi` atau `keluar 50k`).
+   - Bot otomatis membalas dengan **Inline Keyboard Kategori**, dan setelah tombol dipilih, transaksi langsung tercatat ke database dengan saldo terbaru.
+   - Perintah cepat: `/saldo` (rincian saldo semua dompet) dan `/laporan` (rekap kas bulan berjalan).
+   - Panel Super Admin (`/admin/telegram`) untuk manajemen token, status online bot, dan 1-klik pendaftaran Webhook.
+
+4. **Modul Penjualan & Perhitungan HPP (Sales & Cost of Goods Sold)**:
    - Pencatatan master produk, konfigurasi paket kuantiti, dan harga modal (HPP).
    - Transaksi penjualan harian, rekap laba kotor (*Gross Profit*), beban operasional (*Sale Expense*), hingga laba bersih (*Net Profit*).
 
-4. **Laporan & Analitik Keuangan**:
+5. **Laporan & Analitik Keuangan**:
    - Ringkasan statistik bulanan/tahunan dengan visualisasi grafik interaktif.
    - Ekspor transaksi dan laporan ke file format Microsoft Excel (`.xlsx`).
 
-5. **Sistem Langganan SaaS (Subscription & Midtrans)**:
+6. **Sistem Langganan SaaS (Subscription & Midtrans)**:
    - Skema paket: **Free**, **Basic**, dan **Pro** (pembatasan kuota workspace, transaksi/bulan, dan fitur ekspor).
    - Pembayaran otomatis melalui Midtrans Snap Popup & Webhook IPN (Instant Payment Notification).
 
-6. **Super Admin Console**:
+7. **Super Admin Console**:
    - Dashboard analitik MRR (*Monthly Recurring Revenue*), total pengguna, dan status langganan.
    - Manajemen paket harga dan hak akses pengguna.
    - **Fitur Ekspor & Cadangkan Database**: Unduh instan snapshot seluruh data database dalam format **JSON** atau **SQL Dump (`.sql`)**.
+   - **Manajemen Telegram Bot**: Pengaturan token, webhook register/delete, dan monitoring user terhubung.
 
 ---
 

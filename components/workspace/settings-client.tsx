@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/components/providers/language-provider";
 import { SettingsHeader } from "@/app/(dashboard)/settings/_components/settings-header";
 import { SettingsGeneralForm } from "@/app/(dashboard)/settings/_components/settings-general-form";
+import { SettingsTelegramCard } from "@/app/(dashboard)/settings/_components/settings-telegram-card";
 import { SettingsDangerZone } from "@/app/(dashboard)/settings/_components/settings-danger-zone";
 
 type Workspace = {
@@ -193,7 +194,10 @@ export function SettingsClient({ workspaceId }: { workspaceId: string }) {
         onSave={onSave}
       />
 
-      {/* ── 3. Danger Zone ── */}
+      {/* ── 3. Telegram Integration ── */}
+      <SettingsTelegramCard workspaceId={workspace.id} />
+
+      {/* ── 4. Danger Zone ── */}
       <SettingsDangerZone
         isOwner={isOwner}
         isPending={isPending}
