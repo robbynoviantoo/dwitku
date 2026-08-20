@@ -9,9 +9,10 @@ import gsap from "gsap";
 
 interface FloatingTrialButtonProps {
   canClaimTrial: boolean;
+  trialDays?: number;
 }
 
-export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps) {
+export function FloatingTrialButton({ canClaimTrial, trialDays = 7 }: FloatingTrialButtonProps) {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -94,7 +95,7 @@ export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps)
     floatTimelineRef.current?.pause();
 
     const confirm = await Swal.fire({
-      title: "Mulai Trial Pro 7 Hari? 🎉",
+      title: `Mulai Trial Pro ${trialDays} Hari? 🎉`,
       html: `
         <div class="text-left text-xs text-zinc-600 space-y-2 mt-2">
           <p>Aktifkan akses penuh ke seluruh fitur unggulan <strong>Dwitku Pro</strong>:</p>
@@ -105,14 +106,14 @@ export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps)
             <li>Deep Insights & Proyeksi Arus Kas</li>
             <li>Kolaborasi Tim & Multi-User tanpa batas</li>
           </ul>
-          <p class="pt-2 text-zinc-400 text-[11px]">✨ 100% Gratis selama 7 hari tanpa perlu kartu kredit.</p>
+          <p class="pt-2 text-zinc-400 text-[11px]">✨ 100% Gratis selama ${trialDays} hari tanpa perlu kartu kredit.</p>
         </div>
       `,
       icon: "info",
       showCancelButton: true,
       confirmButtonColor: "#004C29",
       cancelButtonColor: "#71717a",
-      confirmButtonText: "Aktifkan 7 Hari Gratis 🚀",
+      confirmButtonText: `Aktifkan ${trialDays} Hari Gratis 🚀`,
       cancelButtonText: "Nanti Saja",
       customClass: {
         popup: "!rounded-3xl !p-6",
@@ -133,7 +134,7 @@ export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps)
     if (res?.success) {
       await Swal.fire({
         title: "Selamat! Trial Pro Aktif 🎉",
-        text: "Masa uji coba Pro 7 hari kamu telah aktif. Nikmati kemudahan mengelola keuangan tanpa batas!",
+        text: `Masa uji coba Pro ${trialDays} hari kamu telah aktif. Nikmati kemudahan mengelola keuangan tanpa batas!`,
         icon: "success",
         confirmButtonColor: "#004C29",
         confirmButtonText: "Mulai Sekarang",
@@ -174,7 +175,7 @@ export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps)
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        title="Buka Penawaran Trial Pro 7 Hari"
+        title={`Buka Penawaran Trial Pro ${trialDays} Hari`}
         className="fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-linear-to-br from-[#004C29] to-[#002615] text-amber-300 shadow-2xl shadow-green-950/40 border border-amber-400/30 hover:scale-110 active:scale-95 transition-all cursor-pointer group"
       >
         <div className="relative">
@@ -219,7 +220,7 @@ export function FloatingTrialButton({ canClaimTrial }: FloatingTrialButtonProps)
               GRATIS
             </span>
             <span className="font-extrabold text-xs text-white tracking-tight group-hover:text-amber-300 transition-colors">
-              Trial Pro 7 Hari
+              Trial Pro {trialDays} Hari
             </span>
           </div>
           <p className="text-[11px] text-emerald-100/70 truncate">

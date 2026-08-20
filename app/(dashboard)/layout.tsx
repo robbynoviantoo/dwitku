@@ -28,7 +28,7 @@ export default async function DashboardLayout({
   const sidebarCollapsedCookie = cookieStore.get("sidebar_collapsed")?.value;
   const defaultCollapsed = sidebarCollapsedCookie === "1" || sidebarCollapsedCookie === "true";
 
-  const [allWorkspaces, dbUser] = await Promise.all([
+  const [allWorkspaces, dbUser, proPlan] = await Promise.all([
     getUserWorkspaces(),
     prisma.user.findUnique({
       where: { id: session.user.id },
@@ -46,6 +46,10 @@ export default async function DashboardLayout({
         },
       },
     }),
+    prisma.plan.findUnique({
+      where: { key: "pro" },
+      select: { trialDays: true },
+    }).catch(() => null),
   ]);
 
   // Tampilkan banner hanya untuk user credential (punya password) yang belum verif email
@@ -95,7 +99,10 @@ export default async function DashboardLayout({
               </MainContent>
 
               {/* Floating Pro Trial CTA button for eligible users */}
-              <FloatingTrialButton canClaimTrial={canClaimTrial} />
+              <FloatingTrialButton
+                canClaimTrial={canClaimTrial}
+                trialDays={proPlan?.trialDays ?? 7}
+              />
             </div>
           </WorkspaceProvider>
         </PrivacyProvider>
