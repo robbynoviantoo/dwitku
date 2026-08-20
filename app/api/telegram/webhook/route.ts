@@ -20,6 +20,26 @@ function formatNumber(num: number): string {
   return new Intl.NumberFormat("id-ID").format(num);
 }
 
+/** Health-check & status endpoint untuk verifikasi di browser */
+export async function GET() {
+  try {
+    const config = await getTelegramConfig();
+    return NextResponse.json({
+      status: "Dwitku Telegram Webhook is active",
+      botConfigured: !!config.botToken,
+      botUsername: config.botUsername || "Belum diisi",
+      hasSecret: !!config.webhookSecret,
+      appUrl: config.appUrl || "Belum diisi",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { status: "Error", error: err?.message || "Internal error" },
+      { status: 500 }
+    );
+  }
+}
+
 /** Ambil workspace utama user */
 async function getUserActiveWorkspace(userId: string) {
   // Cek apakah ada preferensi workspace aktif
