@@ -122,10 +122,19 @@ export function WalletFormDialog({ workspaceId, wallet, onClose, onSuccess }: Pr
       if (res.error) {
         setError(res.error);
       } else {
-        queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
-        queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] });
-        queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
-        broadcastInvalidate(["wallets", "transactions", "dashboard"]);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["wallets"] }),
+          queryClient.invalidateQueries({ queryKey: ["wallets-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+          queryClient.invalidateQueries({ queryKey: ["transaction-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["filtered-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["calendar-transactions"] }),
+        ]);
+        broadcastInvalidate(["wallets", workspaceId]);
+        broadcastInvalidate(["wallets-summary", workspaceId]);
+        broadcastInvalidate(["transactions", workspaceId]);
+        broadcastInvalidate(["transaction-summary", workspaceId]);
+        broadcastInvalidate(["filtered-summary", workspaceId]);
         onSuccess();
         onClose();
       }

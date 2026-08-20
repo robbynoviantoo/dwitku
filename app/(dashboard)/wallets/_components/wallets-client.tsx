@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getWallets, getWalletsTotalSummary, deleteWallet, WalletWithBalance } from "@/app/actions/wallet";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getWallets,
+  getWalletsTotalSummary,
+  deleteWallet,
+  reorderWallets,
+  WalletWithBalance,
+} from "@/app/actions/wallet";
 import { WalletLogo } from "@/components/ui/wallet-logo";
 import { WalletFormDialog } from "./wallet-form-dialog";
 import { formatCurrency, cn } from "@/lib/utils";
 import { usePrivacy } from "@/components/providers/privacy-provider";
 import { useLanguage } from "@/components/providers/language-provider";
+import { broadcastInvalidate } from "@/components/providers/query-provider";
 import {
   CreditCard,
   Plus,
@@ -18,6 +25,10 @@ import {
   Hash,
   TrendingUp,
   TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  GripVertical,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
@@ -35,11 +46,15 @@ export function WalletsClient({
   canEdit,
   isEmailVerified,
 }: WalletsClientProps) {
+  const queryClient = useQueryClient();
   const { showAmount } = usePrivacy();
   const { t } = useLanguage();
 
   const [formOpen, setFormOpen] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<WalletWithBalance | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   // Queries
   const { data: wallets = [], isLoading, refetch } = useQuery({
@@ -100,8 +115,61 @@ export function WalletsClient({
       if (res.error) {
         Swal.fire("Error", res.error, "error");
       } else {
-        refetch();
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["wallets"] }),
+          queryClient.invalidateQueries({ queryKey: ["wallets-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+          queryClient.invalidateQueries({ queryKey: ["transaction-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["filtered-summary"] }),
+        ]);
+        broadcastInvalidate(["wallets", workspaceId]);
+        broadcastInvalidate(["wallets-summary", workspaceId]);
       }
+    }
+  };
+
+  const handleMove = async (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= wallets.length) return;
+
+    const newWallets = [...wallets];
+    const [moved] = newWallets.splice(index, 1);
+    newWallets.splice(targetIndex, 0, moved);
+
+    // Optimistically update query data
+    queryClient.setQueryData(["wallets", workspaceId], newWallets);
+
+    const res = await reorderWallets(workspaceId, newWallets.map((w) => w.id));
+    if (res.error) {
+      queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
+      Swal.fire("Error", res.error, "error");
+    } else {
+      broadcastInvalidate(["wallets", workspaceId]);
+    }
+  };
+
+  const handleDrop = async (targetIdx: number) => {
+    if (draggedIdx === null || draggedIdx === targetIdx) {
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const newWallets = [...wallets];
+    const [moved] = newWallets.splice(draggedIdx, 1);
+    newWallets.splice(targetIdx, 0, moved);
+
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+
+    // Optimistically update query data
+    queryClient.setQueryData(["wallets", workspaceId], newWallets);
+
+    const res = await reorderWallets(workspaceId, newWallets.map((w) => w.id));
+    if (res.error) {
+      queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
+      Swal.fire("Error", res.error, "error");
+    } else {
+      broadcastInvalidate(["wallets", workspaceId]);
     }
   };
 
@@ -123,13 +191,31 @@ export function WalletsClient({
           </div>
 
           {canEdit && (
-            <button
-              onClick={handleOpenAdd}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer self-start sm:self-auto"
-            >
-              <Plus className="w-4 h-4" />
-              {t("wallets.addNew")}
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {wallets.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setIsReordering((v) => !v)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer",
+                    isReordering
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20"
+                      : "bg-white dark:bg-[#161b22] border-slate-200 dark:border-[#21262d] text-zinc-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
+                  )}
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>{t("wallets.reorder")}</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleOpenAdd}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {t("wallets.addNew")}
+              </button>
+            </div>
           )}
         </div>
 
@@ -234,17 +320,72 @@ export function WalletsClient({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-4 gap-4">
-            {wallets.map((w) => {
+            {wallets.map((w, idx) => {
+              const isDragged = draggedIdx === idx;
+              const isDragOver = dragOverIdx === idx && !isDragged;
+
               return (
                 <div
                   key={w.id}
-                  className="group rounded-2xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] hover:border-green-600/50 dark:hover:border-green-600/50 transition-all duration-200 flex flex-col justify-between p-4"
+                  draggable={canEdit}
+                  onDragStart={(e) => {
+                    if (!canEdit) return;
+                    setDraggedIdx(idx);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", idx.toString());
+                  }}
+                  onDragOver={(e) => {
+                    if (!canEdit) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverIdx !== idx) {
+                      setDragOverIdx(idx);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverIdx === idx) {
+                      setDragOverIdx(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (!canEdit) return;
+                    e.preventDefault();
+                    handleDrop(idx);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedIdx(null);
+                    setDragOverIdx(null);
+                  }}
+                  className={cn(
+                    "group rounded-2xl bg-white dark:bg-[#161b22] border transition-all duration-200 flex flex-col justify-between p-4 relative select-none",
+                    canEdit && "cursor-grab active:cursor-grabbing",
+                    isDragged && "opacity-35 scale-95 ring-2 ring-emerald-500/60 border-emerald-500 shadow-inner",
+                    isDragOver && "scale-[1.02] ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-lg",
+                    !isDragged && !isDragOver && (isReordering
+                      ? "border-emerald-500/40 dark:border-emerald-500/40 shadow-sm ring-1 ring-emerald-500/10"
+                      : "border-slate-200 dark:border-[#21262d] hover:border-green-600/50 dark:hover:border-green-600/50")
+                  )}
                 >
                   {/* Top Card Info */}
                   <div>
-                    <div className="flex items-start justify-between gap-2.5 mb-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <WalletLogo providerCode={w.providerCode} size="md" />
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {canEdit && (
+                          <div
+                            className="text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 cursor-grab active:cursor-grabbing transition-colors shrink-0 -ml-1"
+                            title="Drag untuk mengubah urutan"
+                          >
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="relative shrink-0">
+                          <WalletLogo providerCode={w.providerCode} size="md" />
+                          {isReordering && (
+                            <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center shadow-xs">
+                              {idx + 1}
+                            </span>
+                          )}
+                        </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
@@ -262,22 +403,55 @@ export function WalletsClient({
                         </div>
                       </div>
 
-                      {/* Action buttons */}
+                      {/* Action buttons & Reorder controls */}
                       {canEdit && (
-                        <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity shrink-0">
+                        <div className={cn(
+                          "flex items-center gap-1 shrink-0 transition-opacity",
+                          isReordering ? "opacity-100" : "opacity-70 group-hover:opacity-100"
+                        )}>
+                          {/* Reorder move buttons */}
+                          {wallets.length > 1 && (
+                            <div className="flex items-center bg-slate-100 dark:bg-zinc-800 rounded-lg p-0.5 border border-slate-200/60 dark:border-zinc-700/60">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMove(idx, "up");
+                                }}
+                                className="p-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                title={t("wallets.moveUp")}
+                              >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === wallets.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMove(idx, "down");
+                                }}
+                                className="p-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-700 transition-colors disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                title={t("wallets.moveDown")}
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+
                           <button
                             onClick={() => handleOpenEdit(w)}
-                            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer"
                             title={t("wallets.editWallet")}
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(w)}
-                            className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
                             title={t("wallets.deleteWallet")}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       )}

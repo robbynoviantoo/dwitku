@@ -18,6 +18,7 @@ export interface WalletWithBalance {
   color: string;
   initialBalance: number;
   isDefault: boolean;
+  order: number;
   totalIncome: number;
   totalExpense: number;
   currentBalance: number;
@@ -62,6 +63,7 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
     },
     orderBy: [
       { isDefault: "desc" },
+      { order: "asc" },
       { createdAt: "asc" },
     ],
   });
@@ -98,6 +100,7 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
       color: w.color,
       initialBalance: initBal,
       isDefault: w.isDefault,
+      order: w.order ?? 0,
       totalIncome,
       totalExpense,
       currentBalance,
@@ -109,18 +112,16 @@ export async function getWallets(workspaceId: string): Promise<WalletWithBalance
   });
 }
 
-/** Ringkasan total kekayaan gabungan dari semua dompet */
+/** Hitung summary saldo seluruh dompet di workspace */
 export async function getWalletsTotalSummary(workspaceId: string) {
   const wallets = await getWallets(workspaceId);
-  const totalBalance = wallets.reduce((sum, w) => sum + w.currentBalance, 0);
-  const totalInitial = wallets.reduce((sum, w) => sum + w.initialBalance, 0);
-  const totalIncome = wallets.reduce((sum, w) => sum + w.totalIncome, 0);
-  const totalExpense = wallets.reduce((sum, w) => sum + w.totalExpense, 0);
+  const totalBalance = wallets.reduce((acc, w) => acc + w.currentBalance, 0);
+  const totalIncome = wallets.reduce((acc, w) => acc + w.totalIncome, 0);
+  const totalExpense = wallets.reduce((acc, w) => acc + w.totalExpense, 0);
 
   return {
     totalWallets: wallets.length,
     totalBalance,
-    totalInitial,
     totalIncome,
     totalExpense,
   };
@@ -129,7 +130,7 @@ export async function getWalletsTotalSummary(workspaceId: string) {
 /** Buat dompet baru */
 export async function createWallet(
   workspaceId: string,
-  values: z.infer<typeof WalletSchema>
+  data: z.infer<typeof WalletSchema>
 ) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Tidak terautentikasi" };
@@ -141,21 +142,36 @@ export async function createWallet(
     return { error: "Tidak punya izin untuk membuat dompet" };
   }
 
-  const validated = WalletSchema.safeParse(values);
-  if (!validated.success) return { error: "Data dompet tidak valid" };
+  const parsed = WalletSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Input tidak valid" };
+  }
 
-  const { name, type, providerCode, accountNumber, holderName, color, initialBalance, isDefault } = validated.data;
+  const {
+    name,
+    type,
+    providerCode,
+    accountNumber,
+    holderName,
+    color,
+    initialBalance,
+    isDefault,
+  } = parsed.data;
 
-  // Jika dibuat sebagai default, nonaktifkan isDefault di dompet lain
+  // Jika isDefault, lepas default dari dompet lain
   if (isDefault) {
     await prisma.wallet.updateMany({
-      where: { workspaceId },
+      where: { workspaceId, isDefault: true },
       data: { isDefault: false },
     });
   }
 
+  // Cari index order terakhir
+  const walletCount = await prisma.wallet.count({ where: { workspaceId } });
+
   const wallet = await prisma.wallet.create({
     data: {
+      workspaceId,
       name,
       type: type as WalletType,
       providerCode: providerCode || null,
@@ -164,7 +180,7 @@ export async function createWallet(
       color: color || "#16a34a",
       initialBalance: initialBalance || 0,
       isDefault: isDefault || false,
-      workspaceId,
+      order: walletCount,
       createdById: session.user.id,
     },
   });
@@ -182,11 +198,11 @@ export async function createWallet(
   };
 }
 
-/** Update dompet */
+/** Ubah data dompet */
 export async function updateWallet(
   walletId: string,
   workspaceId: string,
-  values: z.infer<typeof WalletSchema>
+  data: z.infer<typeof WalletSchema>
 ) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Tidak terautentikasi" };
@@ -195,17 +211,33 @@ export async function updateWallet(
     where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
   });
   if (!membership || membership.role === WorkspaceRole.VIEWER) {
-    return { error: "Tidak punya izin untuk mengedit dompet" };
+    return { error: "Tidak punya izin untuk mengubah dompet" };
   }
 
-  const validated = WalletSchema.safeParse(values);
-  if (!validated.success) return { error: "Data dompet tidak valid" };
+  const parsed = WalletSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Input tidak valid" };
+  }
 
-  const { name, type, providerCode, accountNumber, holderName, color, initialBalance, isDefault } = validated.data;
+  const {
+    name,
+    type,
+    providerCode,
+    accountNumber,
+    holderName,
+    color,
+    initialBalance,
+    isDefault,
+  } = parsed.data;
 
+  // Jika isDefault, lepas default dari dompet lain
   if (isDefault) {
     await prisma.wallet.updateMany({
-      where: { workspaceId, id: { not: walletId } },
+      where: {
+        workspaceId,
+        id: { not: walletId },
+        isDefault: true,
+      },
       data: { isDefault: false },
     });
   }
@@ -235,6 +267,38 @@ export async function updateWallet(
       initialBalance: Number(wallet.initialBalance),
     },
   };
+}
+
+/** Update urutan custom dompet/wallet */
+export async function reorderWallets(
+  workspaceId: string,
+  walletIds: string[]
+) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Tidak terautentikasi" };
+
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId: session.user.id } },
+  });
+  if (!membership || membership.role === WorkspaceRole.VIEWER) {
+    return { error: "Tidak punya izin untuk mengubah urutan dompet" };
+  }
+
+  // Update order secara atomik
+  await prisma.$transaction(
+    walletIds.map((id, index) =>
+      prisma.wallet.update({
+        where: { id, workspaceId },
+        data: { order: index },
+      })
+    )
+  );
+
+  revalidatePath("/wallets");
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+
+  return { success: true };
 }
 
 /** Hapus dompet */

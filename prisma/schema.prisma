@@ -145,6 +145,7 @@ model Wallet {
   color          String      @default("#16a34a")
   initialBalance Decimal     @default(0) @db.Decimal(15, 2)
   isDefault      Boolean     @default(false)
+  order          Int         @default(0)
   createdById    String
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt

@@ -38,8 +38,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         // Invalidate queries in THIS tab when OTHER tabs signal a change
         queryClient.invalidateQueries({
           queryKey: event.data.queryKey,
-          // Jangan invalidate yang sedang fetching agar tidak loop (opsional)
-          refetchType: "active"
+          refetchType: "all"
         });
       }
     };

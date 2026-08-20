@@ -184,12 +184,18 @@ export function TransactionsClient({
   const deleteMutation = useMutation({
     mutationFn: (txId: string) => deleteTransaction(txId, workspaceId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["filtered-summary", workspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["filtered-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets"] });
+      queryClient.invalidateQueries({ queryKey: ["wallets-summary"] });
       broadcastInvalidate(["transactions", workspaceId]);
+      broadcastInvalidate(["transaction-summary", workspaceId]);
+      broadcastInvalidate(["filtered-summary", workspaceId]);
+      broadcastInvalidate(["calendar-transactions", workspaceId]);
+      broadcastInvalidate(["wallets", workspaceId]);
+      broadcastInvalidate(["wallets-summary", workspaceId]);
     },
     onError: (err: any) => setError(err.message || t("transactions.failedDelete")),
   });
@@ -600,11 +606,12 @@ export function TransactionsClient({
             transaction={dialog.transaction as any}
             onClose={() => setDialog({ open: false })}
             onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] });
-              queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] });
-              queryClient.invalidateQueries({ queryKey: ["filtered-summary", workspaceId] });
-              queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] });
-              queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] });
+              queryClient.invalidateQueries({ queryKey: ["transactions"] });
+              queryClient.invalidateQueries({ queryKey: ["transaction-summary"] });
+              queryClient.invalidateQueries({ queryKey: ["filtered-summary"] });
+              queryClient.invalidateQueries({ queryKey: ["wallets"] });
+              queryClient.invalidateQueries({ queryKey: ["wallets-summary"] });
+              queryClient.invalidateQueries({ queryKey: ["calendar-transactions"] });
             }}
           />
         )}

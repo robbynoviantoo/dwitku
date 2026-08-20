@@ -80,6 +80,10 @@ const translations: Record<Locale, Record<string, string>> = {
     "wallets.saving": "Menyimpan...",
     "wallets.updateWallet": "Perbarui Dompet",
     "wallets.saveWallet": "Simpan Dompet",
+    "wallets.moveUp": "Pindahkan ke atas / kiri",
+    "wallets.moveDown": "Pindahkan ke bawah / kanan",
+    "wallets.reorder": "Atur Urutan",
+    "wallets.orderUpdated": "Urutan dompet berhasil diperbarui",
     // Dashboard
     "greeting.morning": "Selamat Pagi",
     "greeting.afternoon": "Selamat Siang",
@@ -446,6 +450,10 @@ const translations: Record<Locale, Record<string, string>> = {
     "wallets.saving": "Saving...",
     "wallets.updateWallet": "Update Wallet",
     "wallets.saveWallet": "Save Wallet",
+    "wallets.moveUp": "Move up / left",
+    "wallets.moveDown": "Move down / right",
+    "wallets.reorder": "Reorder",
+    "wallets.orderUpdated": "Wallet order updated successfully",
     // Dashboard
     "greeting.morning": "Good Morning",
     "greeting.afternoon": "Good Afternoon",

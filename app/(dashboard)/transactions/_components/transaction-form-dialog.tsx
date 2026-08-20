@@ -29,6 +29,8 @@ import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 
+import * as Popover from "@radix-ui/react-popover";
+
 type Category = { id: string; name: string; emoji: string; color: string; type: string };
 
 type Transaction = {
@@ -61,14 +63,14 @@ function parseThousands(formatted: string): number {
     return Number(formatted.replace(/\./g, ""));
 }
 
-// ── Searchable Wallet Select Component ───────────────────────────────────────
+// ── Searchable Wallet Select Component (Radix Popover) ───────────────────────
 function FormWalletSelect({
     wallets,
     value,
     onChange,
     excludeWalletId,
     placeholder,
-    align = "left",
+    align = "start",
     error,
 }: {
     wallets: WalletWithBalance[];
@@ -76,14 +78,13 @@ function FormWalletSelect({
     onChange: (id: string) => void;
     excludeWalletId?: string;
     placeholder?: string;
-    align?: "left" | "right";
+    align?: "start" | "end" | "center";
     error?: string;
 }) {
     const { t } = useLanguage();
     const defaultPlaceholder = placeholder || t("transactions.selectWallet");
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const availableWallets = useMemo(
@@ -103,125 +104,118 @@ function FormWalletSelect({
         [availableWallets, search]
     );
 
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-                setSearch("");
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    const handleOpen = () => {
-        setOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 50);
-    };
-
     return (
-        <div ref={ref} className="relative z-30">
-            <button
-                type="button"
-                onClick={open ? () => { setOpen(false); setSearch(""); } : handleOpen}
-                className={cn(
-                    "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
-                    "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-none",
-                    error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
-                )}
-            >
-                {selectedWallet ? (
-                    <div className="flex items-center gap-2.5 min-w-0 text-left">
-                        <WalletLogo providerCode={selectedWallet.providerCode} size="sm" />
-                        <div className="min-w-0">
-                            <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
-                                {selectedWallet.name}
-                            </p>
-                            <p className="text-[10px] text-zinc-400 truncate leading-tight">
-                                {selectedWallet.holderName ? `${selectedWallet.holderName} · ` : ""}
-                                {formatCurrency(selectedWallet.currentBalance, "IDR")}
-                            </p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2 text-zinc-400 text-xs">
-                        <WalletIcon className="w-4 h-4" />
-                        <span className="truncate">{defaultPlaceholder}</span>
-                    </div>
-                )}
-                <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
-            </button>
-
-            {open && (
-                <div
-                    className={cn(
-                        "absolute top-full mt-1.5 w-[290px] sm:w-[330px] max-w-[calc(100vw-2.5rem)] bg-white border border-zinc-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150",
-                        align === "right" ? "right-0 left-auto" : "left-0 right-auto"
-                    )}
-                >
-                    <div className="p-2 border-b border-zinc-100 bg-zinc-50/70">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-                            <input
-                                ref={inputRef}
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder={t("transactions.searchWallet")}
-                                className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
-                            />
-                        </div>
-                    </div>
-                    <div className="max-h-56 overflow-y-auto p-1.5 space-y-1" data-lenis-prevent>
-                        {filtered.length === 0 ? (
-                            <p className="text-center py-4 text-xs text-zinc-400">{t("transactions.walletNotFound")}</p>
-                        ) : (
-                            filtered.map((w) => {
-                                const active = w.id === value;
-                                return (
-                                    <button
-                                        key={w.id}
-                                        type="button"
-                                        onClick={() => {
-                                            onChange(w.id);
-                                            setOpen(false);
-                                            setSearch("");
-                                        }}
-                                        className={cn(
-                                            "flex items-center justify-between w-full p-2.5 rounded-xl text-left transition-colors cursor-pointer group",
-                                            active
-                                                ? "bg-green-50/90 text-green-950 font-semibold border border-green-200/80"
-                                                : "hover:bg-zinc-50 text-zinc-700"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <WalletLogo providerCode={w.providerCode} size="md" className="shrink-0" />
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
-                                                    {w.name}
-                                                </p>
-                                                <p className="text-[10px] text-zinc-400 truncate leading-tight mt-0.5">
-                                                    {w.holderName ? `${w.holderName}` : ""}
-                                                    {w.holderName && w.accountNumber ? " · " : ""}
-                                                    {w.accountNumber ? `${w.accountNumber}` : ""}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 ml-2 whitespace-nowrap">
-                                            {formatCurrency(w.currentBalance, "IDR")}
-                                        </span>
-                                    </button>
-                                );
-                            })
+        <div className="relative w-full">
+            <Popover.Root open={open} onOpenChange={(v) => {
+                setOpen(v);
+                if (v) setTimeout(() => inputRef.current?.focus(), 80);
+                else setSearch("");
+            }}>
+                <Popover.Trigger asChild>
+                    <button
+                        type="button"
+                        className={cn(
+                            "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
+                            "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-hidden",
+                            error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
                         )}
-                    </div>
-                </div>
-            )}
+                    >
+                        {selectedWallet ? (
+                            <div className="flex items-center gap-2.5 min-w-0 text-left">
+                                <WalletLogo providerCode={selectedWallet.providerCode} size="sm" />
+                                <div className="min-w-0">
+                                    <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
+                                        {selectedWallet.name}
+                                    </p>
+                                    <p className="text-[10px] text-zinc-400 truncate leading-tight">
+                                        {selectedWallet.holderName ? `${selectedWallet.holderName} · ` : ""}
+                                        {formatCurrency(selectedWallet.currentBalance, "IDR")}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                                <WalletIcon className="w-4 h-4" />
+                                <span className="truncate">{defaultPlaceholder}</span>
+                            </div>
+                        )}
+                        <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
+                    </button>
+                </Popover.Trigger>
+
+                <Popover.Portal>
+                    <Popover.Content
+                        align={align}
+                        side="bottom"
+                        sideOffset={6}
+                        collisionPadding={12}
+                        avoidCollisions={true}
+                        className="w-[calc(100vw-2.5rem)] sm:w-[330px] max-w-[380px] bg-white border border-zinc-200 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-150 focus:outline-hidden"
+                    >
+                        <div className="p-2 border-b border-zinc-100 bg-zinc-50/70">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                                <input
+                                    ref={inputRef}
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder={t("transactions.searchWallet")}
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-green-400 bg-white"
+                                />
+                            </div>
+                        </div>
+                        <div className="max-h-[min(260px,50vh)] overflow-y-auto p-1.5 space-y-1 overscroll-contain" data-lenis-prevent>
+                            {filtered.length === 0 ? (
+                                <p className="text-center py-4 text-xs text-zinc-400">{t("transactions.walletNotFound")}</p>
+                            ) : (
+                                filtered.map((w) => {
+                                    const active = w.id === value;
+                                    return (
+                                        <button
+                                            key={w.id}
+                                            type="button"
+                                            onClick={() => {
+                                                onChange(w.id);
+                                                setOpen(false);
+                                                setSearch("");
+                                            }}
+                                            className={cn(
+                                                "flex items-center justify-between w-full p-2.5 rounded-xl text-left transition-colors cursor-pointer group",
+                                                active
+                                                    ? "bg-green-50/90 text-green-950 font-semibold border border-green-200/80"
+                                                    : "hover:bg-zinc-50 text-zinc-700"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <WalletLogo providerCode={w.providerCode} size="md" className="shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
+                                                        {w.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-zinc-400 truncate leading-tight mt-0.5">
+                                                        {w.holderName ? `${w.holderName}` : ""}
+                                                        {w.holderName && w.accountNumber ? " · " : ""}
+                                                        {w.accountNumber ? `${w.accountNumber}` : ""}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 ml-2 whitespace-nowrap">
+                                                {formatCurrency(w.currentBalance, "IDR")}
+                                            </span>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </Popover.Content>
+                </Popover.Portal>
+            </Popover.Root>
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
 
-// ── Searchable Category Select Component ─────────────────────────────────────
+// ── Searchable Category Select Component (Radix Popover) ─────────────────────
 function FormCategorySelect({
     categories,
     value,
@@ -236,98 +230,98 @@ function FormCategorySelect({
     const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const selectedCat = categories.find((c) => c.id === value);
-    const filtered = categories.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase())
+    const filtered = useMemo(
+        () =>
+            categories.filter((c) =>
+                c.name.toLowerCase().includes(search.toLowerCase())
+            ),
+        [categories, search]
     );
 
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-                setSearch("");
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    const handleOpen = () => {
-        setOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 50);
-    };
-
     return (
-        <div ref={ref} className="relative z-20">
-            <button
-                type="button"
-                onClick={open ? () => { setOpen(false); setSearch(""); } : handleOpen}
-                className={cn(
-                    "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
-                    "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-none",
-                    error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
-                )}
-            >
-                {selectedCat ? (
-                    <div className="flex items-center gap-2 min-w-0 text-left">
-                        <span className="text-base">{selectedCat.emoji}</span>
-                        <span className="text-xs font-semibold text-zinc-900 truncate">{selectedCat.name}</span>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2 text-zinc-400 text-xs">
-                        <Tag className="w-4 h-4" />
-                        <span>{t("transactions.selectCategory")}</span>
-                    </div>
-                )}
-                <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
-            </button>
-
-            {open && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="p-2 border-b border-zinc-100 bg-zinc-50/70">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-                            <input
-                                ref={inputRef}
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder={t("transactions.searchCategoryPlaceholder")}
-                                className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
-                            />
-                        </div>
-                    </div>
-                    <div className="max-h-52 overflow-y-auto p-1.5 grid grid-cols-2 gap-1" data-lenis-prevent>
-                        {filtered.length === 0 ? (
-                            <p className="col-span-2 text-center py-4 text-xs text-zinc-400">{t("transactions.categoryNotFound")}</p>
-                        ) : (
-                            filtered.map((c) => {
-                                const active = c.id === value;
-                                return (
-                                    <button
-                                        key={c.id}
-                                        type="button"
-                                        onClick={() => {
-                                            onChange(c.id);
-                                            setOpen(false);
-                                            setSearch("");
-                                        }}
-                                        className={cn(
-                                            "flex items-center gap-2 p-2 rounded-xl text-left transition-colors cursor-pointer",
-                                            active ? "bg-green-100 text-green-900 font-semibold" : "hover:bg-zinc-50 text-zinc-700"
-                                        )}
-                                    >
-                                        <span className="text-base shrink-0">{c.emoji}</span>
-                                        <span className="text-xs truncate">{c.name}</span>
-                                    </button>
-                                );
-                            })
+        <div className="relative w-full">
+            <Popover.Root open={open} onOpenChange={(v) => {
+                setOpen(v);
+                if (v) setTimeout(() => inputRef.current?.focus(), 80);
+                else setSearch("");
+            }}>
+                <Popover.Trigger asChild>
+                    <button
+                        type="button"
+                        className={cn(
+                            "flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all cursor-pointer",
+                            "bg-zinc-50 hover:bg-white border-zinc-200 focus:outline-hidden",
+                            error ? "border-red-500 bg-red-50/30" : open ? "border-green-500 ring-2 ring-green-100 bg-white" : ""
                         )}
-                    </div>
-                </div>
-            )}
+                    >
+                        {selectedCat ? (
+                            <div className="flex items-center gap-2 min-w-0 text-left">
+                                <span className="text-base">{selectedCat.emoji}</span>
+                                <span className="text-xs font-semibold text-zinc-900 truncate">{selectedCat.name}</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                                <Tag className="w-4 h-4" />
+                                <span>{t("transactions.selectCategory")}</span>
+                            </div>
+                        )}
+                        <ChevronDown className={cn("w-4 h-4 text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
+                    </button>
+                </Popover.Trigger>
+
+                <Popover.Portal>
+                    <Popover.Content
+                        side="bottom"
+                        sideOffset={6}
+                        collisionPadding={12}
+                        avoidCollisions={true}
+                        className="w-[calc(100vw-2.5rem)] sm:w-[380px] max-w-[420px] bg-white border border-zinc-200 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-150 focus:outline-hidden"
+                    >
+                        <div className="p-2 border-b border-zinc-100 bg-zinc-50/70">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                                <input
+                                    ref={inputRef}
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder={t("transactions.searchCategoryPlaceholder")}
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-green-400 bg-white"
+                                />
+                            </div>
+                        </div>
+                        <div className="max-h-[min(240px,45vh)] overflow-y-auto p-1.5 grid grid-cols-2 gap-1 overscroll-contain" data-lenis-prevent>
+                            {filtered.length === 0 ? (
+                                <p className="col-span-2 text-center py-4 text-xs text-zinc-400">{t("transactions.categoryNotFound")}</p>
+                            ) : (
+                                filtered.map((c) => {
+                                    const active = c.id === value;
+                                    return (
+                                        <button
+                                            key={c.id}
+                                            type="button"
+                                            onClick={() => {
+                                                onChange(c.id);
+                                                setOpen(false);
+                                                setSearch("");
+                                            }}
+                                            className={cn(
+                                                "flex items-center gap-2 p-2 rounded-xl text-left transition-colors cursor-pointer",
+                                                active ? "bg-green-100 text-green-900 font-semibold" : "hover:bg-zinc-50 text-zinc-700"
+                                            )}
+                                        >
+                                            <span className="text-base shrink-0">{c.emoji}</span>
+                                            <span className="text-xs truncate">{c.name}</span>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </Popover.Content>
+                </Popover.Portal>
+            </Popover.Root>
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
     );
@@ -475,41 +469,50 @@ export function TransactionFormDialog({
                 ? await updateTransaction(transaction!.id, workspaceId, values)
                 : await createTransaction(workspaceId, values);
 
+            if (result.error) {
+                setError(result.error);
+                return;
+            }
+
+            // Invalidate all transaction and summary queries (with immediate refetch)
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ["transaction-summary", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["report-monthly", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["report-category", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["report-comparison", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["transactions", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["wallets", workspaceId] }),
-                queryClient.invalidateQueries({ queryKey: ["wallets-summary", workspaceId] }),
+                queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+                queryClient.invalidateQueries({ queryKey: ["transaction-summary"] }),
+                queryClient.invalidateQueries({ queryKey: ["filtered-summary"] }),
+                queryClient.invalidateQueries({ queryKey: ["calendar-transactions"] }),
+                queryClient.invalidateQueries({ queryKey: ["wallets"] }),
+                queryClient.invalidateQueries({ queryKey: ["wallets-summary"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-detailed-summary"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-monthly"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-category"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-top-transactions"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-wallet-distribution"] }),
+                queryClient.invalidateQueries({ queryKey: ["report-comparison"] }),
+                queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
             ]);
 
             broadcastInvalidate(["transaction-summary", workspaceId]);
-            broadcastInvalidate(["report-monthly", workspaceId]);
-            broadcastInvalidate(["report-category", workspaceId]);
-            broadcastInvalidate(["report-comparison", workspaceId]);
+            broadcastInvalidate(["filtered-summary", workspaceId]);
+            broadcastInvalidate(["calendar-transactions", workspaceId]);
             broadcastInvalidate(["transactions", workspaceId]);
             broadcastInvalidate(["wallets", workspaceId]);
+            broadcastInvalidate(["wallets-summary", workspaceId]);
+            broadcastInvalidate(["report-monthly", workspaceId]);
 
-            if (result.error) {
-                setError(result.error);
-            } else {
-                onSuccess();
-                onClose();
-            }
+            onSuccess();
+            onClose();
         });
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             {/* Backdrop */}
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200" onClick={onClose} />
 
             {/* Modal Box */}
-            <div className="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md flex flex-col z-10 animate-in zoom-in-95 duration-200">
+            <div className="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col z-10 animate-in zoom-in-95 duration-200 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/50 rounded-t-3xl shrink-0">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/50 shrink-0">
                     <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                         {isEdit ? t("transactions.editTransaction") : t("transactions.addTransaction")}
                     </h2>
@@ -521,8 +524,8 @@ export function TransactionFormDialog({
                     </button>
                 </div>
 
-                {/* Form area */}
-                <form onSubmit={form.handleSubmit(onSubmit)} className="p-5 space-y-3.5 flex-1">
+                {/* Form area (Scrollable on mobile) */}
+                <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-5 space-y-3.5 flex-1 overflow-y-auto overscroll-contain">
                     {/* 1. Tipe Transaksi (Pengeluaran / Pemasukan / Transfer) */}
                     <div>
                         <div className="grid grid-cols-3 gap-2">
@@ -608,7 +611,7 @@ export function TransactionFormDialog({
                                                 excludeWalletId={watchedWalletId}
                                                 onChange={field.onChange}
                                                 placeholder={t("transactions.selectDestWallet")}
-                                                align="right"
+                                                align="end"
                                                 error={fieldState.error?.message}
                                             />
                                         )}
