@@ -1,85 +1,138 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, ShieldCheck, Zap, Users2 } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
+import gsap from "gsap";
 
 export function LandingHero() {
   const { locale } = useLanguage();
+  const isEn = locale === "en";
+
+  const containerRef = useRef<HTMLElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // 1. Headline Animation (Blur to Clear + Staggered Slide Up)
+      if (headlineRef.current) {
+        gsap.fromTo(
+          headlineRef.current.children,
+          {
+            y: 35,
+            opacity: 0,
+            filter: "blur(8px)",
+          },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 0.9,
+            stagger: 0.12,
+            ease: "power3.out",
+            delay: 0.1,
+          }
+        );
+      }
+
+      // 2. Subtitle Animation
+      if (subtitleRef.current) {
+        gsap.fromTo(
+          subtitleRef.current,
+          {
+            y: 20,
+            opacity: 0,
+            filter: "blur(6px)",
+          },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 0.85,
+            ease: "power2.out",
+            delay: 0.32,
+          }
+        );
+      }
+
+      // 3. Buttons Animation (Subtle Spring Pop)
+      if (buttonsRef.current) {
+        gsap.fromTo(
+          buttonsRef.current.children,
+          {
+            y: 18,
+            opacity: 0,
+            scale: 0.96,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.75,
+            stagger: 0.08,
+            ease: "back.out(1.2)",
+            delay: 0.45,
+          }
+        );
+      }
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [locale]);
 
   return (
-    <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 px-4 overflow-hidden">
-      {/* Background Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-green-500/10 dark:bg-green-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-
-      <div className="max-w-4xl mx-auto text-center">
-        {/* Floating Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-50 dark:bg-green-950/60 border border-green-200/80 dark:border-green-800/60 text-green-700 dark:text-green-300 text-xs font-bold mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-green-600" />
-          <span>
-            {locale === "en"
-              ? "Next-Gen Multi-Workspace Finance Platform"
-              : "Platform Keuangan Multi-Workspace Generasi Baru"}
+    <section
+      ref={containerRef}
+      className="relative pt-24 sm:pt-28 md:pt-32 pb-4 px-4 overflow-hidden shrink-0"
+    >
+      <div className="max-w-4xl mx-auto text-center relative z-10">
+        {/* ── Main Headline ─────────────────────────────────────────── */}
+        <h1
+          ref={headlineRef}
+          className="text-3xl sm:text-5xl md:text-[62px] font-medium tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.1] mb-4 font-sans will-change-transform"
+        >
+          <span className="inline-block">
+            {isEn ? "Your Next Level" : "Kelola Finansial"}
           </span>
-        </div>
-
-        {/* Hero Title with High-Impact Typography */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 leading-[1.08] mb-6 font-sans">
-          {locale === "en" ? (
-            <>
-              Master your wealth, <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004C29] via-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300">
-                seamlessly & collaborative.
-              </span>
-            </>
-          ) : (
-            <>
-              Kelola uangmu, <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004C29] via-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300">
-                bersama & tanpa batas.
-              </span>
-            </>
-          )}
+          <br />
+          <span className="inline-block font-extrabold text-[#004C29] dark:text-emerald-400">
+            {isEn ? "Financial Manage Engine" : "Next-Level Bersama Tim"}
+          </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-9 leading-relaxed font-normal">
-          {locale === "en"
-            ? "Unified tracking for cashflows, smart multi-wallet balances, and real-time collaborative workspaces with zero clutter."
-            : "Catat arus kas masuk & keluar, pantau saldo multi-dompet real-time, dan undang pasangan atau tim untuk mencatat bersama tanpa ribet."}
+        {/* ── Subtitle ──────────────────────────────────────────────── */}
+        <p
+          ref={subtitleRef}
+          className="text-xs sm:text-sm md:text-base text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto mb-6 sm:mb-8 leading-relaxed font-normal will-change-transform"
+        >
+          {isEn
+            ? "Gain complete and confident control over each of your valuable assets with ease."
+            : "Pegang kendali penuh dan percaya diri atas seluruh aset, rekening bank, dan pembukuan Anda dengan mudah."}
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+        {/* ── Pill Buttons ──────────────────────────────────────────── */}
+        <div
+          ref={buttonsRef}
+          className="flex items-center justify-center gap-3 max-w-md mx-auto will-change-transform"
+        >
           <Link
             href="/register"
-            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all active:scale-95 text-xs cursor-pointer shadow-none"
+            className="px-6 sm:px-7 py-3 sm:py-3.5 bg-[#004C29] hover:bg-[#00381e] text-white text-xs sm:text-sm font-bold rounded-full transition-all shadow-lg shadow-[#004C29]/25 active:scale-95 cursor-pointer border border-emerald-500/20"
           >
-            <span>{locale === "en" ? "Start Free Now" : "Mulai Gratis Sekarang"}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{isEn ? "Get started" : "Mulai sekarang"}</span>
           </Link>
-          <Link
-            href="/login"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] text-zinc-800 dark:text-zinc-200 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-xs cursor-pointer"
-          >
-            {locale === "en" ? "Sign In" : "Masuk ke Akun"}
-          </Link>
-        </div>
 
-        {/* Trust Points */}
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-zinc-400 text-xs font-semibold">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-green-600" />
-            {locale === "en" ? "Bank-Grade Encryption" : "Enkripsi Aman"}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-green-600" />
-            {locale === "en" ? "Ultra Fast UI" : "Super Cepat & Ringan"}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Users2 className="w-4 h-4 text-green-600" />
-            {locale === "en" ? "Multi-Member Ready" : "Kolaborasi Instan"}
-          </span>
+          <Link
+            href="/guide"
+            className="px-5 sm:px-6 py-3 sm:py-3.5 bg-white/90 dark:bg-zinc-800/90 hover:bg-white text-zinc-800 dark:text-zinc-200 border border-slate-200/90 dark:border-zinc-700 text-xs sm:text-sm font-semibold rounded-full transition-all shadow-xs cursor-pointer"
+          >
+            <span>{isEn ? "Request Demo" : "Buku Panduan"}</span>
+          </Link>
         </div>
       </div>
     </section>

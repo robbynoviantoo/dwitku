@@ -2,84 +2,83 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 
 export function LandingNavbar() {
   const { locale, setLocale } = useLanguage();
+  const isEn = locale === "en";
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0d1117]/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-[#21262d]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="fixed top-5 left-0 right-0 z-50 px-4 pointer-events-none flex justify-center">
+      <header className="pointer-events-auto w-full max-w-3xl bg-white/90 dark:bg-[#121619]/90 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 rounded-full py-2 px-3 sm:px-5 shadow-[0_12px_32px_-10px_rgba(0,0,0,0.12)] flex items-center justify-between transition-all">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center gap-2.5 group pl-1">
           <Image
             src="/icon-512.png"
             alt="Dwitku Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-xl object-contain group-hover:scale-105 transition-transform"
+            width={28}
+            height={28}
+            className="w-7 h-7 rounded-lg object-contain group-hover:scale-105 transition-transform"
             priority
           />
-          <span className="font-extrabold text-lg tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">
-            Dwitku<span className="text-green-600 dark:text-green-400">.</span>
+          <span className="font-extrabold text-sm sm:text-base tracking-tight text-zinc-950 dark:text-white font-sans">
+            Dwitku<span className="text-[#004C29] dark:text-emerald-400">.</span>
           </span>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7">
-          <a
-            href="#features"
-            className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            {locale === "en" ? "Features" : "Fitur Unggulan"}
-          </a>
+        {/* Center Navigation Links */}
+        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
           <a
             href="#preview"
-            className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="hover:text-[#004C29] dark:hover:text-white transition-colors"
           >
-            {locale === "en" ? "App Interface" : "Tampilan"}
+            {isEn ? "Dashboard" : "Dashboard"}
+          </a>
+          <a
+            href="#features"
+            className="hover:text-[#004C29] dark:hover:text-white transition-colors"
+          >
+            {isEn ? "Assets" : "Dompet & Aset"}
           </a>
           <a
             href="#pricing"
-            className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="hover:text-[#004C29] dark:hover:text-white transition-colors"
           >
-            {locale === "en" ? "Pricing" : "Paket Harga"}
+            {isEn ? "Pricing" : "Paket Harga"}
           </a>
-          <a
-            href="#testimonials"
-            className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+          <Link
+            href="/guide"
+            className="hover:text-[#004C29] dark:hover:text-white transition-colors"
           >
-            {locale === "en" ? "Reviews" : "Testimoni"}
-          </a>
+            {isEn ? "Guide" : "Panduan"}
+          </Link>
         </nav>
 
-        {/* Action & Language Toggle */}
-        <div className="flex items-center gap-2.5">
-          {/* Language Switcher */}
+        {/* Right Action & Language Switch */}
+        <div className="flex items-center gap-2">
+          {/* Language Toggle */}
           <button
             onClick={() => setLocale(locale === "id" ? "en" : "id")}
-            className="px-2.5 py-1 text-[11px] font-bold uppercase rounded-lg border border-slate-200 dark:border-[#21262d] bg-slate-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border border-slate-200 dark:border-white/15 bg-slate-100/80 dark:bg-white/5 text-zinc-700 dark:text-zinc-200 hover:bg-slate-200/80 transition-colors cursor-pointer"
           >
             {locale.toUpperCase()}
           </button>
 
           <Link
             href="/login"
-            className="hidden sm:inline-flex px-3.5 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors"
           >
-            {locale === "en" ? "Sign In" : "Masuk"}
+            {isEn ? "Sign In" : "Masuk"}
           </Link>
 
           <Link
             href="/register"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95 shadow-none"
+            className="px-4 py-1.5 bg-[#004C29] hover:bg-[#003d21] text-white text-xs font-bold rounded-full transition-all active:scale-95 shadow-sm cursor-pointer"
           >
-            <span>{locale === "en" ? "Get Started" : "Mulai Gratis"}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>{isEn ? "Launch App" : "Buka App"}</span>
           </Link>
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 }
