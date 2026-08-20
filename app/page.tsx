@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { LandingNavbar } from "./_components/landing-navbar";
 import { LandingHero } from "./_components/landing-hero";
 import { LandingPreview } from "./_components/landing-preview";
@@ -5,7 +6,16 @@ import { LandingFeatures } from "./_components/landing-features";
 import { LandingPricing } from "./_components/landing-pricing";
 import { LandingFooter } from "./_components/landing-footer";
 
-export default function LandingPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LandingPage() {
+  const dbPlans = await prisma.plan
+    .findMany({
+      where: { isActive: true },
+      orderBy: { priceMonthly: "asc" },
+    })
+    .catch(() => []);
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d1117] text-zinc-900 dark:text-zinc-100 font-sans selection:bg-green-100 selection:text-green-900">
       {/* ── 1. Navbar ── */}
@@ -21,7 +31,7 @@ export default function LandingPage() {
       <LandingFeatures />
 
       {/* ── 5. Pricing Plans ── */}
-      <LandingPricing />
+      <LandingPricing dbPlans={dbPlans} />
 
       {/* ── 6. Footer ── */}
       <LandingFooter />

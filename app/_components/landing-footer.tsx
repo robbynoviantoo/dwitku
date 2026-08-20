@@ -23,12 +23,18 @@ export function LandingFooter() {
         </div>
 
         {/* Links */}
-        <div className="flex items-center gap-6 text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-zinc-500 dark:text-zinc-400">
           <Link href="/login" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
             {locale === "en" ? "Sign In" : "Masuk"}
           </Link>
           <Link href="/register" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
             {locale === "en" ? "Register" : "Daftar"}
+          </Link>
+          <Link href="/terms" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">
+            {locale === "en" ? "Terms of Service" : "Syarat & Ketentuan"}
+          </Link>
+          <Link href="/privacy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">
+            {locale === "en" ? "Privacy Policy" : "Kebijakan Privasi"}
           </Link>
           <a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
             {locale === "en" ? "Features" : "Fitur"}

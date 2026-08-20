@@ -158,12 +158,24 @@ export function LoginForm() {
                 Google
             </button>
 
-            <div className="mt-8 text-center text-sm text-zinc-600">
+            <div className="mt-6 text-center text-sm text-zinc-600">
                 Belum punya akun?{" "}
                 <Link href="/register" className="font-semibold text-green-600 hover:text-green-500">
                     Daftar sekarang
                 </Link>
             </div>
+
+            <p className="mt-6 text-center text-[11px] text-zinc-400 leading-relaxed">
+                Dengan melanjutkan, Anda menyetujui{" "}
+                <Link href="/terms" className="underline hover:text-zinc-600 transition-colors">
+                    Ketentuan Layanan
+                </Link>{" "}
+                dan{" "}
+                <Link href="/privacy" className="underline hover:text-zinc-600 transition-colors">
+                    Kebijakan Privasi
+                </Link>{" "}
+                Dwitku.
+            </p>
         </div>
     );
 }

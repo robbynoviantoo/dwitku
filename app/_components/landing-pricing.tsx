@@ -5,72 +5,159 @@ import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
 
-export function LandingPricing() {
+interface LandingPricingProps {
+  dbPlans?: any[];
+}
+
+export function LandingPricing({ dbPlans }: LandingPricingProps) {
   const { locale } = useLanguage();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const isYearly = billingCycle === "yearly";
 
-  const plans = [
-    {
-      name: locale === "en" ? "Free" : "Gratis",
-      price: "Rp 0",
-      period: locale === "en" ? "forever" : "selamanya",
-      desc: locale === "en" ? "Perfect for testing & individual habit" : "Cocok untuk pencatatan keuangan pribadi harian",
-      highlight: false,
-      cta: locale === "en" ? "Start Free" : "Mulai Gratis",
-      ctaHref: "/register",
-      features: [
-        locale === "en" ? "1 Personal Workspace" : "1 Workspace Pribadi",
-        locale === "en" ? "Max 50 transactions / month" : "Maksimal 50 transaksi / bulan",
-        locale === "en" ? "Up to 2 Wallets (Cash/Bank)" : "Manajemen 2 Dompet (Cash/Bank)",
-        locale === "en" ? "3 Custom categories" : "Maksimal 3 kategori kustom",
-        locale === "en" ? "Basic financial summary" : "Ringkasan keuangan dasar",
-      ],
-    },
-    {
-      name: "Basic",
-      price: isYearly ? "Rp 240.000" : "Rp 25.000",
-      period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
-      equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 20,000 / mo" : "Setara Rp 20.000 / bulan") : undefined,
-      desc: locale === "en" ? "For families, freelancers & micro businesses" : "Untuk keluarga, freelancer & UMKM mikro",
-      highlight: true,
-      badge: locale === "en" ? "POPULAR" : "POPULER",
-      cta: isYearly
-        ? (locale === "en" ? "Choose Basic (Annual)" : "Pilih Basic Tahunan")
-        : (locale === "en" ? "Try 7 Days Free" : "Coba 7 Hari Gratis"),
-      ctaHref: `/register?plan=basic&billing=${billingCycle}`,
-      features: [
-        locale === "en" ? "Up to 3 Workspaces" : "Hingga 3 Workspace",
-        locale === "en" ? "Up to 500 transactions / month" : "Hingga 500 transaksi / bulan",
-        locale === "en" ? "Collaborate up to 5 Members" : "Kolaborasi hingga 5 anggota tim",
-        locale === "en" ? "15 Custom categories" : "15 Kategori kustom",
-        locale === "en" ? "Excel & CSV data export" : "Ekspor data ke Excel & CSV (XLSX)",
-        locale === "en" ? "Interactive monthly charts & analytics" : "Grafik & analitik keuangan bulanan",
-        locale === "en" ? "Sales & Cashier mode access" : "Akses mode penjualan / kasir (Sales)",
-      ],
-    },
-    {
-      name: "Pro Unlimited",
-      price: isYearly ? "Rp 470.000" : "Rp 49.000",
-      period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
-      equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 39,166 / mo" : "Setara Rp 39.166 / bulan") : undefined,
-      desc: locale === "en" ? "For power users, communities & multi-business" : "Untuk power user, komunitas & multi-bisnis",
-      highlight: false,
-      cta: isYearly
-        ? (locale === "en" ? "Choose Pro (Annual)" : "Pilih Pro Tahunan")
-        : (locale === "en" ? "Upgrade to Pro" : "Pilih Paket Pro"),
-      ctaHref: `/register?plan=pro&billing=${billingCycle}`,
-      features: [
-        locale === "en" ? "Unlimited Workspaces" : "Unlimited Workspace",
-        locale === "en" ? "Unlimited Transactions" : "Unlimited Transaksi",
-        locale === "en" ? "Unlimited Team Members & Roles" : "Unlimited Anggota & Hak Akses Tim",
-        locale === "en" ? "Unlimited Custom Categories & Wallets" : "Unlimited Kategori & Dompet",
-        locale === "en" ? "Deep Insights & Cashflow Projection" : "Deep Insights & Proyeksi Arus Kas",
-        locale === "en" ? "Audit Log & Advanced Tax Summary" : "Audit Log & Rekap Laporan Pajak",
-        locale === "en" ? "VIP Priority Support & Cloud Backup" : "Dukungan Prioritas VIP & Backup Cloud",
-      ],
-    },
-  ];
+  // Ambil data plans dari database jika tersedia, atau fallback ke default
+  const plans = (dbPlans && dbPlans.length > 0)
+    ? dbPlans.map((p) => {
+        const isFree = p.key === "free";
+        const isBasic = p.key === "basic";
+        const isPro = p.key === "pro";
+
+        const currentPrice = isYearly ? p.priceYearly : p.priceMonthly;
+        const formattedPrice = currentPrice === 0
+          ? "Rp 0"
+          : `Rp ${new Intl.NumberFormat("id-ID").format(currentPrice)}`;
+
+        const period = currentPrice === 0
+          ? (locale === "en" ? "forever" : "selamanya")
+          : isYearly
+          ? (locale === "en" ? "/ year" : "/ tahun")
+          : (locale === "en" ? "/ month" : "/ bulan");
+
+        const equivalentText = (isYearly && p.priceYearly > 0)
+          ? (locale === "en"
+              ? `Eqv. Rp ${new Intl.NumberFormat("id-ID").format(Math.round(p.priceYearly / 12))} / mo`
+              : `Setara Rp ${new Intl.NumberFormat("id-ID").format(Math.round(p.priceYearly / 12))} / bulan`)
+          : undefined;
+
+        let name = p.name;
+        if (isFree) name = locale === "en" ? "Free" : "Gratis";
+
+        let desc = locale === "en" ? "Perfect for individual financial habits" : "Cocok untuk pencatatan keuangan pribadi harian";
+        if (isBasic) desc = locale === "en" ? "For families, freelancers & micro businesses" : "Untuk keluarga, freelancer & UMKM mikro";
+        if (isPro) desc = locale === "en" ? "For power users, communities & multi-business" : "Untuk power user, komunitas & multi-bisnis";
+
+        let cta = isFree
+          ? (locale === "en" ? "Start Free" : "Mulai Gratis")
+          : isYearly
+          ? (locale === "en" ? `Choose ${p.name} (Annual)` : `Pilih ${p.name} Tahunan`)
+          : p.trialDays > 0
+          ? (locale === "en" ? `Try ${p.trialDays} Days Free` : `Coba ${p.trialDays} Hari Gratis`)
+          : (locale === "en" ? `Choose ${p.name}` : `Pilih ${p.name}`);
+
+        const features = [
+          p.maxWorkspaces === -1
+            ? (locale === "en" ? "Unlimited Workspaces" : "Unlimited Workspace")
+            : (locale === "en" ? `Up to ${p.maxWorkspaces} Workspaces` : `Hingga ${p.maxWorkspaces} Workspace`),
+          p.maxTx === -1
+            ? (locale === "en" ? "Unlimited Transactions" : "Unlimited Transaksi")
+            : (locale === "en" ? `Max ${p.maxTx} transactions / month` : `Maksimal ${p.maxTx} transaksi / bulan`),
+          p.maxMembers === -1
+            ? (locale === "en" ? "Unlimited Team Members & Roles" : "Unlimited Anggota & Hak Akses Tim")
+            : (locale === "en" ? `Collaborate up to ${p.maxMembers} Members` : `Kolaborasi hingga ${p.maxMembers} Anggota`),
+          p.maxCategories === -1
+            ? (locale === "en" ? "Unlimited Custom Categories & Wallets" : "Unlimited Kategori & Dompet")
+            : (locale === "en" ? `${p.maxCategories} Custom categories` : `${p.maxCategories} Kategori kustom`),
+        ];
+
+        if (p.canExport) {
+          features.push(locale === "en" ? "Excel & CSV data export" : "Ekspor data ke Excel & CSV (XLSX)");
+        }
+        if (p.canReport) {
+          features.push(locale === "en" ? "Interactive monthly charts & analytics" : "Grafik & analitik keuangan bulanan");
+        }
+        if (p.canBudget) {
+          features.push(locale === "en" ? "Budgeting & Financial Targets" : "Target & Anggaran Keuangan (Budget)");
+        }
+        if (isBasic) {
+          features.push(locale === "en" ? "Sales & Cashier mode access" : "Akses mode penjualan / kasir (Sales)");
+        }
+        if (isPro) {
+          features.push(locale === "en" ? "VIP Priority Support & Cloud Backup" : "Dukungan Prioritas VIP & Backup Cloud");
+        }
+
+        return {
+          name,
+          price: formattedPrice,
+          period,
+          equivalentText,
+          desc,
+          highlight: isBasic,
+          badge: locale === "en" ? "POPULAR" : "POPULER",
+          cta,
+          ctaHref: isFree ? "/register" : `/register?plan=${p.key}&billing=${billingCycle}`,
+          features,
+        };
+      })
+    : [
+        {
+          name: locale === "en" ? "Free" : "Gratis",
+          price: "Rp 0",
+          period: locale === "en" ? "forever" : "selamanya",
+          desc: locale === "en" ? "Perfect for testing & individual habit" : "Cocok untuk pencatatan keuangan pribadi harian",
+          highlight: false,
+          cta: locale === "en" ? "Start Free" : "Mulai Gratis",
+          ctaHref: "/register",
+          features: [
+            locale === "en" ? "1 Personal Workspace" : "1 Workspace Pribadi",
+            locale === "en" ? "Max 50 transactions / month" : "Maksimal 50 transaksi / bulan",
+            locale === "en" ? "Up to 2 Wallets (Cash/Bank)" : "Manajemen 2 Dompet (Cash/Bank)",
+            locale === "en" ? "3 Custom categories" : "Maksimal 3 kategori kustom",
+            locale === "en" ? "Basic financial summary" : "Ringkasan keuangan dasar",
+          ],
+        },
+        {
+          name: "Basic",
+          price: isYearly ? "Rp 240.000" : "Rp 25.000",
+          period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
+          equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 20,000 / mo" : "Setara Rp 20.000 / bulan") : undefined,
+          desc: locale === "en" ? "For families, freelancers & micro businesses" : "Untuk keluarga, freelancer & UMKM mikro",
+          highlight: true,
+          badge: locale === "en" ? "POPULAR" : "POPULER",
+          cta: isYearly
+            ? (locale === "en" ? "Choose Basic (Annual)" : "Pilih Basic Tahunan")
+            : (locale === "en" ? "Try 7 Days Free" : "Coba 7 Hari Gratis"),
+          ctaHref: `/register?plan=basic&billing=${billingCycle}`,
+          features: [
+            locale === "en" ? "Up to 3 Workspaces" : "Hingga 3 Workspace",
+            locale === "en" ? "Up to 500 transactions / month" : "Hingga 500 transaksi / bulan",
+            locale === "en" ? "Collaborate up to 5 Members" : "Kolaborasi hingga 5 anggota tim",
+            locale === "en" ? "15 Custom categories" : "15 Kategori kustom",
+            locale === "en" ? "Excel & CSV data export" : "Ekspor data ke Excel & CSV (XLSX)",
+            locale === "en" ? "Interactive monthly charts & analytics" : "Grafik & analitik keuangan bulanan",
+            locale === "en" ? "Sales & Cashier mode access" : "Akses mode penjualan / kasir (Sales)",
+          ],
+        },
+        {
+          name: "Pro Unlimited",
+          price: isYearly ? "Rp 470.000" : "Rp 49.000",
+          period: isYearly ? (locale === "en" ? "/ year" : "/ tahun") : (locale === "en" ? "/ month" : "/ bulan"),
+          equivalentText: isYearly ? (locale === "en" ? "Eqv. Rp 39,166 / mo" : "Setara Rp 39.166 / bulan") : undefined,
+          desc: locale === "en" ? "For power users, communities & multi-business" : "Untuk power user, komunitas & multi-bisnis",
+          highlight: false,
+          cta: isYearly
+            ? (locale === "en" ? "Choose Pro (Annual)" : "Pilih Pro Tahunan")
+            : (locale === "en" ? "Upgrade to Pro" : "Pilih Paket Pro"),
+          ctaHref: `/register?plan=pro&billing=${billingCycle}`,
+          features: [
+            locale === "en" ? "Unlimited Workspaces" : "Unlimited Workspace",
+            locale === "en" ? "Unlimited Transactions" : "Unlimited Transaksi",
+            locale === "en" ? "Unlimited Team Members & Roles" : "Unlimited Anggota & Hak Akses Tim",
+            locale === "en" ? "Unlimited Custom Categories & Wallets" : "Unlimited Kategori & Dompet",
+            locale === "en" ? "Deep Insights & Cashflow Projection" : "Deep Insights & Proyeksi Arus Kas",
+            locale === "en" ? "Audit Log & Advanced Tax Summary" : "Audit Log & Rekap Laporan Pajak",
+            locale === "en" ? "VIP Priority Support & Cloud Backup" : "Dukungan Prioritas VIP & Backup Cloud",
+          ],
+        },
+      ];
 
   return (
     <section id="pricing" className="py-20 px-4 max-w-7xl mx-auto">
