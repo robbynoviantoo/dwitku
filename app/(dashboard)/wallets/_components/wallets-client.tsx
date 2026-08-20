@@ -16,6 +16,8 @@ import {
   Sparkles,
   User,
   Hash,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { PullToRefreshWrapper } from "@/components/ui/pull-to-refresh-wrapper";
@@ -132,38 +134,70 @@ export function WalletsClient({
         </div>
 
         {/* ── Total Net Wealth Hero Banner ───────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl bg-zinc-900 text-white p-6 md:p-8 border border-zinc-800">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-4 sm:p-5 md:p-6 shadow-xl border border-zinc-800 shrink-0">
+          {/* Modern Premium Decoration: Mesh Glow & Subtle Pattern */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#004C29] via-[#00381e] to-zinc-950 opacity-95" />
-          <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[120%] bg-emerald-400/15 blur-[80px] rounded-full animate-pulse" />
-          <div className="absolute -bottom-[20%] -left-[10%] w-[40%] h-[90%] bg-emerald-600/20 blur-[80px] rounded-full" />
+          <div className="absolute -top-[30%] -right-[10%] w-[60%] h-[140%] bg-emerald-400/20 blur-[80px] rounded-full animate-pulse" />
+          <div className="absolute -bottom-[30%] -left-[10%] w-[50%] h-[120%] bg-emerald-600/20 blur-[80px] rounded-full" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 mb-3">
-                <Sparkles className="w-4 h-4 text-green-300" />
-                <span className="text-xs font-semibold text-green-100 tracking-wide">
+          <div
+            className="absolute inset-0 opacity-[0.09]"
+            style={{
+              backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+              backgroundSize: "24px 24px",
+              maskImage: "radial-gradient(ellipse at center, black, transparent 80%)",
+            }}
+          />
+
+          <div className="relative z-10 flex flex-col min-[1366px]:flex-row min-[1366px]:items-center justify-between gap-4 min-[1366px]:gap-6">
+            {/* Net Wealth */}
+            <div className="space-y-1 sm:space-y-1.5 min-w-0 flex-1">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit whitespace-nowrap shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-green-300 shrink-0" />
+                <span className="text-[11px] sm:text-xs text-green-100 font-semibold tracking-wide whitespace-nowrap">
                   {t("wallets.totalNetWealth")}
                 </span>
               </div>
-              <p className="text-3xl md:text-5xl font-black tracking-tight text-white font-mono">
-                {showAmount ? formatCurrency(totalBalance, currency) : "••••••••••••"}
+              <p className="text-[clamp(1.75rem,3.2vw,2.75rem)] font-black tracking-tight leading-none text-white drop-shadow-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
+                {showAmount ? (
+                  formatCurrency(totalBalance, currency)
+                ) : (
+                  <span className="tracking-widest text-[clamp(1.25rem,2.5vw,2rem)]">••••••••</span>
+                )}
               </p>
-              <p className="text-xs text-green-200/80 mt-1">
+              <p className="text-[11px] sm:text-xs text-green-200/80 mt-1">
                 {t("wallets.accumulated")} {wallets.length} {t("wallets.activeWallets")}
               </p>
             </div>
 
-            <div className="flex items-center gap-4 sm:gap-6 bg-black/25 backdrop-blur-md px-5 py-3.5 rounded-2xl border border-white/15">
-              <div>
-                <p className="text-[11px] text-green-200 font-medium">{t("dashboard.totalIncome")}</p>
-                <p className="text-sm md:text-base font-bold text-white font-mono">
+            {/* Total In & Out (Responsive 2-column Grid) */}
+            <div className="grid grid-cols-2 divide-x divide-white/20 bg-black/30 backdrop-blur-md p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/15 shadow-inner w-full min-[1366px]:w-auto min-[1366px]:min-w-[340px] shrink-0">
+              {/* Income */}
+              <div className="pr-3 sm:pr-4 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1 sm:mb-1.5">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-green-500/20 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-300" />
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-green-200/90 font-medium truncate">
+                    {t("dashboard.totalIncome")}
+                  </p>
+                </div>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-white font-mono tracking-tight leading-snug truncate">
                   {showAmount ? formatCurrency(summary?.totalIncome ?? 0, currency) : "••••••"}
                 </p>
               </div>
-              <div className="w-[1px] h-8 bg-white/20" />
-              <div>
-                <p className="text-[11px] text-red-200 font-medium">{t("dashboard.totalExpense")}</p>
-                <p className="text-sm md:text-base font-bold text-white font-mono">
+
+              {/* Expense */}
+              <div className="pl-3 sm:pl-4 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1 sm:mb-1.5">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-red-500/20 flex items-center justify-center shrink-0">
+                    <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-300" />
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-red-200/90 font-medium truncate">
+                    {t("dashboard.totalExpense")}
+                  </p>
+                </div>
+                <p className="text-sm sm:text-base md:text-lg font-bold text-white font-mono tracking-tight leading-snug truncate">
                   {showAmount ? formatCurrency(summary?.totalExpense ?? 0, currency) : "••••••"}
                 </p>
               </div>
@@ -171,10 +205,10 @@ export function WalletsClient({
           </div>
         </div>
 
-        {/* ── Wallets Grid (4 Kolom per Baris & Desain Modern Bersih) ── */}
+        {/* ── Wallets Grid (3 Kolom per Baris di 1366px, 4 Kolom di >=1600px) ── */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((n) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
               <div key={n} className="h-48 rounded-2xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
             ))}
           </div>
@@ -199,7 +233,7 @@ export function WalletsClient({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-[1600px]:grid-cols-4 gap-4">
             {wallets.map((w) => {
               return (
                 <div

@@ -99,7 +99,7 @@ export function DashboardCalendar({ workspaceId, currency }: DashboardCalendarPr
   };
 
   return (
-    <div className="financial-calendar-card p-3 sm:p-4 lg:h-full flex flex-col justify-between">
+    <div className="financial-calendar-card p-3 sm:p-4 min-[1366px]:h-full flex flex-col justify-between">
       {/* Header section */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">

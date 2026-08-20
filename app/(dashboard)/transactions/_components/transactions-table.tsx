@@ -11,11 +11,13 @@ interface TransactionsTableProps {
   columnsLength: number;
   total: number;
   page: number;
+  pageSize: number;
   totalPages: number;
   isPlaceholderData: boolean;
   isPendingDelete: boolean;
   canEdit: boolean;
   onPageChange: (newPage: number) => void;
+  onPageSizeChange: (newPageSize: number) => void;
   onOpenAdd: () => void;
 }
 
@@ -25,11 +27,13 @@ export function TransactionsTable({
   columnsLength,
   total,
   page,
+  pageSize,
   totalPages,
   isPlaceholderData,
   isPendingDelete,
   canEdit,
   onPageChange,
+  onPageSizeChange,
   onOpenAdd,
 }: TransactionsTableProps) {
   const { t } = useLanguage();
@@ -123,15 +127,32 @@ export function TransactionsTable({
       </div>
 
       {/* Table Pagination Footer */}
-      {totalPages > 1 && (
+      {total > 0 && (
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200 dark:border-[#21262d] bg-slate-50/50 dark:bg-zinc-800/40 shrink-0">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
-            {t("transactions.pageOf")}{" "}
-            <span className="font-bold text-zinc-800 dark:text-zinc-200">{page}</span>{" "}
-            {t("transactions.of")}{" "}
-            <span className="font-bold text-zinc-800 dark:text-zinc-200">{totalPages}</span>
-            <span className="text-zinc-400"> · {total} {t("transactions.found")}</span>
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+              {t("transactions.pageOf")}{" "}
+              <span className="font-bold text-zinc-800 dark:text-zinc-200">{page}</span>{" "}
+              {t("transactions.of")}{" "}
+              <span className="font-bold text-zinc-800 dark:text-zinc-200">{totalPages}</span>
+              <span className="text-zinc-400"> · {total} {t("transactions.found")}</span>
+            </p>
+
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="hidden sm:inline">Tampilkan:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-[#21262d] rounded-lg px-2 py-0.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-green-500"
+              >
+                {[10, 15, 20, 30, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size} / hal
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <div className="flex gap-1.5">
             <button

@@ -102,6 +102,7 @@ export function TransactionsClient({
   const { locale, t } = useLanguage();
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [filter, setFilter] = useState<TransactionFilter>({});
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -160,6 +161,7 @@ export function TransactionsClient({
       "transactions",
       workspaceId,
       page,
+      pageSize,
       filter,
       search,
       currentSortBy,
@@ -170,7 +172,7 @@ export function TransactionsClient({
         ...filter,
         search: search || undefined,
         page,
-        limit: PAGE_SIZE,
+        limit: pageSize,
         sortBy: currentSortBy,
         sortOrder: currentSortOrder,
       }),
@@ -562,11 +564,16 @@ export function TransactionsClient({
           columnsLength={columns.length}
           total={total}
           page={page}
+          pageSize={pageSize}
           totalPages={totalPages}
           isPlaceholderData={isPlaceholderData}
           isPendingDelete={deleteMutation.isPending}
           canEdit={canEdit}
           onPageChange={(p) => setPage(p)}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setPage(1);
+          }}
           onOpenAdd={() => handleOpenDialog()}
         />
 
