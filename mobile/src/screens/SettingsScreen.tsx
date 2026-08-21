@@ -4,23 +4,52 @@ import {
   Text,
   View,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Alert,
 } from 'react-native';
-import { LogOut, Shield, Info, Smartphone, Scale, FileText } from 'lucide-react-native';
+import {
+  LogOut,
+  Shield,
+  Info,
+  Smartphone,
+  Scale,
+  FileText,
+  Building2,
+  Users,
+  Bot,
+  User,
+  FolderKanban,
+} from 'lucide-react-native';
+import { AppHeader } from '../components/AppHeader';
 import { LegalModal } from '../components/LegalModal';
+import { SettingsWorkspaceForm } from './settings/components/SettingsWorkspaceForm';
+import { SettingsMembersCard } from './settings/components/SettingsMembersCard';
+import { SettingsTelegramCard } from './settings/components/SettingsTelegramCard';
 
 interface SettingsScreenProps {
   user: any;
+  activeWorkspaceId?: string;
+  activeWorkspace?: any;
+  onOpenWorkspaceModal?: () => void;
   onLogout: () => void;
 }
 
-export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) {
+type SettingsTab = 'workspace' | 'members' | 'telegram' | 'profile';
+
+export default function SettingsScreen({
+  user,
+  activeWorkspaceId,
+  activeWorkspace,
+  onOpenWorkspaceModal,
+  onLogout,
+}: SettingsScreenProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('workspace');
   const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'terms' | 'privacy' }>({
     visible: false,
     type: 'terms',
   });
+
+  const isOwner = activeWorkspace?.role === 'OWNER' || activeWorkspace?.ownerId === user?.id;
 
   const confirmLogout = () => {
     Alert.alert(
@@ -38,99 +67,216 @@ export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) 
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pengaturan Akun</Text>
-        <Text style={styles.headerSubtitle}>Profil & Informasi Aplikasi Dwitku</Text>
-      </View>
+    <View style={styles.container}>
+      {/* 1. App Header */}
+      <AppHeader
+        user={user}
+        activeWorkspace={activeWorkspace}
+        onOpenWorkspaceModal={onOpenWorkspaceModal}
+        showAmount={true}
+        onToggleShowAmount={() => {}}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarTextLarge}>
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+        {/* 2. Page Header */}
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Pengaturan</Text>
+          <Text style={styles.pageSubtitle}>
+            Workspace "{activeWorkspace?.name || 'Utama'}" & Akun Anda
+          </Text>
+        </View>
+
+        {/* 3. Settings Navigation Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'workspace' && styles.tabItemActive]}
+            onPress={() => setActiveTab('workspace')}
+            activeOpacity={0.7}
+          >
+            <Building2
+              size={15}
+              color={activeTab === 'workspace' ? '#004C29' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'workspace' && styles.tabTextActive,
+              ]}
+            >
+              Workspace
             </Text>
-          </View>
-          <Text style={styles.userName}>{user?.name || 'User Dwitku'}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
-        </View>
-
-        {/* Info Items */}
-        <View style={styles.section}>
-          <View style={styles.itemRow}>
-            <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
-              <Smartphone size={18} color="#004C29" />
-            </View>
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>Versi Aplikasi Mobile</Text>
-              <Text style={styles.itemSubtitle}>v1.1.0 (Expo React Native Build)</Text>
-            </View>
-          </View>
-
-          <View style={styles.itemRow}>
-            <View style={[styles.iconCircle, { backgroundColor: '#2563eb20' }]}>
-              <Shield size={18} color="#2563eb" />
-            </View>
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>Keamanan Server & Database</Text>
-              <Text style={styles.itemSubtitle}>Neon Serverless Postgres + Session Token</Text>
-            </View>
-          </View>
-
-          <View style={styles.itemRow}>
-            <View style={[styles.iconCircle, { backgroundColor: '#eab30820' }]}>
-              <Info size={18} color="#eab308" />
-            </View>
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>Kompatibilitas Platform</Text>
-              <Text style={styles.itemSubtitle}>Android APK, iOS, & Web Dashboard</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.itemRow}
-            onPress={() => setLegalModal({ visible: true, type: 'terms' })}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
-              <Scale size={18} color="#004C29" />
-            </View>
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>Ketentuan Layanan</Text>
-              <Text style={styles.itemSubtitle}>Hak & ketentuan penggunaan Dwitku</Text>
-            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.itemRow}
-            onPress={() => setLegalModal({ visible: true, type: 'privacy' })}
+            style={[styles.tabItem, activeTab === 'members' && styles.tabItemActive]}
+            onPress={() => setActiveTab('members')}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#3b82f620' }]}>
-              <FileText size={18} color="#3b82f6" />
-            </View>
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>Kebijakan Privasi</Text>
-              <Text style={styles.itemSubtitle}>Perlindungan & keamanan data keuangan Anda</Text>
-            </View>
+            <Users
+              size={15}
+              color={activeTab === 'members' ? '#004C29' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'members' && styles.tabTextActive,
+              ]}
+            >
+              Anggota
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'telegram' && styles.tabItemActive]}
+            onPress={() => setActiveTab('telegram')}
+            activeOpacity={0.7}
+          >
+            <Bot
+              size={15}
+              color={activeTab === 'telegram' ? '#004C29' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'telegram' && styles.tabTextActive,
+              ]}
+            >
+              Telegram
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'profile' && styles.tabItemActive]}
+            onPress={() => setActiveTab('profile')}
+            activeOpacity={0.7}
+          >
+            <User
+              size={15}
+              color={activeTab === 'profile' ? '#004C29' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'profile' && styles.tabTextActive,
+              ]}
+            >
+              Profil
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Modal Popup Ketentuan Layanan & Privasi */}
-        <LegalModal
-          visible={legalModal.visible}
-          type={legalModal.type}
-          onClose={() => setLegalModal({ ...legalModal, visible: false })}
-        />
+        {/* 4. Tab Content */}
+        {activeTab === 'workspace' && (
+          <SettingsWorkspaceForm
+            workspace={activeWorkspace}
+            isOwner={isOwner}
+          />
+        )}
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
-          <LogOut size={18} color="#ef4444" />
-          <Text style={styles.logoutText}>Keluar dari Akun</Text>
-        </TouchableOpacity>
+        {activeTab === 'members' && (
+          <SettingsMembersCard
+            workspaceId={activeWorkspaceId || ''}
+            isOwner={isOwner}
+            currentUserId={user?.id}
+          />
+        )}
+
+        {activeTab === 'telegram' && (
+          <SettingsTelegramCard
+            workspaceId={activeWorkspaceId || ''}
+          />
+        )}
+
+        {activeTab === 'profile' && (
+          <View>
+            {/* Profile Card */}
+            <View style={styles.profileCard}>
+              <View style={styles.avatarLarge}>
+                <Text style={styles.avatarTextLarge}>
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+              <Text style={styles.userName}>{user?.name || 'User Dwitku'}</Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+            </View>
+
+            {/* Info Items */}
+            <View style={styles.section}>
+              <View style={styles.itemRow}>
+                <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
+                  <Smartphone size={18} color="#004C29" />
+                </View>
+                <View style={styles.itemTextContainer}>
+                  <Text style={styles.itemTitle}>Versi Aplikasi Mobile</Text>
+                  <Text style={styles.itemSubtitle}>v1.1.0 (Expo React Native Build)</Text>
+                </View>
+              </View>
+
+              <View style={styles.itemRow}>
+                <View style={[styles.iconCircle, { backgroundColor: '#2563eb20' }]}>
+                  <Shield size={18} color="#2563eb" />
+                </View>
+                <View style={styles.itemTextContainer}>
+                  <Text style={styles.itemTitle}>Keamanan Server & Database</Text>
+                  <Text style={styles.itemSubtitle}>Neon Serverless Postgres + Session Token</Text>
+                </View>
+              </View>
+
+              <View style={styles.itemRow}>
+                <View style={[styles.iconCircle, { backgroundColor: '#eab30820' }]}>
+                  <Info size={18} color="#eab308" />
+                </View>
+                <View style={styles.itemTextContainer}>
+                  <Text style={styles.itemTitle}>Kompatibilitas Platform</Text>
+                  <Text style={styles.itemSubtitle}>Android APK, iOS, & Web Dashboard</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.itemRow}
+                onPress={() => setLegalModal({ visible: true, type: 'terms' })}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
+                  <Scale size={18} color="#004C29" />
+                </View>
+                <View style={styles.itemTextContainer}>
+                  <Text style={styles.itemTitle}>Ketentuan Layanan</Text>
+                  <Text style={styles.itemSubtitle}>Hak & ketentuan penggunaan Dwitku</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.itemRow}
+                onPress={() => setLegalModal({ visible: true, type: 'privacy' })}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: '#3b82f620' }]}>
+                  <FileText size={18} color="#3b82f6" />
+                </View>
+                <View style={styles.itemTextContainer}>
+                  <Text style={styles.itemTitle}>Kebijakan Privasi</Text>
+                  <Text style={styles.itemSubtitle}>Perlindungan & keamanan data keuangan Anda</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Logout Button */}
+            <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
+              <LogOut size={18} color="#ef4444" />
+              <Text style={styles.logoutText}>Keluar dari Akun</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Modal Popup Ketentuan Layanan & Privasi */}
+      <LegalModal
+        visible={legalModal.visible}
+        type={legalModal.type}
+        onClose={() => setLegalModal({ ...legalModal, visible: false })}
+      />
+    </View>
   );
 }
 
@@ -139,32 +285,60 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 90,
   },
-  headerTitle: {
-    fontSize: 18,
+  pageHeader: {
+    marginBottom: 14,
+  },
+  pageTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0f172a',
   },
-  headerSubtitle: {
+  pageSubtitle: {
     fontSize: 12,
     color: '#64748b',
     marginTop: 2,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 24,
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  tabItemActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  tabTextActive: {
+    color: '#004C29',
+    fontWeight: 'bold',
   },
   profileCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
@@ -199,11 +373,11 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    marginBottom: 16,
+    marginBottom: 14,
     gap: 12,
   },
   itemRow: {
@@ -239,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
     borderWidth: 1,
     borderColor: '#fecaca',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 12,
   },
   logoutText: {

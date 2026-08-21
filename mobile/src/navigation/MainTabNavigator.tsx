@@ -119,7 +119,13 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
         </View>
 
         <View style={[styles.screenTab, activeTab === 'settings' ? styles.screenActive : styles.screenHidden]}>
-          <SettingsScreen user={user} onLogout={onLogout} />
+          <SettingsScreen
+            user={user}
+            activeWorkspaceId={activeWorkspaceId}
+            activeWorkspace={activeWorkspace}
+            onOpenWorkspaceModal={() => setWsModalVisible(true)}
+            onLogout={onLogout}
+          />
         </View>
       </View>
 
