@@ -551,16 +551,13 @@ export function GuideClient({
 
       {/* ── Main Layout: Sidebar & Content Grid ───────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
-        {/* Left Navigation: Topics Sidebar (Sticky) */}
-        <aside
-          style={{ position: "sticky", top: "1.5rem" }}
-          className="lg:col-span-4 space-y-2 self-start z-20"
-        >
+        {/* Left Navigation: Topics Sidebar (Sticky hanya di Desktop lg:) */}
+        <aside className="lg:col-span-4 space-y-2 lg:sticky lg:top-6 lg:self-start z-10">
           <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 px-3 mb-2">
             {isEn ? "Documentation Modules" : "Daftar Modul Panduan"} ({filteredCategories.length})
           </p>
 
-          <div className="space-y-1.5 bg-white dark:bg-[#161b22] p-2.5 rounded-2xl border border-slate-200 dark:border-[#21262d] shadow-sm max-h-[calc(100vh-5rem)] overflow-y-auto">
+          <div className="space-y-1.5 bg-white dark:bg-[#161b22] p-2.5 rounded-2xl border border-slate-200 dark:border-[#21262d] shadow-xs lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
             {filteredCategories.length === 0 ? (
               <div className="p-4 text-center text-xs text-zinc-400">
                 {isEn ? "No tutorials match your search." : "Tidak ada panduan yang cocok dengan pencarian."}
@@ -575,7 +572,12 @@ export function GuideClient({
                     key={category.id}
                     onClick={() => {
                       setActiveCategory(category.id);
-                      window.scrollTo({ top: 320, behavior: "smooth" });
+                      if (window.innerWidth < 1024) {
+                        const target = document.getElementById("module-content");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }
                     }}
                     className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between gap-3 cursor-pointer group ${
                       isSelected
@@ -626,7 +628,7 @@ export function GuideClient({
         </aside>
 
         {/* Right Content: Selected Module Steps & Images */}
-        <div className="lg:col-span-8 space-y-6">
+        <div id="module-content" className="lg:col-span-8 space-y-6 scroll-mt-6">
           {/* Module Header Card */}
           <div className="p-6 rounded-3xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#21262d] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
