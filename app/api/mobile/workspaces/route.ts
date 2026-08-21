@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       const myMembership = ws.members.find((m) => m.userId === session.userId);
       return {
         ...ws,
-        role: myMembership?.role || (ws.ownerId === session.userId ? "OWNER" : "VIEWER"),
+        role: myMembership?.role || "VIEWER",
       };
     });
 
