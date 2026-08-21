@@ -31,6 +31,7 @@ interface TransactionFormModalProps {
   categories: any[];
   wallets: any[];
   transaction?: any | null; // Data transaksi jika mode Edit
+  prefillData?: any | null; // Data hasil scan struk AI
   onSuccess: () => void;
 }
 
@@ -41,6 +42,7 @@ export function TransactionFormModal({
   categories,
   wallets,
   transaction,
+  prefillData,
   onSuccess,
 }: TransactionFormModalProps) {
   const isEditMode = !!transaction;
@@ -78,8 +80,25 @@ export function TransactionFormModal({
           setSelectedWalletId(defaultWallet?.id || '');
         }
       }
+    } else if (prefillData) {
+      // Mode Prefill dari Scan Struk AI
+      setTxType((prefillData.type as 'EXPENSE' | 'INCOME' | 'TRANSFER') || 'EXPENSE');
+      if (prefillData.amount) {
+        setDisplayAmount(new Intl.NumberFormat('id-ID').format(prefillData.amount));
+      } else {
+        setDisplayAmount('');
+      }
+      setNote(prefillData.note || prefillData.merchantName || '');
+      setSelectedCategoryId(prefillData.matchedCategoryId || '');
+      setSelectedToWalletId('');
+      if (prefillData.matchedWalletId) {
+        setSelectedWalletId(prefillData.matchedWalletId);
+      } else if (wallets.length > 0) {
+        const defaultWallet = wallets.find((w: any) => w.isDefault) || wallets[0];
+        setSelectedWalletId(defaultWallet?.id || '');
+      }
     }
-  }, [visible, transaction, wallets]);
+  }, [visible, transaction, wallets, prefillData]);
 
   const handleAmountChange = (text: string) => {
     const raw = text.replace(/\D/g, '');
@@ -189,14 +208,24 @@ export function TransactionFormModal({
           {/* Header Dialog */}
           <View style={styles.dialogHeader}>
             <Text style={styles.dialogTitle}>
-              {isEditMode ? 'Edit Transaction' : 'Add Transaction'}
+              {isEditMode ? 'Edit Transaction' : prefillData ? '✨ Hasil Scan Struk' : 'Add Transaction'}
             </Text>
             <TouchableOpacity style={styles.closeIconBtn} onPress={onClose} activeOpacity={0.7}>
               <X size={18} color="#64748b" />
             </TouchableOpacity>
           </View>
 
+          {/* AI Scan Prefill Banner */}
+          {prefillData && !isEditMode && (
+            <View style={styles.scanBanner}>
+              <Text style={styles.scanBannerText}>
+                ✨ Form telah diisi otomatis dari scan struk AI ({Math.round((prefillData.confidence || 0.9) * 100)}% akurat). Periksa sebelum simpan.
+              </Text>
+            </View>
+          )}
+
           {/* 3 Tabs: Expense, Income, Transfer */}
+
           <View style={styles.typeTabContainer}>
             <TouchableOpacity
               style={[styles.typeTab, txType === 'EXPENSE' && styles.typeTabExpenseActive]}
@@ -769,4 +798,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#64748b',
   },
+  scanBanner: {
+    marginHorizontal: 0,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#f5f3ff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd6fe',
+  },
+  scanBannerText: {
+    fontSize: 11.5,
+    color: '#6d28d9',
+    fontWeight: '500',
+    lineHeight: 17,
+  },
 });
+

@@ -22,6 +22,7 @@ import { TransactionsFilterBar } from './transactions/components/TransactionsFil
 import { TransactionCardItem } from './transactions/components/TransactionCardItem';
 import { TransactionsPagination } from './transactions/components/TransactionsPagination';
 import { TransactionFormModal } from '../components/TransactionFormModal';
+import { ScanReceiptModal, ScanResultData } from '../components/ScanReceiptModal';
 
 interface TransactionsScreenProps {
   user?: any;
@@ -45,6 +46,8 @@ export default function TransactionsScreen({
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [selectedEditTx, setSelectedEditTx] = useState<any | null>(null);
+  const [scanModalVisible, setScanModalVisible] = useState(false);
+  const [scanPrefill, setScanPrefill] = useState<ScanResultData | null>(null);
   const limit = 10;
 
   // Reset to page 1 when filter or search changes
@@ -131,10 +134,11 @@ export default function TransactionsScreen({
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={['#004C29']} />}
       >
-        {/* 1. Header Title & Actions (+ Add) */}
+        {/* 1. Header Title & Actions (+ Add + Scan) */}
         <TransactionsHeader
           totalCount={totalCount}
           onAddPress={() => setAddModalVisible(true)}
+          onScanPress={() => setScanModalVisible(true)}
           onExportPress={() => {}}
         />
 
@@ -183,9 +187,11 @@ export default function TransactionsScreen({
       <TransactionFormModal
         visible={addModalVisible || !!selectedEditTx}
         transaction={selectedEditTx}
+        prefillData={scanPrefill}
         onClose={() => {
           setAddModalVisible(false);
           setSelectedEditTx(null);
+          setScanPrefill(null);
         }}
         workspaceId={activeWorkspaceId}
         categories={categories}
@@ -194,6 +200,18 @@ export default function TransactionsScreen({
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
           queryClient.invalidateQueries({ queryKey: ['wallets'] });
           queryClient.invalidateQueries({ queryKey: ['reports'] });
+        }}
+      />
+
+      {/* ── Modal Scan Struk AI ── */}
+      <ScanReceiptModal
+        visible={scanModalVisible}
+        workspaceId={activeWorkspaceId}
+        onClose={() => setScanModalVisible(false)}
+        onSuccess={(data) => {
+          setScanPrefill(data);
+          setScanModalVisible(false);
+          setAddModalVisible(true);
         }}
       />
 

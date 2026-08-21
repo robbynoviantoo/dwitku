@@ -19,6 +19,8 @@ import {
     Wallet as WalletIcon,
     Tag,
     ArrowRightLeft,
+    ScanLine,
+    Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLenis } from "lenis/react";
@@ -393,6 +395,9 @@ export function TransactionFormDialog({
     const queryClient = useQueryClient();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | undefined>();
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{ confidence: number; items?: any[] } | null>(null);
+    const scanInputRef = useRef<HTMLInputElement>(null);
     const isEdit = !!transaction;
 
     const { data: wallets = [] } = useQuery({
@@ -400,6 +405,55 @@ export function TransactionFormDialog({
         queryFn: () => getWallets(workspaceId),
         enabled: !!workspaceId,
     });
+
+    // ── AI Receipt Scanner ───────────────────────────────────────────────────
+    const handleScanReceipt = () => {
+        scanInputRef.current?.click();
+    };
+
+    const processScannedImage = async (file: File) => {
+        if (!file) return;
+        setIsScanning(true);
+        setError(undefined);
+        try {
+            const base64 = await fileToBase64(file);
+            const res = await fetch("/api/ai/scan-receipt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    imageBase64: base64,
+                    mimeType: file.type,
+                    workspaceId,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || "Gagal memproses gambar");
+            }
+            const data = json.data;
+            // Auto-fill form fields
+            if (data.amount) form.setValue("amount", data.amount);
+            if (data.note) form.setValue("note", data.note);
+            if (data.type) form.setValue("type", data.type as "EXPENSE" | "INCOME" | "TRANSFER");
+            if (data.date) form.setValue("date", data.date);
+            if (data.matchedCategoryId) form.setValue("categoryId", data.matchedCategoryId);
+            if (data.matchedWalletId) form.setValue("walletId", data.matchedWalletId);
+            setScanResult({ confidence: data.confidence, items: data.items });
+        } catch (err: any) {
+            setError(err?.message || "Gagal scan struk");
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    function fileToBase64(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+        });
+    }
 
     // Lock body scroll and pause Lenis smooth scroll while dialog is open
     const lenis = useLenis();
@@ -516,13 +570,74 @@ export function TransactionFormDialog({
                     <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                         {isEdit ? t("transactions.editTransaction") : t("transactions.addTransaction")}
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        {/* AI Scan Receipt Button */}
+                        {!isEdit && (
+                            <>
+                                <input
+                                    ref={scanInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) processScannedImage(file);
+                                        e.target.value = "";
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleScanReceipt}
+                                    disabled={isScanning}
+                                    title="Scan Struk / Screenshot dengan AI"
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border",
+                                        isScanning
+                                            ? "bg-violet-50 text-violet-400 border-violet-200 animate-pulse"
+                                            : "bg-gradient-to-r from-violet-500 to-purple-600 text-white border-transparent hover:from-violet-600 hover:to-purple-700 shadow-sm"
+                                    )}
+                                >
+                                    {isScanning ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <ScanLine className="w-3.5 h-3.5" />
+                                    )}
+                                    <span>{isScanning ? "Scanning..." : "Scan Struk"}</span>
+                                    <Sparkles className="w-3 h-3" />
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
+                {/* AI Scan Result Banner */}
+                {scanResult && (
+                    <div className="mx-4 mt-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 flex items-start gap-2.5">
+                        <Sparkles className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-semibold text-violet-800">Struk berhasil dibaca AI ✨</p>
+                            <p className="text-[10px] text-violet-600 mt-0.5">
+                                Tingkat keyakinan: {Math.round(scanResult.confidence * 100)}%
+                                {scanResult.items && scanResult.items.length > 0
+                                    ? ` · ${scanResult.items.length} item terdeteksi`
+                                    : ""}
+                                . Periksa dan sesuaikan data di bawah sebelum simpan.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setScanResult(null)}
+                            className="text-violet-400 hover:text-violet-600 transition-colors shrink-0"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
 
                 {/* Form area (Scrollable on mobile) */}
                 <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-5 space-y-3.5 flex-1 overflow-y-auto overscroll-contain">

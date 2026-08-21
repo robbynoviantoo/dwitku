@@ -17,6 +17,9 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  ScanLine,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -83,6 +86,24 @@ export default async function AdminPage() {
   const activeSubsCount = subscriptions.filter((s) => s.status === "ACTIVE").length;
   const trialSubsCount = subscriptions.filter((s) => s.status === "TRIAL").length;
   const totalRevenue = successfulPayments._sum.amount ?? 0;
+
+  // AI OCR Config
+  const aiOcrProvider = process.env.AI_OCR_PROVIDER || null;
+  const geminiKey = process.env.GEMINI_API_KEY ? "configured" : null;
+  const openaiKey = process.env.OPENAI_API_KEY ? "configured" : null;
+  const groqKey = process.env.GROQ_API_KEY ? "configured" : null;
+  const geminiModel = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
+  const openaiModel = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
+  const groqModel = process.env.GROQ_OCR_MODEL || "llama-3.2-11b-vision-preview";
+
+  const PROVIDER_META = {
+    gemini: { label: "Google Gemini", badge: "Gratis", docsUrl: "https://aistudio.google.com/", keyConfigured: !!geminiKey, model: geminiModel },
+    openai: { label: "OpenAI GPT", badge: "Berbayar", docsUrl: "https://platform.openai.com/", keyConfigured: !!openaiKey, model: openaiModel },
+    groq: { label: "Groq (LLaVA)", badge: "Beta", docsUrl: "https://console.groq.com/", keyConfigured: !!groqKey, model: groqModel },
+  } as const;
+
+  type ProviderKey = keyof typeof PROVIDER_META;
+  const currentMeta = aiOcrProvider ? PROVIDER_META[aiOcrProvider as ProviderKey] : null;
 
   const STATUS_CONFIG: Record<
     string,
@@ -415,7 +436,127 @@ export default async function AdminPage() {
           </table>
         </div>
       </div>
+
+      {/* ── AI OCR Config Section ── */}
+      <div className="bg-white dark:bg-[#161b22] rounded-2xl border border-slate-200 dark:border-[#21262d] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-[#21262d] bg-gradient-to-r from-violet-50/80 to-purple-50/60 dark:from-violet-950/20 dark:to-purple-950/10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
+              <ScanLine className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Konfigurasi AI Receipt Scanner</h2>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700 flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  AI Powered
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Pilih provider AI untuk fitur scan struk otomatis di Web &amp; Mobile. Dikonfigurasi via file .env</p>
+            </div>
+          </div>
+          {/* Status Badge */}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+            currentMeta?.keyConfigured
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+          }`}>
+            {currentMeta?.keyConfigured
+              ? <><CheckCircle2 className="w-3.5 h-3.5" /> Aktif</>  
+              : <><AlertCircle className="w-3.5 h-3.5" /> Belum Dikonfigurasi</>}
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Provider Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(Object.entries(PROVIDER_META) as [ProviderKey, (typeof PROVIDER_META)[ProviderKey]][]).map(([key, meta]) => {
+              const isActive = aiOcrProvider === key;
+              return (
+                <div
+                  key={key}
+                  className={`relative p-4 rounded-xl border-2 transition-all ${
+                    isActive
+                      ? "border-violet-500 bg-violet-50/70 dark:bg-violet-950/20"
+                      : "border-slate-200 dark:border-[#21262d] bg-slate-50/50 dark:bg-[#21262d]/30"
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500 text-white">AKTIF</span>
+                  )}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      key === "gemini" ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
+                      key === "openai" ? "text-amber-700 bg-amber-50 border-amber-200" :
+                      "text-purple-700 bg-purple-50 border-purple-200"
+                    }`}>{meta.badge}</span>
+                    <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{meta.label}</span>
+                  </div>
+                  {/* API Key Status */}
+                  <div className={`flex items-center gap-1.5 text-[10.5px] font-medium mb-3 ${
+                    meta.keyConfigured ? "text-emerald-600" : "text-zinc-400"
+                  }`}>
+                    {meta.keyConfigured
+                      ? <><CheckCircle2 className="w-3 h-3" /> API Key terpasang</>
+                      : <><AlertCircle className="w-3 h-3" /> API Key belum diisi</>
+                    }
+                  </div>
+                  {/* Model */}
+                  <code className="block text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1.5 rounded-lg text-violet-700 dark:text-violet-400 mb-3 truncate">
+                    {meta.model}
+                  </code>
+                  <a
+                    href={meta.docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10.5px] text-violet-600 dark:text-violet-400 hover:text-violet-800 font-semibold transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Dapatkan API Key
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* .env Config Reference */}
+          <div className="bg-zinc-950 dark:bg-zinc-900 rounded-xl p-4 space-y-1.5">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3"># Konfigurasi di file .env</p>
+            {[
+              { key: "AI_OCR_PROVIDER", value: aiOcrProvider || "gemini", comment: "# gemini | openai | groq", configured: !!aiOcrProvider },
+              { key: "GEMINI_API_KEY", value: geminiKey ? "*****" : "(belum diisi)", comment: "# Gratis di aistudio.google.com", configured: !!geminiKey },
+              { key: "GEMINI_OCR_MODEL", value: geminiModel, comment: "# gemini-2.5-flash / gemini-1.5-flash", configured: true },
+              { key: "OPENAI_API_KEY", value: openaiKey ? "*****" : "(opsional)", comment: "# Jika provider=openai", configured: !!openaiKey },
+              { key: "GROQ_API_KEY", value: groqKey ? "*****" : "(opsional)", comment: "# Jika provider=groq", configured: !!groqKey },
+            ].map((item) => (
+              <div key={item.key} className="flex items-start gap-2 font-mono text-[11px]">
+                <span className={item.configured ? "text-emerald-400" : "text-zinc-500"}>{item.key}</span>
+                <span className="text-zinc-600">=</span>
+                <span className={item.configured ? "text-amber-300" : "text-zinc-600"}>&#34;{item.value}&#34;</span>
+                <span className="text-zinc-600 ml-2">{item.comment}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Capability List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              "📄 Struk belanja minimarket (Indomaret, Alfamart)",
+              "🍽️ Nota restoran & kafe",
+              "🏦 Screenshot mutasi m-banking (BCA, Mandiri, BRI, BNI)",
+              "💳 Bukti transfer e-wallet (GoPay, OVO, ShopeePay, DANA)",
+              "🧾 Struk kasir POS & invoice",
+              "📱 Screenshot Shopee, Tokopedia, dll",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-[11.5px] text-zinc-600 dark:text-zinc-400 bg-slate-50 dark:bg-[#21262d] rounded-lg px-3 py-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-

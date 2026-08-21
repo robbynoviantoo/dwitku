@@ -1,16 +1,18 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { ArrowRightLeft, FileSpreadsheet, Plus } from 'lucide-react-native';
+import { ArrowRightLeft, FileSpreadsheet, Plus, ScanLine } from 'lucide-react-native';
 
 interface TransactionsHeaderProps {
   totalCount: number;
   onAddPress?: () => void;
+  onScanPress?: () => void;
   onExportPress?: () => void;
 }
 
 export function TransactionsHeader({
   totalCount,
   onAddPress,
+  onScanPress,
   onExportPress,
 }: TransactionsHeaderProps) {
   return (
@@ -26,6 +28,12 @@ export function TransactionsHeader({
       <View style={styles.headerRightActions}>
         <TouchableOpacity style={styles.exportBtn} onPress={onExportPress} activeOpacity={0.7}>
           <FileSpreadsheet size={16} color="#004C29" />
+        </TouchableOpacity>
+
+        {/* AI Scan Struk Button */}
+        <TouchableOpacity style={styles.scanBtn} onPress={onScanPress} activeOpacity={0.7}>
+          <ScanLine size={15} color="#ffffff" />
+          <Text style={styles.scanBtnText}>Scan</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.addBtn} onPress={onAddPress} activeOpacity={0.7}>
@@ -73,6 +81,20 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  scanBtnText: {
+    color: '#ffffff',
+    fontSize: 12.5,
+    fontWeight: 'bold',
   },
   addBtn: {
     flexDirection: 'row',
