@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../services/api';
 import { PieChart, TrendingUp, TrendingDown, Wallet } from 'lucide-react-native';
 
@@ -16,25 +17,11 @@ interface ReportsScreenProps {
 }
 
 export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchReport = useCallback(async () => {
-    if (!activeWorkspaceId) return;
-    setLoading(true);
-    try {
-      const res = await apiRequest(`/reports?workspaceId=${activeWorkspaceId}`);
-      setData(res);
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeWorkspaceId]);
-
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['reports', activeWorkspaceId],
+    queryFn: () => apiRequest(`/reports?workspaceId=${activeWorkspaceId}`),
+    enabled: !!activeWorkspaceId,
+  });
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -52,8 +39,8 @@ export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps)
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {loading ? (
-          <ActivityIndicator color="#16a34a" style={{ marginTop: 40 }} />
+        {loading && !data ? (
+          <ActivityIndicator color="#004C29" style={{ marginTop: 40 }} />
         ) : !data ? (
           <View style={styles.emptyContainer}>
             <PieChart size={44} color="#3f3f46" />
@@ -64,14 +51,14 @@ export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps)
             {/* Net Summary Card */}
             <View style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
-                <Wallet size={16} color="#16a34a" />
+                <Wallet size={16} color="#004C29" />
                 <Text style={styles.summaryTitle}>Saldo Net Keseluruhan</Text>
               </View>
               <Text style={styles.summaryValue}>{formatRupiah(data.summary?.netBalance || 0)}</Text>
               <View style={styles.statGrid}>
                 <View style={styles.statBox}>
                   <View style={styles.statBadgeRow}>
-                    <TrendingUp size={14} color="#16a34a" />
+                    <TrendingUp size={14} color="#004C29" />
                     <Text style={styles.statLabel}>Pemasukan</Text>
                   </View>
                   <Text style={styles.statValGreen}>{formatRupiah(data.summary?.totalIncome || 0)}</Text>
@@ -107,7 +94,7 @@ export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps)
                         <Text
                           style={[
                             styles.catAmount,
-                            { color: isIncome ? '#16a34a' : '#dc2626' },
+                            { color: isIncome ? '#004C29' : '#dc2626' },
                           ]}
                         >
                           {formatRupiah(cat.amount)}
@@ -122,7 +109,7 @@ export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps)
                           styles.progressBarFill,
                           {
                             width: `${Math.min(percentage, 100)}%`,
-                            backgroundColor: isIncome ? '#16a34a' : '#dc2626',
+                            backgroundColor: isIncome ? '#004C29' : '#dc2626',
                           },
                         ]}
                       />
@@ -141,25 +128,29 @@ export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#a1a1aa',
+    color: '#64748b',
     marginTop: 2,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 28,
   },
   emptyContainer: {
@@ -168,17 +159,17 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
   },
   emptyText: {
-    color: '#71717a',
+    color: '#94a3b8',
     marginTop: 10,
     fontSize: 13,
   },
   summaryCard: {
-    backgroundColor: '#18181b',
+    backgroundColor: '#ffffff',
     borderRadius: 18,
-    padding: 18,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#27272a',
-    marginBottom: 20,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -186,23 +177,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   summaryTitle: {
-    color: '#a1a1aa',
+    color: '#64748b',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   summaryValue: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginVertical: 8,
+    color: '#0f172a',
+    marginVertical: 6,
   },
   statGrid: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 10,
-    paddingTop: 12,
+    marginTop: 8,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#27272a',
+    borderTopColor: '#f1f5f9',
   },
   statBox: {
     flex: 1,
@@ -214,33 +205,33 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: '#a1a1aa',
+    color: '#64748b',
   },
   statValGreen: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: 'bold',
-    color: '#16a34a',
+    color: '#004C29',
     marginTop: 2,
   },
   statValRed: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: 'bold',
     color: '#dc2626',
     marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
     marginBottom: 10,
   },
   catReportCard: {
-    backgroundColor: '#18181b',
+    backgroundColor: '#ffffff',
     borderRadius: 14,
-    padding: 14,
+    padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#27272a',
+    borderColor: '#e2e8f0',
   },
   catHeader: {
     flexDirection: 'row',
@@ -248,31 +239,31 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   catEmoji: {
-    fontSize: 20,
+    fontSize: 18,
     marginRight: 10,
   },
   catName: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   catType: {
     fontSize: 11,
-    color: '#71717a',
+    color: '#64748b',
     marginTop: 1,
   },
   catAmount: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: 'bold',
   },
   catPercent: {
     fontSize: 10,
-    color: '#71717a',
+    color: '#94a3b8',
     marginTop: 2,
   },
   progressBarBg: {
     height: 5,
-    backgroundColor: '#27272a',
+    backgroundColor: '#e2e8f0',
     borderRadius: 3,
     overflow: 'hidden',
   },

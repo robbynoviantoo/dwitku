@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,7 +8,8 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { LogOut, Shield, Info, Smartphone } from 'lucide-react-native';
+import { LogOut, Shield, Info, Smartphone, Scale, FileText } from 'lucide-react-native';
+import { LegalModal } from '../components/LegalModal';
 
 interface SettingsScreenProps {
   user: any;
@@ -16,6 +17,11 @@ interface SettingsScreenProps {
 }
 
 export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) {
+  const [legalModal, setLegalModal] = useState<{ visible: boolean; type: 'terms' | 'privacy' }>({
+    visible: false,
+    type: 'terms',
+  });
+
   const confirmLogout = () => {
     Alert.alert(
       'Konfirmasi Keluar',
@@ -53,8 +59,8 @@ export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) 
         {/* Info Items */}
         <View style={styles.section}>
           <View style={styles.itemRow}>
-            <View style={[styles.iconCircle, { backgroundColor: '#16a34a20' }]}>
-              <Smartphone size={18} color="#16a34a" />
+            <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
+              <Smartphone size={18} color="#004C29" />
             </View>
             <View style={styles.itemTextContainer}>
               <Text style={styles.itemTitle}>Versi Aplikasi Mobile</Text>
@@ -81,7 +87,42 @@ export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) 
               <Text style={styles.itemSubtitle}>Android APK, iOS, & Web Dashboard</Text>
             </View>
           </View>
+
+          <TouchableOpacity
+            style={styles.itemRow}
+            onPress={() => setLegalModal({ visible: true, type: 'terms' })}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#004C2920' }]}>
+              <Scale size={18} color="#004C29" />
+            </View>
+            <View style={styles.itemTextContainer}>
+              <Text style={styles.itemTitle}>Ketentuan Layanan</Text>
+              <Text style={styles.itemSubtitle}>Hak & ketentuan penggunaan Dwitku</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.itemRow}
+            onPress={() => setLegalModal({ visible: true, type: 'privacy' })}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#3b82f620' }]}>
+              <FileText size={18} color="#3b82f6" />
+            </View>
+            <View style={styles.itemTextContainer}>
+              <Text style={styles.itemTitle}>Kebijakan Privasi</Text>
+              <Text style={styles.itemSubtitle}>Perlindungan & keamanan data keuangan Anda</Text>
+            </View>
+          </TouchableOpacity>
         </View>
+
+        {/* Modal Popup Ketentuan Layanan & Privasi */}
+        <LegalModal
+          visible={legalModal.visible}
+          type={legalModal.type}
+          onClose={() => setLegalModal({ ...legalModal, visible: false })}
+        />
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
@@ -96,70 +137,74 @@ export default function SettingsScreen({ user, onLogout }: SettingsScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#a1a1aa',
+    color: '#64748b',
     marginTop: 2,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
     paddingBottom: 24,
   },
   profileCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 20,
-    padding: 22,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#27272a',
-    marginBottom: 16,
+    borderColor: '#e2e8f0',
+    marginBottom: 14,
   },
   avatarLarge: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(22, 163, 74, 0.15)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f0fdf4',
     borderWidth: 1.5,
-    borderColor: '#16a34a',
+    borderColor: '#86efac',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   avatarTextLarge: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#16a34a',
+    color: '#004C29',
   },
   userName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   userEmail: {
-    fontSize: 13,
-    color: '#71717a',
-    marginTop: 3,
+    fontSize: 12.5,
+    color: '#64748b',
+    marginTop: 2,
   },
   section: {
-    backgroundColor: '#18181b',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#27272a',
-    marginBottom: 20,
-    gap: 14,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
+    gap: 12,
   },
   itemRow: {
     flexDirection: 'row',
@@ -177,29 +222,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   itemSubtitle: {
     fontSize: 11,
-    color: '#71717a',
-    marginTop: 2,
+    color: '#64748b',
+    marginTop: 1,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: '#fef2f2',
     borderWidth: 1,
-    borderColor: '#ef4444',
+    borderColor: '#fecaca',
     borderRadius: 12,
-    paddingVertical: 13,
+    paddingVertical: 12,
   },
   logoutText: {
-    color: '#ef4444',
-    fontSize: 14,
+    color: '#dc2626',
+    fontSize: 13.5,
     fontWeight: 'bold',
   },
 });

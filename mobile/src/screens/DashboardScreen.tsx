@@ -10,18 +10,28 @@ import {
   TextInput,
   Alert,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../services/api';
 import {
-  TrendingUp,
-  TrendingDown,
   Plus,
   FolderKanban,
   ChevronDown,
   Check,
   ArrowRightLeft,
   Wallet as WalletIcon,
+  Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react-native';
+
+import { DashboardHero } from './dashboard/components/DashboardHero';
+import { FinancialCalendar } from './dashboard/components/FinancialCalendar';
+import { RecentTransactions } from './dashboard/components/RecentTransactions';
+import { QuickWallets } from './dashboard/components/QuickWallets';
+import { DashboardSkeleton } from './dashboard/components/DashboardSkeleton';
+import { AppHeader } from '../components/AppHeader';
 
 interface DashboardScreenProps {
   user: any;
@@ -30,7 +40,6 @@ interface DashboardScreenProps {
   onWorkspaceChange?: (wsId: string) => void;
 }
 
-// Helper format nominal ribuan
 function formatThousands(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
@@ -46,19 +55,58 @@ export default function DashboardScreen({
   activeWorkspaceId,
   onWorkspaceChange,
 }: DashboardScreenProps) {
-  const [workspaces, setWorkspaces] = useState<any[]>([]);
-  const [activeWorkspace, setActiveWorkspace] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, balance: 0 });
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [selectedWorkspace, setSelectedWorkspace] = useState<any>(null);
+  const [showAmount, setShowAmount] = useState(true);
 
-  // Modal State
+  // 1. Query Workspaces
+  const { data: workspacesData, isLoading: loadingWs } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: () => apiRequest('/workspaces'),
+  });
+
+  const workspaces = workspacesData?.workspaces || [];
+  const activeWorkspace =
+    selectedWorkspace ||
+    workspaces.find((w: any) => w.id === activeWorkspaceId) ||
+    workspaces[0] ||
+    null;
+
+  const currentWsId = activeWorkspace?.id;
+
+  // 2. Query Transactions
+  const {
+    data: txData,
+    isLoading: loadingTx,
+    isRefetching: refreshingTx,
+    refetch: refetchTx,
+  } = useQuery({
+    queryKey: ['transactions', currentWsId],
+    queryFn: () => apiRequest(`/transactions?workspaceId=${currentWsId}`),
+    enabled: !!currentWsId,
+  });
+
+  // 3. Query Wallets
+  const {
+    data: walletsData,
+    isLoading: loadingWallets,
+    refetch: refetchWallets,
+  } = useQuery({
+    queryKey: ['wallets', currentWsId],
+    queryFn: () => apiRequest(`/wallets?workspaceId=${currentWsId}`),
+    enabled: !!currentWsId,
+  });
+
+  const transactions = txData?.transactions || [];
+  const categories = txData?.categories || [];
+  const summary = txData?.summary || { totalIncome: 0, totalExpense: 0, balance: 0 };
+  const wallets = walletsData?.wallets || [];
+  const loading = !txData && (loadingWs || loadingTx);
+
+  // Modal State Tambah Transaksi
   const [modalVisible, setModalVisible] = useState(false);
   const [wsModalVisible, setWsModalVisible] = useState(false);
   const [txType, setTxType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>('EXPENSE');
-  const [rawAmount, setRawAmount] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
   const [note, setNote] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -67,74 +115,28 @@ export default function DashboardScreen({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchWorkspaces();
-  }, []);
+    if (categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
 
   useEffect(() => {
-    if (activeWorkspace) {
-      fetchTransactions(activeWorkspace.id);
-      fetchWallets(activeWorkspace.id);
-    }
-  }, [activeWorkspace]);
-
-  const fetchWorkspaces = async () => {
-    try {
-      const data = await apiRequest('/workspaces');
-      const wsList = data.workspaces || [];
-      setWorkspaces(wsList);
-      if (wsList.length > 0) {
-        if (activeWorkspaceId) {
-          const found = wsList.find((w: any) => w.id === activeWorkspaceId);
-          setActiveWorkspace(found || wsList[0]);
-        } else {
-          setActiveWorkspace(wsList[0]);
-        }
-      } else {
-        setLoading(false);
+    if (wallets.length > 0 && !selectedWalletId) {
+      const defaultW = wallets.find((w: any) => w.isDefault) || wallets[0];
+      setSelectedWalletId(defaultW.id);
+      if (wallets.length > 1 && !selectedToWalletId) {
+        const secondW = wallets.find((w: any) => w.id !== defaultW.id);
+        if (secondW) setSelectedToWalletId(secondW.id);
       }
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-      setLoading(false);
     }
-  };
+  }, [wallets, selectedWalletId, selectedToWalletId]);
 
-  const fetchTransactions = async (wsId: string) => {
-    setLoading(true);
-    try {
-      const data = await apiRequest(`/transactions?workspaceId=${wsId}`);
-      setTransactions(data.transactions || []);
-      setCategories(data.categories || []);
-      setSummary(data.summary || { totalIncome: 0, totalExpense: 0, balance: 0 });
-      if (data.categories && data.categories.length > 0) {
-        setSelectedCategoryId(data.categories[0].id);
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchWallets = async (wsId: string) => {
-    try {
-      const data = await apiRequest(`/wallets?workspaceId=${wsId}`);
-      const wList = data.wallets || [];
-      setWallets(wList);
-      if (wList.length > 0) {
-        const defaultW = wList.find((w: any) => w.isDefault) || wList[0];
-        setSelectedWalletId(defaultW.id);
-        if (wList.length > 1) {
-          const secondW = wList.find((w: any) => w.id !== defaultW.id);
-          if (secondW) setSelectedToWalletId(secondW.id);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const onRefresh = async () => {
+    await Promise.all([refetchTx(), refetchWallets()]);
   };
 
   const handleSelectWorkspace = (ws: any) => {
-    setActiveWorkspace(ws);
+    setSelectedWorkspace(ws);
     setWsModalVisible(false);
     if (onWorkspaceChange) {
       onWorkspaceChange(ws.id);
@@ -144,7 +146,6 @@ export default function DashboardScreen({
   const handleAmountChange = (text: string) => {
     const formatted = formatThousands(text);
     setDisplayAmount(formatted);
-    setRawAmount(String(parseThousands(formatted) || ''));
   };
 
   const handleCreateTransaction = async () => {
@@ -186,10 +187,10 @@ export default function DashboardScreen({
 
       setModalVisible(false);
       setDisplayAmount('');
-      setRawAmount('');
       setNote('');
-      fetchTransactions(activeWorkspace.id);
-      fetchWallets(activeWorkspace.id);
+      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspace.id] });
+      queryClient.invalidateQueries({ queryKey: ['wallets', activeWorkspace.id] });
+      queryClient.invalidateQueries({ queryKey: ['reports', activeWorkspace.id] });
     } catch (err: any) {
       Alert.alert('Gagal Simpan', err.message);
     } finally {
@@ -198,6 +199,7 @@ export default function DashboardScreen({
   };
 
   const formatRupiah = (val: number) => {
+    if (!showAmount) return '••••••••';
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -206,179 +208,80 @@ export default function DashboardScreen({
   };
 
   const totalWalletBalance = wallets.reduce((acc, w) => acc + (w.currentBalance || 0), 0);
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Sobat';
+
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours >= 4 && hours < 11) return 'Selamat Pagi';
+    if (hours >= 11 && hours < 15) return 'Selamat Siang';
+    if (hours >= 15 && hours < 19) return 'Selamat Sore';
+    return 'Selamat Malam';
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Halo, {user?.name || 'User'} 👋</Text>
-          <TouchableOpacity
-            style={styles.wsSelector}
-            onPress={() => setWsModalVisible(true)}
-          >
-            <FolderKanban size={14} color="#16a34a" />
-            <Text style={styles.wsName}>{activeWorkspace?.name || 'Workspace'}</Text>
-            <ChevronDown size={14} color="#71717a" />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={styles.addIconBtn}
-          onPress={() => {
-            setDisplayAmount('');
-            setRawAmount('');
-            setNote('');
-            setModalVisible(true);
-          }}
-        >
-          <Plus size={20} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
+      {/* ── Reusable Unified Top Header ── */}
+      <AppHeader
+        user={user}
+        activeWorkspace={activeWorkspace}
+        onOpenWorkspaceModal={() => setWsModalVisible(true)}
+        showAmount={showAmount}
+        onToggleShowAmount={() => setShowAmount(!showAmount)}
+        onOpenAddModal={() => {
+          setDisplayAmount('');
+          setNote('');
+          setModalVisible(true);
+        }}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Card Ringkasan Saldo Modern */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceTitle}>Total Saldo Bersih</Text>
-          <Text style={styles.balanceAmount}>
-            {formatRupiah(wallets.length > 0 ? totalWalletBalance : summary.balance)}
-          </Text>
-
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <View style={[styles.iconBadge, { backgroundColor: '#dcfce7' }]}>
-                <TrendingUp size={16} color="#16a34a" />
-              </View>
-              <View>
-                <Text style={styles.summaryLabel}>Pemasukan Bulan Ini</Text>
-                <Text style={styles.summaryValueGreen}>{formatRupiah(summary.totalIncome)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.summaryItem}>
-              <View style={[styles.iconBadge, { backgroundColor: '#fee2e2' }]}>
-                <TrendingDown size={16} color="#dc2626" />
-              </View>
-              <View>
-                <Text style={styles.summaryLabel}>Pengeluaran Bulan Ini</Text>
-                <Text style={styles.summaryValueRed}>{formatRupiah(summary.totalExpense)}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Section Dompet / Wallets */}
-        {wallets.length > 0 && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Dompet & Rekening</Text>
-              <Text style={styles.sectionCount}>{wallets.length} Dompet</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.walletScroll}>
-              {wallets.map((w) => (
-                <View key={w.id} style={styles.walletCard}>
-                  <View style={styles.walletCardHeader}>
-                    <View style={[styles.walletDot, { backgroundColor: w.color || '#16a34a' }]} />
-                    <Text style={styles.walletName} numberOfLines={1}>
-                      {w.name}
-                    </Text>
-                  </View>
-                  <Text style={styles.walletBalance}>{formatRupiah(w.currentBalance || 0)}</Text>
-                  {w.accountNumber ? (
-                    <Text style={styles.walletAccNumber}>{w.accountNumber}</Text>
-                  ) : (
-                    <Text style={styles.walletAccNumber}>{w.type}</Text>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Action Button Tambah Transaksi */}
-        <TouchableOpacity
-          style={styles.addTxButton}
-          onPress={() => {
-            setDisplayAmount('');
-            setRawAmount('');
-            setNote('');
-            setModalVisible(true);
-          }}
-        >
-          <Plus size={18} color="#ffffff" />
-          <Text style={styles.addTxText}>Catat Transaksi Baru</Text>
-        </TouchableOpacity>
-
-        {/* Section List Transaksi */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Riwayat Transaksi</Text>
-          <Text style={styles.sectionCount}>{transactions.length} Item</Text>
-        </View>
-
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshingTx} onRefresh={onRefresh} colors={['#004C29']} />}
+      >
         {loading ? (
-          <ActivityIndicator color="#16a34a" style={{ marginTop: 24 }} />
-        ) : transactions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Belum ada transaksi di workspace ini</Text>
-          </View>
+          <DashboardSkeleton />
         ) : (
-          transactions.map((item) => {
-            const isIncome = item.type === 'INCOME';
-            const isTransfer = item.type === 'TRANSFER';
-            return (
-              <View key={item.id} style={styles.txCard}>
-                <View
-                  style={[
-                    styles.txEmojiBox,
-                    isTransfer
-                      ? { backgroundColor: '#eff6ff' }
-                      : isIncome
-                      ? { backgroundColor: '#f0fdf4' }
-                      : { backgroundColor: '#fef2f2' },
-                  ]}
-                >
-                  {isTransfer ? (
-                    <ArrowRightLeft size={18} color="#2563eb" />
-                  ) : (
-                    <Text style={styles.txEmoji}>{item.category?.emoji || '💰'}</Text>
-                  )}
-                </View>
-                <View style={styles.txDetails}>
-                  <Text style={styles.txCatName}>
-                    {isTransfer
-                      ? `Transfer: ${item.wallet?.name || 'Dompet'} ➔ ${item.toWallet?.name || 'Tujuan'}`
-                      : item.category?.name || 'Kategori'}
-                  </Text>
-                  <Text style={styles.txNote} numberOfLines={1}>
-                    {item.note || (item.wallet?.name ? `Via ${item.wallet.name}` : 'Tanpa catatan')}
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.txAmount,
-                    isTransfer
-                      ? { color: '#2563eb' }
-                      : isIncome
-                      ? { color: '#16a34a' }
-                      : { color: '#dc2626' },
-                  ]}
-                >
-                  {isTransfer ? '' : isIncome ? '+' : '-'}
-                  {formatRupiah(Number(item.amount))}
-                </Text>
-              </View>
-            );
-          })
+          <>
+            {/* ── 1. Hero Card (Saldo Bersih & Total Masuk/Keluar) ── */}
+            <DashboardHero
+              totalBalance={wallets.length > 0 ? totalWalletBalance : summary.balance}
+              totalIncome={summary.totalIncome}
+              totalExpense={summary.totalExpense}
+              formatRupiah={formatRupiah}
+            />
+
+            {/* ── 2. Kalender Keuangan (Financial Calendar) ── */}
+            <FinancialCalendar
+              transactions={transactions}
+              showAmount={showAmount}
+              formatRupiah={formatRupiah}
+            />
+
+            {/* ── 3. Transaksi Terkini (Recent Transactions) ── */}
+            <RecentTransactions
+              transactions={transactions}
+              loading={loading}
+              formatRupiah={formatRupiah}
+            />
+
+            {/* ── 4. Dompet & Rekening Berada di Paling Bawah (Quick Wallets) ── */}
+            <QuickWallets
+              wallets={wallets}
+              formatRupiah={formatRupiah}
+            />
+          </>
         )}
       </ScrollView>
 
-      {/* Modal Tambah Transaksi */}
+      {/* ── Modal Catat Transaksi Baru ── */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Catat Transaksi Baru</Text>
 
-            {/* Type Selector (Pengeluaran / Pemasukan / Transfer) */}
-            <View style={styles.typeContainer}>
+            {/* Tab Tipe Transaksi */}
+            <View style={styles.typeSelectorContainer}>
               <TouchableOpacity
                 style={[
                   styles.typeBtn,
@@ -395,10 +298,11 @@ export default function DashboardScreen({
                   Pengeluaran
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.typeBtn,
-                  txType === 'INCOME' && { backgroundColor: '#16a34a' },
+                  txType === 'INCOME' && { backgroundColor: '#004C29' },
                 ]}
                 onPress={() => setTxType('INCOME')}
               >
@@ -411,6 +315,7 @@ export default function DashboardScreen({
                   Pemasukan
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.typeBtn,
@@ -429,21 +334,21 @@ export default function DashboardScreen({
               </TouchableOpacity>
             </View>
 
-            {/* Input Nominal dengan Separator Ribuan */}
+            {/* Input Nominal */}
             <Text style={styles.inputLabel}>Nominal (Rp) *</Text>
             <View style={styles.amountInputWrapper}>
               <Text style={styles.rpPrefix}>Rp</Text>
               <TextInput
                 style={styles.amountInput}
                 placeholder="0"
-                placeholderTextColor="#71717a"
+                placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
                 value={displayAmount}
                 onChangeText={handleAmountChange}
               />
             </View>
 
-            {/* Pilihan Dompet Asal / Sumber */}
+            {/* Dompet Asal */}
             {wallets.length > 0 && (
               <>
                 <Text style={styles.inputLabel}>
@@ -459,14 +364,14 @@ export default function DashboardScreen({
                       ]}
                       onPress={() => setSelectedWalletId(w.id)}
                     >
-                      <WalletIcon size={13} color={selectedWalletId === w.id ? '#ffffff' : '#71717a'} />
+                      <WalletIcon size={12} color={selectedWalletId === w.id ? '#ffffff' : '#64748b'} />
                       <Text
                         style={[
                           styles.chipItemText,
                           selectedWalletId === w.id && styles.chipItemTextActive,
                         ]}
                       >
-                        {w.name} ({formatRupiah(w.currentBalance)})
+                        {w.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -474,7 +379,7 @@ export default function DashboardScreen({
               </>
             )}
 
-            {/* Pilihan Dompet Tujuan (Jika Transfer) */}
+            {/* Dompet Tujuan (Jika Transfer) */}
             {txType === 'TRANSFER' && wallets.length > 1 && (
               <>
                 <Text style={styles.inputLabel}>Ke Dompet Tujuan *</Text>
@@ -490,10 +395,7 @@ export default function DashboardScreen({
                         ]}
                         onPress={() => setSelectedToWalletId(w.id)}
                       >
-                        <ArrowRightLeft
-                          size={13}
-                          color={selectedToWalletId === w.id ? '#ffffff' : '#71717a'}
-                        />
+                        <ArrowRightLeft size={12} color={selectedToWalletId === w.id ? '#ffffff' : '#64748b'} />
                         <Text
                           style={[
                             styles.chipItemText,
@@ -508,7 +410,7 @@ export default function DashboardScreen({
               </>
             )}
 
-            {/* Pilihan Kategori (Jika Bukan Transfer) */}
+            {/* Kategori (Jika bukan Transfer) */}
             {txType !== 'TRANSFER' && (
               <>
                 <Text style={styles.inputLabel}>Pilih Kategori *</Text>
@@ -524,7 +426,7 @@ export default function DashboardScreen({
                         ]}
                         onPress={() => setSelectedCategoryId(cat.id)}
                       >
-                        <Text style={styles.chipItemEmoji}>{cat.emoji}</Text>
+                        <Text style={styles.chipEmoji}>{cat.emoji}</Text>
                         <Text
                           style={[
                             styles.chipItemText,
@@ -539,15 +441,17 @@ export default function DashboardScreen({
               </>
             )}
 
+            {/* Catatan */}
             <Text style={styles.inputLabel}>Catatan (Opsional)</Text>
             <TextInput
               style={styles.modalInput}
               placeholder="Contoh: Belanja bulanan / Makan siang"
-              placeholderTextColor="#71717a"
+              placeholderTextColor="#94a3b8"
               value={note}
               onChangeText={setNote}
             />
 
+            {/* Tombol Aksi */}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.cancelBtn]}
@@ -562,7 +466,7 @@ export default function DashboardScreen({
                   txType === 'TRANSFER'
                     ? { backgroundColor: '#2563eb' }
                     : txType === 'INCOME'
-                    ? { backgroundColor: '#16a34a' }
+                    ? { backgroundColor: '#004C29' }
                     : { backgroundColor: '#dc2626' },
                 ]}
                 onPress={handleCreateTransaction}
@@ -579,41 +483,83 @@ export default function DashboardScreen({
         </View>
       </Modal>
 
-      {/* Modal Switch Workspace */}
-      <Modal visible={wsModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Pilih Workspace</Text>
-            <ScrollView style={{ maxHeight: 300 }}>
-              {workspaces.map((ws) => {
+      {/* ── Modal Switch Workspace (Dribbble Grade Bottom Sheet) ── */}
+      <Modal
+        visible={wsModalVisible}
+        animationType="fade"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => setWsModalVisible(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          {/* Backdrop Tap to Close */}
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            activeOpacity={1}
+            onPress={() => setWsModalVisible(false)}
+          />
+
+          <View style={styles.sheetContent}>
+            {/* Grabber indicator */}
+            <View style={styles.sheetGrabber} />
+
+            {/* Header Section */}
+            <View style={styles.sheetHeader}>
+              <View>
+                <Text style={styles.sheetTitle}>Pilih Ruang Kerja</Text>
+                <Text style={styles.sheetSubtitle}>Kelola atau beralih akun pembukuan</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.sheetCloseBtn}
+                onPress={() => setWsModalVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.sheetCloseText}>Tutup</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* List Ruang Kerja */}
+            <ScrollView
+              style={{ maxHeight: 340 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingVertical: 4 }}
+            >
+              {workspaces.map((ws: any) => {
                 const isActive = activeWorkspace?.id === ws.id;
                 return (
                   <TouchableOpacity
                     key={ws.id}
-                    style={[styles.wsSelectItem, isActive && styles.wsSelectItemActive]}
+                    style={[styles.wsCard, isActive && styles.wsCardActive]}
                     onPress={() => handleSelectWorkspace(ws)}
+                    activeOpacity={0.75}
                   >
-                    <View style={styles.wsSelectIcon}>
-                      <FolderKanban size={18} color={isActive ? '#16a34a' : '#71717a'} />
+                    <View style={[styles.wsCardIconBox, isActive && styles.wsCardIconBoxActive]}>
+                      <FolderKanban size={20} color={isActive ? '#ffffff' : '#475569'} />
                     </View>
+
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.wsSelectName, isActive && { color: '#16a34a' }]}>
-                        {ws.name}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.wsCardName, isActive && styles.wsCardNameActive]}>
+                          {ws.name}
+                        </Text>
+                        {isActive && (
+                          <View style={styles.activePill}>
+                            <Text style={styles.activePillText}>Aktif</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.wsCardDesc}>
+                        {ws.members?.length || 1} Anggota • {ws.currency || 'IDR'}
                       </Text>
-                      <Text style={styles.wsSelectDesc}>{ws.members?.length || 1} Anggota</Text>
                     </View>
-                    {isActive && <Check size={18} color="#16a34a" />}
+
+                    <View style={[styles.wsRadio, isActive && styles.wsRadioActive]}>
+                      {isActive && <View style={styles.wsRadioInner} />}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.cancelBtn, { marginTop: 16 }]}
-              onPress={() => setWsModalVisible(false)}
-            >
-              <Text style={styles.cancelText}>Tutup</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -624,7 +570,7 @@ export default function DashboardScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
   },
   header: {
     flexDirection: 'row',
@@ -633,238 +579,78 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
+    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#27272a',
+    borderBottomColor: '#f1f5f9',
   },
-  greeting: {
-    fontSize: 17,
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  greetingText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
+    letterSpacing: -0.3,
   },
   wsSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
-    gap: 6,
+    gap: 5,
+    backgroundColor: '#f1f5f9',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   wsName: {
-    fontSize: 13,
-    color: '#a1a1aa',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#334155',
+    fontWeight: '600',
   },
-  addIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#16a34a',
+  eyeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 32,
+    padding: 16,
+    paddingBottom: 90,
   },
-  balanceCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#27272a',
-    marginBottom: 20,
-  },
-  balanceTitle: {
-    fontSize: 12,
-    color: '#a1a1aa',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  balanceAmount: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginVertical: 6,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#27272a',
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  addIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#004C29',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 11,
-    color: '#a1a1aa',
-  },
-  summaryValueGreen: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#22c55e',
-    marginTop: 1,
-  },
-  summaryValueRed: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ef4444',
-    marginTop: 1,
-  },
-  sectionContainer: {
-    marginBottom: 20,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  sectionCount: {
-    fontSize: 12,
-    color: '#71717a',
-  },
-  walletScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-  },
-  walletCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 14,
-    width: 140,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#27272a',
-  },
-  walletCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  walletDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  walletName: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    flex: 1,
-  },
-  walletBalance: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#22c55e',
-  },
-  walletAccNumber: {
-    fontSize: 10,
-    color: '#71717a',
-    marginTop: 2,
-  },
-  addTxButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#16a34a',
-    borderRadius: 14,
-    paddingVertical: 14,
-    marginBottom: 22,
-  },
-  addTxText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    color: '#71717a',
-    fontSize: 13,
-  },
-  txCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#18181b',
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#27272a',
-  },
-  txEmojiBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  txEmoji: {
-    fontSize: 18,
-  },
-  txDetails: {
-    flex: 1,
-    marginRight: 8,
-  },
-  txCatName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  txNote: {
-    fontSize: 12,
-    color: '#71717a',
-    marginTop: 2,
-  },
-  txAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#18181b',
+    backgroundColor: '#ffffff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#27272a',
+    padding: 22,
     maxHeight: '85%',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
+    color: '#0f172a',
+    marginBottom: 14,
   },
-  typeContainer: {
+  typeSelectorContainer: {
     flexDirection: 'row',
-    backgroundColor: '#27272a',
+    backgroundColor: '#f1f5f9',
     borderRadius: 12,
     padding: 3,
     marginBottom: 14,
@@ -876,48 +662,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   typeBtnText: {
-    color: '#a1a1aa',
+    color: '#64748b',
     fontSize: 12,
     fontWeight: '600',
   },
   inputLabel: {
-    color: '#a1a1aa',
+    color: '#475569',
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 6,
-    marginTop: 8,
+    marginBottom: 5,
+    marginTop: 6,
   },
   amountInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#3f3f46',
+    borderColor: '#cbd5e1',
     borderRadius: 12,
     paddingHorizontal: 14,
   },
   rpPrefix: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#a1a1aa',
+    color: '#64748b',
     marginRight: 6,
   },
   amountInput: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 18,
+    paddingVertical: 10,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#0f172a',
   },
   modalInput: {
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#3f3f46',
+    borderColor: '#cbd5e1',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 14,
-    color: '#ffffff',
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#0f172a',
   },
   chipScroll: {
     marginVertical: 4,
@@ -925,24 +711,24 @@ const styles = StyleSheet.create({
   chipItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#27272a',
+    backgroundColor: '#f1f5f9',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 10,
     marginRight: 8,
     gap: 6,
   },
   chipItemActive: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#004C29',
   },
   chipItemActiveBlue: {
     backgroundColor: '#2563eb',
   },
-  chipItemEmoji: {
-    fontSize: 14,
+  chipEmoji: {
+    fontSize: 13,
   },
   chipItemText: {
-    color: '#a1a1aa',
+    color: '#475569',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -953,60 +739,146 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 20,
+    marginTop: 18,
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 13,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
   },
   cancelBtn: {
-    backgroundColor: '#27272a',
+    backgroundColor: '#f1f5f9',
   },
   cancelText: {
-    color: '#ffffff',
+    color: '#475569',
     fontWeight: '600',
     fontSize: 13,
   },
   saveBtn: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#004C29',
   },
   saveText: {
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 13,
   },
-  wsSelectItem: {
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+  sheetGrabber: {
+    width: 38,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: '#cbd5e1',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#09090b',
-    borderWidth: 1,
-    borderColor: '#27272a',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  sheetSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  sheetCloseBtn: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  sheetCloseText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  wsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
     gap: 12,
   },
-  wsSelectItemActive: {
-    borderColor: '#16a34a',
+  wsCardActive: {
+    borderColor: '#004C29',
+    backgroundColor: '#f0fdf4',
   },
-  wsSelectIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#27272a',
+  wsCardIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  wsSelectName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  wsCardIconBoxActive: {
+    backgroundColor: '#004C29',
   },
-  wsSelectDesc: {
-    fontSize: 11,
-    color: '#71717a',
-    marginTop: 2,
+  wsCardName: {
+    fontSize: 14.5,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  wsCardNameActive: {
+    color: '#004C29',
+  },
+  wsCardDesc: {
+    fontSize: 11.5,
+    color: '#64748b',
+    marginTop: 3,
+  },
+  activePill: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+  },
+  activePillText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#004C29',
+  },
+  wsRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.8,
+    borderColor: '#cbd5e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wsRadioActive: {
+    borderColor: '#004C29',
+  },
+  wsRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#004C29',
   },
 });

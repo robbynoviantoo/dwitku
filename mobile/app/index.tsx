@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AuthScreen from '../src/screens/AuthScreen';
 import MainTabNavigator from '../src/navigation/MainTabNavigator';
 import { StatusBar } from 'expo-status-bar';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -36,6 +47,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    queryClient.clear();
     await AsyncStorage.removeItem('dwitku_token');
     await AsyncStorage.removeItem('dwitku_user');
     setUser(null);
@@ -45,32 +57,39 @@ export default function App() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#22c55e" />
+        <ActivityIndicator size="large" color="#004C29" />
       </View>
     );
   }
 
+  const isLoggedIn = !!(token && user);
+
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      {token && user ? (
-        <MainTabNavigator user={user} onLogout={handleLogout} />
-      ) : (
-        <AuthScreen onLoginSuccess={handleLoginSuccess} />
-      )}
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <View style={[styles.container, { backgroundColor: '#f8fafc' }]}>
+        <StatusBar
+          style="dark"
+          backgroundColor="#ffffff"
+        />
+        {isLoggedIn ? (
+          <MainTabNavigator user={user} onLogout={handleLogout} />
+        ) : (
+          <AuthScreen onLoginSuccess={handleLoginSuccess} />
+        )}
+      </View>
+    </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#09090b',
+    backgroundColor: '#f8fafc',
   },
 });

@@ -27,6 +27,12 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const workspaceId = searchParams.get("workspaceId");
+    const search = searchParams.get("search") || "";
+    const type = searchParams.get("type") || "";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const offsetParam = searchParams.get("offset");
+    const skip = offsetParam !== null ? parseInt(offsetParam, 10) : (page - 1) * limit;
 
     if (!workspaceId) {
       return jsonResponse({ error: "workspaceId is required" }, 400);
@@ -46,24 +52,51 @@ export async function GET(req: NextRequest) {
       return jsonResponse({ error: "Akses ke workspace ini dilarang" }, 403);
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where: { workspaceId },
-      include: {
-        category: true,
-        wallet: true,
-        toWallet: true,
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
-      orderBy: { date: "desc" },
-    });
+    // Build where clause
+    const whereClause: any = {
+      workspaceId,
+    };
+
+    if (type && type !== "ALL") {
+      whereClause.type = type;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { note: { contains: search, mode: "insensitive" } },
+        { category: { name: { contains: search, mode: "insensitive" } } },
+        { wallet: { name: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    const [transactions, totalCount] = await Promise.all([
+      prisma.transaction.findMany({
+        where: whereClause,
+        include: {
+          category: true,
+          wallet: true,
+          toWallet: true,
+          createdBy: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { date: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.transaction.count({ where: whereClause }),
+    ]);
 
     const categories = await prisma.category.findMany({
       where: { workspaceId },
       orderBy: { name: "asc" },
     });
 
-    // Summary calculation
-    const summary = transactions.reduce(
+    // Summary calculation (all transactions in workspace)
+    const allTxs = await prisma.transaction.findMany({
+      where: { workspaceId },
+      select: { amount: true, type: true },
+    });
+
+    const summary = allTxs.reduce(
       (acc, tx) => {
         const amt = Number(tx.amount);
         if (tx.type === "INCOME") acc.income += amt;
@@ -75,6 +108,9 @@ export async function GET(req: NextRequest) {
 
     return jsonResponse({
       transactions,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
       categories,
       summary: {
         totalIncome: summary.income,
