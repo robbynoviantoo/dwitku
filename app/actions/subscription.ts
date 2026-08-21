@@ -25,9 +25,9 @@ export async function getUserPlanKey(): Promise<PlanKey> {
 
   const now = new Date();
 
-  // Langganan aktif
+  // Langganan aktif atau trial yang masih berlaku
   if (
-    sub.status === "ACTIVE" &&
+    (sub.status === "ACTIVE" || sub.status === "TRIAL") &&
     sub.currentPeriodEnd &&
     sub.currentPeriodEnd > now
   ) {
@@ -58,8 +58,12 @@ export async function getUserPlanLimits() {
   const sub = await getUserSubscription();
   const now = new Date();
 
-  // Jika langganan aktif
-  if (sub?.status === "ACTIVE" && sub.currentPeriodEnd && sub.currentPeriodEnd > now) {
+  // Jika langganan aktif atau trial yang masih berlaku
+  if (
+    (sub?.status === "ACTIVE" || sub?.status === "TRIAL") &&
+    sub.currentPeriodEnd &&
+    sub.currentPeriodEnd > now
+  ) {
     return {
       maxWorkspaces: sub.plan.maxWorkspaces,
       maxMembers: sub.plan.maxMembers,
