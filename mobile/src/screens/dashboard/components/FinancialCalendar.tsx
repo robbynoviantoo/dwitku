@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '../../../services/api';
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,13 +23,13 @@ import {
 } from 'lucide-react-native';
 
 interface FinancialCalendarProps {
-  transactions: any[];
+  workspaceId: string;
   showAmount: boolean;
   formatRupiah: (val: number) => string;
 }
 
 export function FinancialCalendar({
-  transactions,
+  workspaceId,
   showAmount,
   formatRupiah,
 }: FinancialCalendarProps) {
@@ -43,6 +46,19 @@ export function FinancialCalendar({
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-11
 
+  // Query Data Kalender Bulanan Lengkap (Semua Transaksi Termasuk yang Tanpa Dompet)
+  const { data: calendarData, isLoading } = useQuery({
+    queryKey: ['mobile-calendar', workspaceId, currentYear, currentMonth + 1],
+    queryFn: () =>
+      apiRequest(
+        `/reports/calendar?workspaceId=${workspaceId}&year=${currentYear}&month=${currentMonth + 1}`
+      ),
+    enabled: !!workspaceId,
+  });
+
+  const daysMap: Record<string, { income: number; expense: number; net: number; items: any[] }> =
+    calendarData?.days || {};
+
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
     setSelectedDay(null);
@@ -58,53 +74,17 @@ export function FinancialCalendar({
     setSelectedDay(null);
   };
 
-  // Nama hari sesuai screenshot: MON, TUE, WED, THU, FRI, SAT, SUN
   const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
   // Hitung jumlah hari di bulan ini
   const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0: Min, 1: Sen
-  // Ubah Senin = 0, Minggu = 6
   let firstDayIndex = firstDayOfWeek - 1;
   if (firstDayIndex === -1) firstDayIndex = 6;
-
-  // Kelompokkan transaksi per tanggal yyyy-mm-dd
-  const daysMap: Record<string, { income: number; expense: number; net: number; items: any[] }> = {};
-
-  transactions.forEach((tx) => {
-    const txDate = new Date(tx.date);
-    const dateKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}-${String(
-      txDate.getDate()
-    ).padStart(2, '0')}`;
-
-    if (!daysMap[dateKey]) {
-      daysMap[dateKey] = { income: 0, expense: 0, net: 0, items: [] };
-    }
-
-    const amt = Number(tx.amount);
-    if (tx.type === 'INCOME') {
-      daysMap[dateKey].income += amt;
-      daysMap[dateKey].net += amt;
-    } else if (tx.type === 'EXPENSE') {
-      daysMap[dateKey].expense += amt;
-      daysMap[dateKey].net -= amt;
-    }
-    daysMap[dateKey].items.push(tx);
-  });
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
@@ -121,7 +101,7 @@ export function FinancialCalendar({
 
   return (
     <View style={styles.card}>
-      {/* Header Kalender Persis Screenshot */}
+      {/* Header Kalender */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.iconCircle}>
@@ -154,9 +134,7 @@ export function FinancialCalendar({
       <View style={styles.gridHeader}>
         {dayNames.map((name, index) => (
           <View key={index} style={styles.headerCell}>
-            <Text style={styles.headerCellText}>
-              {name}
-            </Text>
+            <Text style={styles.headerCellText}>{name}</Text>
           </View>
         ))}
       </View>
@@ -240,7 +218,7 @@ export function FinancialCalendar({
         })}
       </View>
 
-      {/* Modal Popup Rincian Transaksi Tanggal Terpilih (Animasi Fade Standard) */}
+      {/* Modal Popup Rincian Transaksi Tanggal Terpilih */}
       <Modal visible={!!selectedDay} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

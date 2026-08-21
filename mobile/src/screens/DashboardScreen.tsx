@@ -134,7 +134,11 @@ export default function DashboardScreen({
   }, [wallets, selectedWalletId, selectedToWalletId]);
 
   const onRefresh = async () => {
-    await Promise.all([refetchTx(), refetchWallets()]);
+    await Promise.all([
+      refetchTx(),
+      refetchWallets(),
+      queryClient.invalidateQueries({ queryKey: ['mobile-calendar', currentWsId] }),
+    ]);
   };
 
   const handleSelectWorkspace = (ws: any) => {
@@ -193,6 +197,7 @@ export default function DashboardScreen({
       queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspace.id] });
       queryClient.invalidateQueries({ queryKey: ['wallets', activeWorkspace.id] });
       queryClient.invalidateQueries({ queryKey: ['reports', activeWorkspace.id] });
+      queryClient.invalidateQueries({ queryKey: ['mobile-calendar', activeWorkspace.id] });
     } catch (err: any) {
       Alert.alert('Gagal Simpan', err.message);
     } finally {
@@ -259,7 +264,7 @@ export default function DashboardScreen({
 
             {/* ── 2. Kalender Keuangan (Financial Calendar) ── */}
             <FinancialCalendar
-              transactions={transactions}
+              workspaceId={currentWsId || ''}
               showAmount={showAmount}
               formatRupiah={formatRupiah}
             />
