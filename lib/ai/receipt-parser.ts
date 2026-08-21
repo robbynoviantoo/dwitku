@@ -1,8 +1,7 @@
 /**
  * lib/ai/receipt-parser.ts
  * Modular AI OCR engine untuk scan struk, screenshot mutasi, bukti transfer.
- * Menggunakan Gemini REST API langsung (tanpa SDK) untuk stabilitas maksimal.
- * Provider didukung: gemini (default gratis), openai, groq
+ * Menggunakan Gemini REST API dengan fallback model otomatis.
  */
 
 export interface ParsedReceiptData {
@@ -22,61 +21,113 @@ export interface WorkspaceContext {
   wallets: Array<{ id: string; name: string }>;
 }
 
+// ── Prompt Builder ─────────────────────────────────────────────────────────────
 function buildPrompt(workspaceContext?: WorkspaceContext): string {
   const categoryList = workspaceContext?.categories?.map((c) => c.name).join(", ") || "-";
   const walletList = workspaceContext?.wallets?.map((w) => w.name).join(", ") || "-";
 
-  return `Anda adalah asisten AI finansial pintar dari Dwitku yang ahli menganalisis:
-- Struk belanja fisik minimarket (Indomaret, Alfamart)
-- Nota restoran & kafe
-- Screenshot mutasi m-banking (BCA, Mandiri, BRI, BNI, Jago)
-- Screenshot e-wallet (GoPay, OVO, ShopeePay, DANA)
-- Struk kasir POS & invoice
+  return `You are a financial AI assistant for Dwitku app. Analyze this receipt/payment screenshot/bank statement image and extract transaction data.
 
-Kategori tersedia: [${categoryList}]
-Dompet/Metode pembayaran tersedia: [${walletList}]
+The image can be any of:
+- Physical store receipt (minimarket, restaurant, cafe)
+- Bank transfer screenshot (BCA, Mandiri, BRI, BNI, Jago, SeaBank)
+- E-wallet transaction (GoPay, OVO, ShopeePay, DANA)
+- POS cashier receipt or invoice
+- Online shopping receipt (Shopee, Tokopedia, etc.)
+- Any payment proof
 
-Ekstrak data transaksi dari gambar ini dan kembalikan HANYA JSON murni (tanpa markdown):
+Available categories in user's workspace: [${categoryList}]
+Available wallets/payment methods: [${walletList}]
+
+Extract and return ONLY a valid JSON object (no markdown, no explanation, no code block):
 {
-  "amount": <angka bulat total yang dibayar, tanpa Rp/titik/koma>,
-  "type": "EXPENSE" atau "INCOME",
-  "note": "<catatan singkat, misal: Belanja Indomaret / Kopi Kenangan 2 Cup>",
-  "merchantName": "<nama toko atau merchant>",
-  "categoryName": "<salah satu kategori dari daftar di atas, atau null>",
-  "walletName": "<salah satu dompet dari daftar di atas, atau null>",
-  "date": "<YYYY-MM-DD jika terbaca, atau null>",
-  "confidence": <0.0 - 1.0>,
-  "items": [{"name": "<item>", "price": <harga>, "qty": <jumlah>}]
-}`;
+  "amount": <integer, total amount paid in the local currency, numbers only without currency symbols or separators>,
+  "type": "EXPENSE" or "INCOME",
+  "note": "<short description, e.g. Belanja Indomaret / Kopi Kenangan 2 Cup / Transfer BCA>",
+  "merchantName": "<store or merchant name if visible>",
+  "categoryName": "<best matching category from the list above, or null if none match>",
+  "walletName": "<best matching wallet from the list above based on payment method shown, or null if none match>",
+  "date": "<transaction date in YYYY-MM-DD format if visible, otherwise null>",
+  "confidence": <number between 0.0 and 1.0 indicating how confident you are>,
+  "items": [
+    {"name": "<item name>", "price": <price as integer>, "qty": <quantity as integer>}
+  ]
 }
 
+Rules:
+- amount MUST be an integer (no decimals, no Rp, no dots or commas)
+- If you cannot clearly read the amount, set amount to null
+- type is almost always EXPENSE unless this is clearly an incoming transfer/payment received
+- Return ONLY the JSON object, nothing else`;
+}
+
+// ── Base64 Extractor ───────────────────────────────────────────────────────────
 function extractBase64(imageBase64: string): { data: string; mimeType: string } {
-  // Bisa berupa data URL (data:image/jpeg;base64,...) atau raw base64
-  const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+  // Support: data:image/jpeg;base64,... OR raw base64
+  const match = imageBase64.match(/^data:([\w\/+]+);base64,(.+)$/s);
   if (match) {
-    return { mimeType: match[1], data: match[2] };
+    return { mimeType: match[1] || "image/jpeg", data: match[2].replace(/\s/g, "") };
   }
-  // Raw base64 tanpa prefix
-  return { mimeType: "image/jpeg", data: imageBase64 };
+  // Raw base64 (strip any whitespace)
+  return { mimeType: "image/jpeg", data: imageBase64.replace(/\s/g, "") };
 }
 
+// ── JSON Extractor (robust) ────────────────────────────────────────────────────
+function extractJSON(text: string): any {
+  // Strategy 1: Direct parse
+  try {
+    return JSON.parse(text.trim());
+  } catch {}
+
+  // Strategy 2: Strip markdown fences
+  const fenceStripped = text
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
+  try {
+    return JSON.parse(fenceStripped);
+  } catch {}
+
+  // Strategy 3: Find first {...} block
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {}
+  }
+
+  // Strategy 4: Find last {...} block (sometimes there's preamble text)
+  const allBlocks = [...text.matchAll(/\{[\s\S]*?\}/g)];
+  for (let i = allBlocks.length - 1; i >= 0; i--) {
+    try {
+      const obj = JSON.parse(allBlocks[i][0]);
+      if (obj && typeof obj === "object") return obj;
+    } catch {}
+  }
+
+  throw new Error("AI menghasilkan respons yang tidak dapat diproses. Coba gambar yang lebih jelas.");
+}
+
+// ── Gemini REST Caller ─────────────────────────────────────────────────────────
 async function callGeminiREST(
   base64Data: string,
   mimeType: string,
-  prompt: string
+  prompt: string,
+  modelName: string
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  const model = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 
   if (!apiKey) {
     throw new Error(
-      "GEMINI_API_KEY belum dikonfigurasi di .env. Dapatkan gratis di https://aistudio.google.com/"
+      "GEMINI_API_KEY belum dikonfigurasi. Tambahkan ke file .env dan restart server."
     );
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  // Encode API key untuk keamanan URL
+  const encodedKey = encodeURIComponent(apiKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodedKey}`;
 
-  const body = {
+  const requestBody = {
     contents: [
       {
         parts: [
@@ -92,43 +143,71 @@ async function callGeminiREST(
     ],
     generationConfig: {
       temperature: 0.1,
-      responseMimeType: "application/json",
+      maxOutputTokens: 1024,
+      // Tidak pakai responseMimeType agar kompatibel semua model
     },
+    safetySettings: [
+      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+    ],
   };
 
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errText = await response.text();
     let errMsg = `Gemini API error ${response.status}`;
     try {
-      const errJson = JSON.parse(errText);
+      const errJson = JSON.parse(responseText);
       errMsg = errJson?.error?.message || errMsg;
     } catch {}
     throw new Error(errMsg);
   }
 
-  const json = await response.json();
-  const text: string =
-    json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  let json: any;
+  try {
+    json = JSON.parse(responseText);
+  } catch {
+    throw new Error("Gagal membaca respons dari Gemini API.");
+  }
 
-  if (!text) {
+  // Ekstrak teks dari response candidates
+  const candidates = json?.candidates;
+  if (!candidates || candidates.length === 0) {
+    const blockReason = json?.promptFeedback?.blockReason;
+    if (blockReason) {
+      throw new Error(`Gambar diblokir oleh safety filter: ${blockReason}`);
+    }
     throw new Error("Gemini tidak mengembalikan hasil. Coba gambar yang lebih jelas.");
+  }
+
+  const finishReason = candidates[0]?.finishReason;
+  if (finishReason === "SAFETY") {
+    throw new Error("Gambar diblokir safety filter. Coba gambar struk yang berbeda.");
+  }
+
+  const text = candidates[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("Gemini tidak menghasilkan teks. Model mungkin tidak mendukung gambar ini.");
   }
 
   return text;
 }
 
+// ── OpenAI REST Caller ─────────────────────────────────────────────────────────
 async function callOpenAIREST(
   base64Data: string,
   mimeType: string,
   prompt: string
 ): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || "";
   const model = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
 
   if (!apiKey) throw new Error("OPENAI_API_KEY belum dikonfigurasi di .env.");
@@ -147,14 +226,17 @@ async function callOpenAIREST(
           content: [
             {
               type: "image_url",
-              image_url: { url: `data:${mimeType};base64,${base64Data}` },
+              image_url: {
+                url: `data:${mimeType};base64,${base64Data}`,
+                detail: "high",
+              },
             },
             { type: "text", text: prompt },
           ],
         },
       ],
       temperature: 0.1,
-      response_format: { type: "json_object" },
+      max_tokens: 1024,
     }),
   });
 
@@ -167,56 +249,79 @@ async function callOpenAIREST(
   return json?.choices?.[0]?.message?.content || "";
 }
 
+// ── Main Parser ────────────────────────────────────────────────────────────────
 export async function parseReceiptWithAI(
   imageBase64: string,
-  mimeType: string = "image/jpeg",
+  mimeTypeHint: string = "image/jpeg",
   workspaceContext?: WorkspaceContext
 ): Promise<ParsedReceiptData> {
   const provider = (process.env.AI_OCR_PROVIDER || "gemini").toLowerCase();
   const prompt = buildPrompt(workspaceContext);
 
-  // Ekstrak base64 murni
   const { data: cleanBase64, mimeType: detectedMime } = extractBase64(imageBase64);
-  const finalMime = mimeType || detectedMime;
+  const finalMime = mimeTypeHint && mimeTypeHint !== "image/jpeg"
+    ? mimeTypeHint
+    : detectedMime;
 
   let rawText = "";
 
-  try {
-    if (provider === "openai") {
-      rawText = await callOpenAIREST(cleanBase64, finalMime, prompt);
-    } else {
-      // Default: Gemini (gratis)
-      rawText = await callGeminiREST(cleanBase64, finalMime, prompt);
+  if (provider === "openai") {
+    rawText = await callOpenAIREST(cleanBase64, finalMime, prompt);
+  } else {
+    // Gemini dengan fallback model otomatis
+    const preferredModel = process.env.GEMINI_OCR_MODEL || "gemini-1.5-flash";
+    // Daftar model fallback jika model utama gagal
+    const modelFallbacks = [
+      preferredModel,
+      "gemini-1.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-pro",
+    ].filter((v, i, a) => a.indexOf(v) === i); // unique
+
+    let lastError: Error | null = null;
+
+    for (const model of modelFallbacks) {
+      try {
+        rawText = await callGeminiREST(cleanBase64, finalMime, prompt, model);
+        break; // Berhasil, keluar dari loop
+      } catch (err: any) {
+        lastError = err;
+        // Jika error bukan soal model (e.g. API key invalid), hentikan retry
+        const msg: string = err?.message || "";
+        if (
+          msg.includes("API_KEY") ||
+          msg.includes("API key") ||
+          msg.includes("belum dikonfigurasi") ||
+          msg.includes("PERMISSION_DENIED") ||
+          msg.includes("UNAUTHENTICATED")
+        ) {
+          break;
+        }
+        // Lanjut ke model berikutnya
+        console.warn(`[OCR] Model ${model} gagal: ${msg}, mencoba model berikutnya...`);
+        continue;
+      }
     }
-  } catch (error: any) {
-    throw new Error(error?.message || "Gagal menghubungi AI. Periksa konfigurasi API key.");
+
+    if (!rawText && lastError) {
+      throw new Error(lastError.message || "Semua model Gemini gagal memproses gambar ini.");
+    }
   }
 
-  // Parse JSON result
-  try {
-    // Bersihkan jika ada markdown fence
-    const cleaned = rawText
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
+  // Parse JSON dari respons AI
+  const parsed = extractJSON(rawText);
 
-    const parsed = JSON.parse(cleaned);
-
-    return {
-      amount: parsed.amount != null ? Number(parsed.amount) : null,
-      type: parsed.type === "INCOME" ? "INCOME" : "EXPENSE",
-      note: parsed.note || parsed.merchantName || null,
-      merchantName: parsed.merchantName || null,
-      categoryName: parsed.categoryName || null,
-      walletName: parsed.walletName || null,
-      date: parsed.date || null,
-      confidence: Number(parsed.confidence) || 0.85,
-      items: Array.isArray(parsed.items) ? parsed.items : [],
-    };
-  } catch {
-    throw new Error(
-      "AI berhasil membaca struk, namun gagal memproses hasilnya. Coba gambar yang lebih jelas."
-    );
-  }
+  return {
+    amount: parsed.amount != null && !isNaN(Number(parsed.amount))
+      ? Math.round(Number(parsed.amount))
+      : null,
+    type: parsed.type === "INCOME" ? "INCOME" : "EXPENSE",
+    note: parsed.note || parsed.merchantName || null,
+    merchantName: parsed.merchantName || null,
+    categoryName: parsed.categoryName || null,
+    walletName: parsed.walletName || null,
+    date: parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null,
+    confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.8,
+    items: Array.isArray(parsed.items) ? parsed.items : [],
+  };
 }
