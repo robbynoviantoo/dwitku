@@ -50,6 +50,8 @@ export async function GET(req: NextRequest) {
       where: { workspaceId },
       include: {
         category: true,
+        wallet: true,
+        toWallet: true,
         createdBy: { select: { id: true, name: true, email: true } },
       },
       orderBy: { date: "desc" },
@@ -103,10 +105,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { amount, note, date, type, workspaceId, categoryId } = body;
+    const { amount, note, date, type, workspaceId, categoryId, walletId, toWalletId } = body;
 
-    if (!amount || !workspaceId || !categoryId || !type) {
+    if (!amount || !workspaceId || !type) {
       return jsonResponse({ error: "Field wajib tidak lengkap" }, 400);
+    }
+
+    if (type !== "TRANSFER" && !categoryId) {
+      return jsonResponse({ error: "Kategori wajib dipilih" }, 400);
+    }
+
+    if (type === "TRANSFER" && (!walletId || !toWalletId)) {
+      return jsonResponse({ error: "Dompet asal dan tujuan wajib dipilih" }, 400);
     }
 
     const transaction = await prisma.transaction.create({
@@ -116,11 +126,15 @@ export async function POST(req: NextRequest) {
         date: date ? new Date(date) : new Date(),
         type,
         workspaceId,
-        categoryId,
+        categoryId: type === "TRANSFER" ? null : categoryId,
+        walletId: walletId || null,
+        toWalletId: type === "TRANSFER" ? toWalletId : null,
         createdById: session.userId,
       },
       include: {
         category: true,
+        wallet: true,
+        toWallet: true,
         createdBy: { select: { id: true, name: true, email: true } },
       },
     });
