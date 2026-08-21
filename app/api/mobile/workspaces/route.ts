@@ -42,7 +42,15 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return jsonResponse({ workspaces });
+    const formattedWorkspaces = workspaces.map((ws) => {
+      const myMembership = ws.members.find((m) => m.userId === session.userId);
+      return {
+        ...ws,
+        role: myMembership?.role || (ws.ownerId === session.userId ? "OWNER" : "VIEWER"),
+      };
+    });
+
+    return jsonResponse({ workspaces: formattedWorkspaces });
   } catch (error) {
     console.error("Mobile Get Workspaces Error:", error);
     return jsonResponse({ error: "Internal Server Error" }, 500);

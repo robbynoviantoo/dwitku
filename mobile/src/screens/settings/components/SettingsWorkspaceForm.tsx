@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -22,6 +22,14 @@ export function SettingsWorkspaceForm({ workspace, isOwner }: SettingsWorkspaceF
   const [name, setName] = useState(workspace?.name || '');
   const [description, setDescription] = useState(workspace?.description || '');
   const [currency, setCurrency] = useState(workspace?.currency || 'IDR');
+
+  useEffect(() => {
+    if (workspace) {
+      setName(workspace.name || '');
+      setDescription(workspace.description || '');
+      setCurrency(workspace.currency || 'IDR');
+    }
+  }, [workspace]);
 
   // Update mutation
   const updateMutation = useMutation({
@@ -119,7 +127,7 @@ export function SettingsWorkspaceForm({ workspace, isOwner }: SettingsWorkspaceF
         </View>
       </View>
 
-      {isOwner && (
+      {isOwner ? (
         <TouchableOpacity
           style={styles.saveBtn}
           onPress={handleSave}
@@ -135,6 +143,12 @@ export function SettingsWorkspaceForm({ workspace, isOwner }: SettingsWorkspaceF
             </>
           )}
         </TouchableOpacity>
+      ) : (
+        <View style={styles.viewerNotice}>
+          <Text style={styles.viewerNoticeText}>
+            Hanya Pemilik (Owner) yang dapat mengubah nama & mata uang workspace ini.
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -240,5 +254,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  viewerNotice: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginTop: 6,
+    alignItems: 'center',
+  },
+  viewerNoticeText: {
+    fontSize: 11,
+    color: '#64748b',
+    textAlign: 'center',
   },
 });
