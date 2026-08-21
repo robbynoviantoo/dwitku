@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
         initialBalance: Number(initialBalance) || 0,
         isDefault: !!isDefault || count === 0,
         order: count,
-        userId: session.userId,
+        createdById: session.userId,
       },
     });
 
