@@ -11,7 +11,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { apiRequest } from '../../services/api';
+import { API_BASE_URL } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ScanReceiptModalProps {
   visible: boolean;
@@ -43,14 +44,15 @@ export function ScanReceiptModal({
   onSuccess,
 }: ScanReceiptModalProps) {
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  // Store raw base64 WITHOUT the data:... prefix — server will handle it
+  const [imageBase64Raw, setImageBase64Raw] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string>('image/jpeg');
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
 
   const resetState = () => {
     setImageUri(null);
-    setImageBase64(null);
+    setImageBase64Raw(null);
     setIsScanning(false);
     setScanError(null);
   };
@@ -67,15 +69,16 @@ export function ScanReceiptModal({
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
-      quality: 0.85,
+      quality: 0.7,   // Lebih kecil = payload lebih kecil
       base64: true,
     });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setImageUri(asset.uri);
-      setImageBase64(`data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`);
+      // Simpan raw base64 tanpa prefix
+      setImageBase64Raw(asset.base64 || null);
       setMimeType(asset.mimeType || 'image/jpeg');
       setScanError(null);
     }
@@ -89,43 +92,57 @@ export function ScanReceiptModal({
     }
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: false,
-      quality: 0.85,
+      quality: 0.7,   // Lebih kecil = payload lebih kecil
       base64: true,
     });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setImageUri(asset.uri);
-      setImageBase64(`data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`);
+      // Simpan raw base64 tanpa prefix
+      setImageBase64Raw(asset.base64 || null);
       setMimeType(asset.mimeType || 'image/jpeg');
       setScanError(null);
     }
   };
 
   const handleScan = async () => {
-    if (!imageBase64) {
+    if (!imageBase64Raw) {
       Alert.alert('Pilih Gambar Dulu', 'Ambil foto atau pilih gambar struk dari galeri.');
       return;
     }
     setIsScanning(true);
     setScanError(null);
     try {
-      const result = await apiRequest('/scan-receipt', {
-        method: 'POST',
-        body: JSON.stringify({
-          imageBase64,
-          mimeType,
-          workspaceId,
-        }),
-      });
+      const token = await AsyncStorage.getItem('dwitku_token');
+      // Kirim langsung via fetch (bukan apiRequest) agar dapat handle payload besar
+      const response = await fetch(
+        `${API_BASE_URL}/scan-receipt`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            // Kirim dengan prefix agar server tahu format
+            imageBase64: `data:${mimeType};base64,${imageBase64Raw}`,
+            mimeType,
+            workspaceId,
+          }),
+        }
+      );
 
-      if (!result.success) {
-        throw new Error(result.error || 'Gagal memproses struk');
+      const json = await response.json();
+
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || `Server error ${response.status}`);
       }
 
-      onSuccess(result.data);
+      onSuccess(json.data);
       handleClose();
     } catch (err: any) {
-      setScanError(err?.message || 'Terjadi kesalahan saat scan struk');
+      console.error('Scan receipt error:', err);
+      setScanError(err?.message || 'Terjadi kesalahan saat scan struk. Coba gambar yang lebih kecil atau jelas.');
     } finally {
       setIsScanning(false);
     }
@@ -155,8 +172,8 @@ export function ScanReceiptModal({
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Image Preview Area */}
             <View style={styles.imageArea}>
-              {imageUri ? (
-                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
+              {imageBase64Raw ? (
+                <Image source={{ uri: imageUri! }} style={styles.previewImage} resizeMode="contain" />
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <Text style={styles.placeholderIcon}>📸</Text>
@@ -204,9 +221,9 @@ export function ScanReceiptModal({
 
             {/* Scan Button */}
             <TouchableOpacity
-              style={[styles.scanBtn, (!imageBase64 || isScanning) && styles.scanBtnDisabled]}
+              style={[styles.scanBtn, (!imageBase64Raw || isScanning) && styles.scanBtnDisabled]}
               onPress={handleScan}
-              disabled={!imageBase64 || isScanning}
+              disabled={!imageBase64Raw || isScanning}
             >
               {isScanning ? (
                 <View style={styles.scanBtnContent}>
@@ -215,7 +232,7 @@ export function ScanReceiptModal({
                 </View>
               ) : (
                 <Text style={styles.scanBtnText}>
-                  {imageBase64 ? '✨ Scan & Isi Otomatis' : 'Pilih Gambar Dulu'}
+                  {imageBase64Raw ? '✨ Scan & Isi Otomatis' : 'Pilih Gambar Dulu'}
                 </Text>
               )}
             </TouchableOpacity>

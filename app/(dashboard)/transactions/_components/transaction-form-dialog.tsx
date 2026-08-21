@@ -603,7 +603,6 @@ export function TransactionFormDialog({
                                         <ScanLine className="w-3.5 h-3.5" />
                                     )}
                                     <span>{isScanning ? "Scanning..." : "Scan Struk"}</span>
-                                    <Sparkles className="w-3 h-3" />
                                 </button>
                             </>
                         )}
