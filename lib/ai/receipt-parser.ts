@@ -1,4 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
+/**
+ * lib/ai/receipt-parser.ts
+ * Modular AI OCR engine untuk scan struk, screenshot mutasi, bukti transfer.
+ * Menggunakan Gemini REST API langsung (tanpa SDK) untuk stabilitas maksimal.
+ * Provider didukung: gemini (default gratis), openai, groq
+ */
 
 export interface ParsedReceiptData {
   amount: number | null;
@@ -9,7 +14,6 @@ export interface ParsedReceiptData {
   walletName: string | null;
   date: string | null; // ISO YYYY-MM-DD
   confidence: number;
-  rawText?: string;
   items?: Array<{ name: string; price: number; qty?: number }>;
 }
 
@@ -18,106 +22,201 @@ export interface WorkspaceContext {
   wallets: Array<{ id: string; name: string }>;
 }
 
-/**
- * Modular AI OCR Parser Engine
- * Mendukung Gemini (Flash/Pro), OpenAI, Groq, atau fallback engine.
- */
+function buildPrompt(workspaceContext?: WorkspaceContext): string {
+  const categoryList = workspaceContext?.categories?.map((c) => c.name).join(", ") || "-";
+  const walletList = workspaceContext?.wallets?.map((w) => w.name).join(", ") || "-";
+
+  return `Anda adalah asisten AI finansial pintar dari Dwitku yang ahli menganalisis:
+- Struk belanja fisik minimarket (Indomaret, Alfamart)
+- Nota restoran & kafe
+- Screenshot mutasi m-banking (BCA, Mandiri, BRI, BNI, Jago)
+- Screenshot e-wallet (GoPay, OVO, ShopeePay, DANA)
+- Struk kasir POS & invoice
+
+Kategori tersedia: [${categoryList}]
+Dompet/Metode pembayaran tersedia: [${walletList}]
+
+Ekstrak data transaksi dari gambar ini dan kembalikan HANYA JSON murni (tanpa markdown):
+{
+  "amount": <angka bulat total yang dibayar, tanpa Rp/titik/koma>,
+  "type": "EXPENSE" atau "INCOME",
+  "note": "<catatan singkat, misal: Belanja Indomaret / Kopi Kenangan 2 Cup>",
+  "merchantName": "<nama toko atau merchant>",
+  "categoryName": "<salah satu kategori dari daftar di atas, atau null>",
+  "walletName": "<salah satu dompet dari daftar di atas, atau null>",
+  "date": "<YYYY-MM-DD jika terbaca, atau null>",
+  "confidence": <0.0 - 1.0>,
+  "items": [{"name": "<item>", "price": <harga>, "qty": <jumlah>}]
+}`;
+}
+
+function extractBase64(imageBase64: string): { data: string; mimeType: string } {
+  // Bisa berupa data URL (data:image/jpeg;base64,...) atau raw base64
+  const match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (match) {
+    return { mimeType: match[1], data: match[2] };
+  }
+  // Raw base64 tanpa prefix
+  return { mimeType: "image/jpeg", data: imageBase64 };
+}
+
+async function callGeminiREST(
+  base64Data: string,
+  mimeType: string,
+  prompt: string
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const model = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
+
+  if (!apiKey) {
+    throw new Error(
+      "GEMINI_API_KEY belum dikonfigurasi di .env. Dapatkan gratis di https://aistudio.google.com/"
+    );
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const body = {
+    contents: [
+      {
+        parts: [
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: base64Data,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+    },
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    let errMsg = `Gemini API error ${response.status}`;
+    try {
+      const errJson = JSON.parse(errText);
+      errMsg = errJson?.error?.message || errMsg;
+    } catch {}
+    throw new Error(errMsg);
+  }
+
+  const json = await response.json();
+  const text: string =
+    json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  if (!text) {
+    throw new Error("Gemini tidak mengembalikan hasil. Coba gambar yang lebih jelas.");
+  }
+
+  return text;
+}
+
+async function callOpenAIREST(
+  base64Data: string,
+  mimeType: string,
+  prompt: string
+): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_OCR_MODEL || "gpt-4o-mini";
+
+  if (!apiKey) throw new Error("OPENAI_API_KEY belum dikonfigurasi di .env.");
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${base64Data}` },
+            },
+            { type: "text", text: prompt },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `OpenAI API error ${response.status}`);
+  }
+
+  const json = await response.json();
+  return json?.choices?.[0]?.message?.content || "";
+}
+
 export async function parseReceiptWithAI(
   imageBase64: string,
   mimeType: string = "image/jpeg",
   workspaceContext?: WorkspaceContext
 ): Promise<ParsedReceiptData> {
-  const provider = process.env.AI_OCR_PROVIDER || "gemini";
-  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const provider = (process.env.AI_OCR_PROVIDER || "gemini").toLowerCase();
+  const prompt = buildPrompt(workspaceContext);
 
-  if (!geminiApiKey && provider === "gemini") {
-    throw new Error(
-      "GEMINI_API_KEY belum dikonfigurasi di file .env. Dapatkan API key gratis di https://aistudio.google.com/"
-    );
-  }
+  // Ekstrak base64 murni
+  const { data: cleanBase64, mimeType: detectedMime } = extractBase64(imageBase64);
+  const finalMime = mimeType || detectedMime;
 
-  const categoryListStr = workspaceContext?.categories?.map((c) => c.name).join(", ") || "";
-  const walletListStr = workspaceContext?.wallets?.map((w) => w.name).join(", ") || "";
-
-  const systemPrompt = `Anda adalah asisten AI finansial pintar dari Dwitku yang ahli menganalisis struk belanja fisik, nota restoran, screenshot mutasi/transfer m-banking (BCA, Mandiri, BRI, BNI, Jago, dll), screenshot e-wallet (GoPay, OVO, ShopeePay, DANA), struk kasir minimarket (Indomaret, Alfamart), dan faktur pembayaran.
-
-Tugas Anda: Analisis gambar struk/screenshot ini dan ekstrak informasinya ke dalam format JSON yang valid.
-
-Kategori yang tersedia di akun pengguna: [${categoryListStr}]
-Dompet/Metode pembayaran yang tersedia: [${walletListStr}]
-
-Instruksi format JSON:
-{
-  "amount": <number bulat tanpa titik/koma/Rp, total transaksi final yang dibayarkan>,
-  "type": "EXPENSE" | "INCOME" (mayoritas adalah EXPENSE kecuali struk/screenshot adalah bukti dana masuk/transfer diterima),
-  "note": "<string catatan ringkas, cth: 'Belanja Indomaret', 'Kopi Kenangan 2 Cup', 'Makan Siang di Solaria'>",
-  "merchantName": "<string nama toko / merchant / nama pengirim>",
-  "categoryName": "<pilih salah satu kategori yang paling cocok dari daftar kategori di atas, atau null jika tidak ada yang cocok>",
-  "walletName": "<pilih salah satu dompet yang paling cocok dari daftar dompet di atas, atau null jika tidak ada>",
-  "date": "<tanggal transaksi dalam format YYYY-MM-DD jika terbaca di struk, atau null jika tidak ada>",
-  "confidence": <angka 0.0 - 1.0 tingkat keyakinan AI>,
-  "items": [
-    { "name": "<nama item barang/makanan>", "price": <harga satuan/total>, "qty": <jumlah item jika ada> }
-  ]
-}
-
-PENTING:
-- Kembalikan HANYA format JSON murni tanpa markdown pembungkus (\`\`\`json ... \`\`\`).
-- Jika nominal tidak terbaca jelas, set amount ke null.
-`;
+  let rawText = "";
 
   try {
-    if (provider === "gemini") {
-      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-      const modelName = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
-
-      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                inlineData: {
-                  data: cleanBase64,
-                  mimeType: mimeType || "image/jpeg",
-                },
-              },
-              {
-                text: systemPrompt,
-              },
-            ],
-          },
-        ],
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-        },
-      });
-
-      const responseText = response.text?.trim() || "";
-      const cleaned = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-
-      return {
-        amount: parsed.amount ? Number(parsed.amount) : null,
-        type: parsed.type === "INCOME" ? "INCOME" : "EXPENSE",
-        note: parsed.note || parsed.merchantName || "Transaksi Scan Struk",
-        merchantName: parsed.merchantName || null,
-        categoryName: parsed.categoryName || null,
-        walletName: parsed.walletName || null,
-        date: parsed.date || null,
-        confidence: parsed.confidence || 0.9,
-        items: parsed.items || [],
-      };
+    if (provider === "openai") {
+      rawText = await callOpenAIREST(cleanBase64, finalMime, prompt);
+    } else {
+      // Default: Gemini (gratis)
+      rawText = await callGeminiREST(cleanBase64, finalMime, prompt);
     }
-
-    // Fallback jika provider lain disiapkan di masa depan
-    throw new Error(`Provider AI OCR '${provider}' belum diaktifkan.`);
   } catch (error: any) {
-    console.error("AI Receipt OCR Error:", error);
-    throw new Error(error?.message || "Gagal memproses gambar struk dengan AI.");
+    throw new Error(error?.message || "Gagal menghubungi AI. Periksa konfigurasi API key.");
+  }
+
+  // Parse JSON result
+  try {
+    // Bersihkan jika ada markdown fence
+    const cleaned = rawText
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      amount: parsed.amount != null ? Number(parsed.amount) : null,
+      type: parsed.type === "INCOME" ? "INCOME" : "EXPENSE",
+      note: parsed.note || parsed.merchantName || null,
+      merchantName: parsed.merchantName || null,
+      categoryName: parsed.categoryName || null,
+      walletName: parsed.walletName || null,
+      date: parsed.date || null,
+      confidence: Number(parsed.confidence) || 0.85,
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+    };
+  } catch {
+    throw new Error(
+      "AI berhasil membaca struk, namun gagal memproses hasilnya. Coba gambar yang lebih jelas."
+    );
   }
 }
