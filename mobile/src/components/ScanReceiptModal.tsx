@@ -11,7 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { API_BASE_URL } from '../../services/api';
+import { API_BASE_URL } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ScanReceiptModalProps {

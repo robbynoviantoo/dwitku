@@ -14,8 +14,10 @@ interface PullToRefreshWrapperProps {
 /**
  * PullToRefreshWrapper
  *
- * Fix 1: Indicator rendered as position:fixed at top of viewport (above navbar/modal).
- * Fix 2: Ignore touches that originate inside a position:fixed ancestor (modals, dialogs).
+ * Solusi Masalah Scroll:
+ * 1. Mendeteksi scrollable container dari target sentuhan (termasuk list di dalam children yang overflow-y-auto).
+ * 2. Hanya aktif saat SEMUA container (lokal dan window) berada tepat di paling atas (scrollTop <= 0).
+ * 3. Tidak memblokir native scroll ke atas saat user sedang berada di tengah/bawah list.
  */
 export function PullToRefreshWrapper({
   onRefresh,
@@ -28,36 +30,55 @@ export function PullToRefreshWrapper({
   const [triggered, setTriggered] = useState(false);
 
   const startY = useRef<number | null>(null);
+  const startX = useRef<number | null>(null);
   const pulling = useRef(false);
+  const touchTarget = useRef<EventTarget | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Find nearest scrollable ancestor
-  const getScrollEl = useCallback((): HTMLElement | null => {
-    if (typeof window === "undefined") return null;
-    let el: Element | null = wrapperRef.current?.parentElement ?? null;
-    while (el && el !== document.body) {
-      const style = window.getComputedStyle(el);
-      const overflow = style.overflowY;
-      if (overflow === "auto" || overflow === "scroll") return el as HTMLElement;
-      el = el.parentElement;
+  // Periksa apakah sebuah elemen scrollable
+  const isScrollable = (el: Element): boolean => {
+    const style = window.getComputedStyle(el);
+    const overflowY = style.overflowY;
+    return (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      el.scrollHeight > el.clientHeight
+    );
+  };
+
+  // Cek apakah target atau container-nya berada di posisi paling atas (scrollTop <= 0)
+  const isAtTop = useCallback((target?: EventTarget | null): boolean => {
+    if (typeof window === "undefined") return true;
+
+    // 1. Cek window scroll
+    const isWindowAtTop = window.scrollY <= 1;
+    if (!isWindowAtTop) return false;
+
+    // 2. Cek semua scrollable container dari target sentuhan ke atas
+    let currentEl = (target as HTMLElement | null) ?? null;
+    while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
+      if (isScrollable(currentEl)) {
+        if (currentEl.scrollTop > 1) {
+          return false;
+        }
+      }
+      currentEl = currentEl.parentElement;
     }
-    return null;
+
+    // 3. Cek wrapper dan parent-parentnya
+    let wrapperEl = wrapperRef.current?.parentElement ?? null;
+    while (wrapperEl && wrapperEl !== document.body && wrapperEl !== document.documentElement) {
+      if (isScrollable(wrapperEl)) {
+        if (wrapperEl.scrollTop > 1) {
+          return false;
+        }
+      }
+      wrapperEl = wrapperEl.parentElement;
+    }
+
+    return true;
   }, []);
 
-  const isAtTop = useCallback(() => {
-    const el = getScrollEl();
-    // Use a small 1px threshold for window scroll to account for Lenis/Precision
-    const isWindowAtTop = typeof window !== "undefined" ? window.scrollY <= 1 : true;
-    
-    // If no specific scroll container is found, we rely exclusively on the window
-    if (!el) return isWindowAtTop;
-    
-    // Important: we must check BOTH. If the window is scrolled down, 
-    // even if the element's local scrollTop is 0, we shouldn't trigger refresh.
-    return el.scrollTop <= 0 && isWindowAtTop;
-  }, [getScrollEl]);
-
-  // ── FIX 2: Detect if touch started inside a fixed-position overlay (modal) ──
+  // Deteksi jika touch dimulai di dalam fixed-position overlay (modal)
   const isInsideFixedOverlay = useCallback((target: EventTarget | null): boolean => {
     if (!target) return false;
     let el = target as Element | null;
@@ -68,11 +89,7 @@ export function PullToRefreshWrapper({
     return false;
   }, []);
 
-  // ── FIX 3: Check if ANY modal/overlay is currently VISIBLE in the DOM ──
-  // Catches the race condition: touchstart fires before modal renders,
-  // but modal has rendered by the time touchend fires.
-  // Important: check computed style, not just class — sidebar backdrop is always
-  // in DOM with opacity-0 pointer-events-none (invisible/inactive).
+  // Cek jika ada modal aktif di DOM
   const hasActiveModal = useCallback((): boolean => {
     if (typeof document === "undefined") return false;
     const elements = document.querySelectorAll(".fixed.inset-0");
@@ -89,12 +106,20 @@ export function PullToRefreshWrapper({
 
   const onTouchStart = useCallback(
     (e: Event) => {
-      // Ignore touches inside modals/fixed overlays
-      if (isInsideFixedOverlay(e.target)) return;
-      if (refreshing) return;
       const touch = e as TouchEvent;
-      if (isAtTop()) {
+      if (isInsideFixedOverlay(touch.target)) return;
+      if (refreshing) return;
+
+      touchTarget.current = touch.target;
+
+      // Hanya inisialisasi jika benar-benar di posisi teratas
+      if (isAtTop(touch.target)) {
         startY.current = touch.touches[0].clientY;
+        startX.current = touch.touches[0].clientX;
+        pulling.current = false;
+      } else {
+        startY.current = null;
+        startX.current = null;
         pulling.current = false;
       }
     },
@@ -105,48 +130,73 @@ export function PullToRefreshWrapper({
     (e: Event) => {
       if (startY.current === null || refreshing) return;
 
-      // Cancel gesture if finger has moved into a fixed overlay (modal appeared)
-      if (isInsideFixedOverlay(e.target)) {
+      const touch = e as TouchEvent;
+      if (isInsideFixedOverlay(touch.target)) {
         pulling.current = false;
         setPullY(0);
         startY.current = null;
         return;
       }
 
-      if (!isAtTop()) {
+      // Pastikan target masih di posisi paling atas
+      if (!isAtTop(touchTarget.current || touch.target)) {
         startY.current = null;
-        setPullY(0);
-        return;
-      }
-      const touch = e as TouchEvent;
-      const delta = touch.touches[0].clientY - startY.current;
-      if (delta <= 0) {
         setPullY(0);
         pulling.current = false;
         return;
       }
+
+      const currentY = touch.touches[0].clientY;
+      const currentX = touch.touches[0].clientX;
+      const deltaY = currentY - startY.current;
+      const deltaX = Math.abs(currentX - (startX.current ?? currentX));
+
+      // Jika pergerakan lebih dominan horizontal, abaikan pull-to-refresh
+      if (deltaX > Math.abs(deltaY) && !pulling.current) {
+        startY.current = null;
+        setPullY(0);
+        return;
+      }
+
+      // Jika user menggeser ke atas (scroll down biasa)
+      if (deltaY <= 0) {
+        setPullY(0);
+        pulling.current = false;
+        return;
+      }
+
+      // User menarik ke bawah dari posisi paling atas
       pulling.current = true;
-      const clamped = Math.min(delta / RESISTANCE, threshold * 1.6);
+      const clamped = Math.min(deltaY / RESISTANCE, threshold * 1.6);
       setPullY(clamped);
       setTriggered(clamped >= threshold);
 
-      // Prevent native scroll/overscroll while actively pulling
-      if (delta > 10 && e.cancelable) {
+      // Hanya prevent default jika benar-benar sedang pull to refresh
+      if (deltaY > 10 && e.cancelable) {
         e.preventDefault();
       }
     },
-    [refreshing, isAtTop, threshold]
+    [refreshing, isAtTop, threshold, isInsideFixedOverlay]
   );
 
   const onTouchEnd = useCallback(async () => {
-    if (!pulling.current) return;
+    if (!pulling.current) {
+      startY.current = null;
+      startX.current = null;
+      touchTarget.current = null;
+      setPullY(0);
+      return;
+    }
+
     pulling.current = false;
 
-    // Cancel if a modal/overlay appeared while the gesture was in progress
+    // Batalkan jika ada modal muncul
     if (hasActiveModal()) {
       setTriggered(false);
       setPullY(0);
       startY.current = null;
+      startX.current = null;
+      touchTarget.current = null;
       return;
     }
 
@@ -164,36 +214,46 @@ export function PullToRefreshWrapper({
       setTriggered(false);
       setPullY(0);
     }
+
     startY.current = null;
-  }, [triggered, refreshing, onRefresh, threshold]);
+    startX.current = null;
+    touchTarget.current = null;
+  }, [triggered, refreshing, onRefresh, threshold, hasActiveModal]);
+
+  const onTouchCancel = useCallback(() => {
+    pulling.current = false;
+    startY.current = null;
+    startX.current = null;
+    touchTarget.current = null;
+    setPullY(0);
+    setTriggered(false);
+  }, []);
 
   useEffect(() => {
-    const el = getScrollEl() || (typeof window !== "undefined" ? window : null);
-    if (!el) return;
-    
-    // Passive: false is required to allow e.preventDefault() in onTouchMove
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    if (typeof window === "undefined") return;
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchCancel, { passive: true });
+
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchCancel);
     };
-  }, [getScrollEl, onTouchStart, onTouchMove, onTouchEnd]);
+  }, [onTouchStart, onTouchMove, onTouchEnd, onTouchCancel]);
 
   const showIndicator = pullY > 8 || refreshing;
   const progress = Math.min(pullY / threshold, 1);
 
   return (
-    <div ref={wrapperRef} className={cn("relative", className)}>
-
-      {/* ── FIX 1: Fixed indicator — renders above navbar & modal ── */}
+    <div ref={wrapperRef} className={cn("relative w-full", className)}>
+      {/* ── Fixed indicator — renders above navbar & modal ── */}
       <div
         className="md:hidden fixed left-0 right-0 flex justify-center items-center pointer-events-none select-none z-[200]"
         style={{
-          // Mobile header is h-14 (56px) + mt-5 (20px) = ~76px.
-          // We sit just below it during the pull.
           top: `${56 + Math.min(pullY, threshold)}px`,
           transition: pullY === 0 ? "top 0.3s ease, opacity 0.3s ease" : "none",
           opacity: showIndicator ? Math.min(progress * 2, 1) : 0,
@@ -205,14 +265,14 @@ export function PullToRefreshWrapper({
             <div
               className={cn(
                 "w-9 h-9 rounded-full border-2 flex items-center justify-center bg-white shadow-md",
-                triggered || refreshing ? "border-green-500" : "border-zinc-200",
+                triggered || refreshing ? "border-green-500" : "border-zinc-200"
               )}
             >
               <RefreshCw
                 className={cn(
                   "w-4 h-4 transition-colors",
                   triggered || refreshing ? "text-green-500" : "text-zinc-400",
-                  refreshing && "animate-spin",
+                  refreshing && "animate-spin"
                 )}
                 style={{
                   transform: refreshing ? undefined : `rotate(${progress * 360}deg)`,
@@ -222,14 +282,14 @@ export function PullToRefreshWrapper({
             <span
               className={cn(
                 "text-[10px] font-semibold tracking-tight bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full",
-                triggered || refreshing ? "text-green-600" : "text-zinc-400",
+                triggered || refreshing ? "text-green-600" : "text-zinc-400"
               )}
             >
               {refreshing
                 ? "Memperbarui..."
                 : triggered
-                  ? "✓ Lepas untuk refresh"
-                  : "Tarik untuk refresh"}
+                ? "✓ Lepas untuk refresh"
+                : "Tarik untuk refresh"}
             </span>
           </div>
         )}

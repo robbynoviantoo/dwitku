@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Swal from "sweetalert2";
 import {
   useReactTable,
@@ -112,6 +113,32 @@ export function TransactionsClient({
     open: boolean;
     transaction?: Transaction;
   }>({ open: false });
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Auto-open add transaction dialog if action=add or new=true is present in URL
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const isNew = searchParams.get("new");
+    if (action === "add" || isNew === "true") {
+      if (canEdit && isEmailVerified !== false) {
+        setDialog({ open: true });
+      }
+    }
+  }, [searchParams, canEdit, isEmailVerified]);
+
+  const handleCloseDialog = () => {
+    setDialog({ open: false });
+    if (searchParams.get("action") || searchParams.get("new")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("action");
+      params.delete("new");
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    }
+  };
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
@@ -604,8 +631,9 @@ export function TransactionsClient({
             workspaceId={workspaceId}
             categories={categories}
             transaction={dialog.transaction as any}
-            onClose={() => setDialog({ open: false })}
+            onClose={handleCloseDialog}
             onSuccess={() => {
+              handleCloseDialog();
               queryClient.invalidateQueries({ queryKey: ["transactions"] });
               queryClient.invalidateQueries({ queryKey: ["transaction-summary"] });
               queryClient.invalidateQueries({ queryKey: ["filtered-summary"] });

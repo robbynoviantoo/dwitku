@@ -38,6 +38,7 @@ interface DashboardScreenProps {
   onLogout: () => void;
   activeWorkspaceId?: string;
   onWorkspaceChange?: (wsId: string) => void;
+  onNavigateToTransactions?: (openAddModal?: boolean) => void;
 }
 
 function formatThousands(value: string): string {
@@ -54,6 +55,7 @@ export default function DashboardScreen({
   user,
   activeWorkspaceId,
   onWorkspaceChange,
+  onNavigateToTransactions,
 }: DashboardScreenProps) {
   const queryClient = useQueryClient();
   const [selectedWorkspace, setSelectedWorkspace] = useState<any>(null);
@@ -228,9 +230,13 @@ export default function DashboardScreen({
         showAmount={showAmount}
         onToggleShowAmount={() => setShowAmount(!showAmount)}
         onOpenAddModal={() => {
-          setDisplayAmount('');
-          setNote('');
-          setModalVisible(true);
+          if (onNavigateToTransactions) {
+            onNavigateToTransactions(true);
+          } else {
+            setDisplayAmount('');
+            setNote('');
+            setModalVisible(true);
+          }
         }}
       />
 

@@ -41,7 +41,7 @@ export function DashboardHeader({
       </div>
 
       <Link
-        href={`/transactions?workspaceId=${workspaceId}`}
+        href={`/transactions?workspaceId=${workspaceId}&action=add`}
         onClick={onCreateTx}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer whitespace-nowrap self-start sm:self-auto"
       >

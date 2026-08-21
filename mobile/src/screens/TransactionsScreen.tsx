@@ -29,6 +29,7 @@ interface TransactionsScreenProps {
   activeWorkspaceId: string;
   activeWorkspace?: any;
   onOpenWorkspaceModal?: () => void;
+  openAddTrigger?: number;
 }
 
 export default function TransactionsScreen({
@@ -36,6 +37,7 @@ export default function TransactionsScreen({
   activeWorkspaceId,
   activeWorkspace,
   onOpenWorkspaceModal,
+  openAddTrigger,
 }: TransactionsScreenProps) {
   const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState<'ALL' | 'EXPENSE' | 'INCOME' | 'TRANSFER'>('ALL');
@@ -49,6 +51,15 @@ export default function TransactionsScreen({
   const [scanModalVisible, setScanModalVisible] = useState(false);
   const [scanPrefill, setScanPrefill] = useState<ScanResultData | null>(null);
   const limit = 10;
+
+  // Auto-open Add Transaction Modal when triggered externally (e.g. from Dashboard Header + button)
+  useEffect(() => {
+    if (openAddTrigger && openAddTrigger > 0) {
+      setSelectedEditTx(null);
+      setScanPrefill(null);
+      setAddModalVisible(true);
+    }
+  }, [openAddTrigger]);
 
   // Reset to page 1 when filter or search changes
   useEffect(() => {

@@ -19,10 +19,12 @@ import {
   Bot,
   User,
   FolderKanban,
+  Tag,
 } from 'lucide-react-native';
 import { AppHeader } from '../components/AppHeader';
 import { LegalModal } from '../components/LegalModal';
 import { SettingsWorkspaceForm } from './settings/components/SettingsWorkspaceForm';
+import { SettingsCategoriesCard } from './settings/components/SettingsCategoriesCard';
 import { SettingsMembersCard } from './settings/components/SettingsMembersCard';
 import { SettingsTelegramCard } from './settings/components/SettingsTelegramCard';
 
@@ -34,7 +36,7 @@ interface SettingsScreenProps {
   onLogout: () => void;
 }
 
-type SettingsTab = 'workspace' | 'members' | 'telegram' | 'profile';
+type SettingsTab = 'workspace' | 'categories' | 'members' | 'telegram' | 'profile';
 
 export default function SettingsScreen({
   user,
@@ -94,7 +96,7 @@ export default function SettingsScreen({
             activeOpacity={0.7}
           >
             <Building2
-              size={15}
+              size={14}
               color={activeTab === 'workspace' ? '#004C29' : '#64748b'}
             />
             <Text
@@ -102,8 +104,29 @@ export default function SettingsScreen({
                 styles.tabText,
                 activeTab === 'workspace' && styles.tabTextActive,
               ]}
+              numberOfLines={1}
             >
               Workspace
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'categories' && styles.tabItemActive]}
+            onPress={() => setActiveTab('categories')}
+            activeOpacity={0.7}
+          >
+            <Tag
+              size={14}
+              color={activeTab === 'categories' ? '#004C29' : '#64748b'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'categories' && styles.tabTextActive,
+              ]}
+              numberOfLines={1}
+            >
+              Kategori
             </Text>
           </TouchableOpacity>
 
@@ -113,7 +136,7 @@ export default function SettingsScreen({
             activeOpacity={0.7}
           >
             <Users
-              size={15}
+              size={14}
               color={activeTab === 'members' ? '#004C29' : '#64748b'}
             />
             <Text
@@ -121,6 +144,7 @@ export default function SettingsScreen({
                 styles.tabText,
                 activeTab === 'members' && styles.tabTextActive,
               ]}
+              numberOfLines={1}
             >
               Anggota
             </Text>
@@ -169,6 +193,13 @@ export default function SettingsScreen({
         {activeTab === 'workspace' && (
           <SettingsWorkspaceForm
             workspace={activeWorkspace}
+            isOwner={isOwner}
+          />
+        )}
+
+        {activeTab === 'categories' && (
+          <SettingsCategoriesCard
+            workspaceId={activeWorkspaceId || ''}
             isOwner={isOwner}
           />
         )}
@@ -315,8 +346,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 8,
+    gap: 3,
+    paddingVertical: 7,
+    paddingHorizontal: 2,
     borderRadius: 10,
   },
   tabItemActive: {
@@ -328,7 +360,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tabText: {
-    fontSize: 11.5,
+    fontSize: 10.5,
     fontWeight: '600',
     color: '#64748b',
   },

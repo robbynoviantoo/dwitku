@@ -73,6 +73,15 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
     }
   };
 
+  const [openTransactionAddTrigger, setOpenTransactionAddTrigger] = useState(0);
+
+  const handleNavigateToTransactions = (openAddModal?: boolean) => {
+    setActiveTab('transactions');
+    if (openAddModal) {
+      setOpenTransactionAddTrigger((prev) => prev + 1);
+    }
+  };
+
   const activeWorkspaceId =
     selectedWorkspaceId || wsData?.workspaces?.[0]?.id || '';
 
@@ -88,6 +97,7 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
             onLogout={onLogout}
             activeWorkspaceId={activeWorkspaceId}
             onWorkspaceChange={handleWorkspaceChange}
+            onNavigateToTransactions={handleNavigateToTransactions}
           />
         </View>
 
@@ -97,6 +107,7 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
             activeWorkspaceId={activeWorkspaceId}
             activeWorkspace={activeWorkspace}
             onOpenWorkspaceModal={() => setWsModalVisible(true)}
+            openAddTrigger={openTransactionAddTrigger}
           />
         </View>
 
