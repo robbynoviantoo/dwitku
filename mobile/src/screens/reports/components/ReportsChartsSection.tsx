@@ -1,7 +1,15 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import Svg, { Rect, Line, Circle, G, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { BarChart3, PieChart as PieChartIcon } from 'lucide-react-native';
+import Svg, {
+  Path,
+  Circle,
+  Line,
+  Defs,
+  LinearGradient,
+  Stop,
+  Text as SvgText,
+} from 'react-native-svg';
+import { TrendingUp, PieChart as PieChartIcon } from 'lucide-react-native';
 
 interface ReportsChartsSectionProps {
   monthlyData: Array<{ month: string; fullLabel: string; income: number; expense: number }>;
@@ -16,7 +24,7 @@ export function ReportsChartsSection({
   formatRupiah,
   showAmount,
 }: ReportsChartsSectionProps) {
-  // Hitung max value untuk bar chart monthly
+  // Hitung max value untuk skala grafik garis
   const maxMonthlyVal = Math.max(
     ...monthlyData.map((d) => Math.max(d.income || 0, d.expense || 0)),
     1000000
@@ -24,71 +32,182 @@ export function ReportsChartsSection({
 
   const totalExpenseCategory = categoryData.reduce((acc, c) => acc + (c.value || 0), 0);
 
+  // Dimensi SVG Line Chart
+  const svgWidth = 320;
+  const svgHeight = 150;
+  const padLeft = 24;
+  const padRight = 24;
+  const padTop = 20;
+  const padBottom = 32;
+  const plotWidth = svgWidth - padLeft - padRight;
+  const plotHeight = svgHeight - padTop - padBottom;
+
+  const getX = (index: number) => {
+    if (monthlyData.length <= 1) return svgWidth / 2;
+    return padLeft + (index / (monthlyData.length - 1)) * plotWidth;
+  };
+
+  const getY = (val: number) => {
+    const ratio = Math.max(0, Math.min(val / maxMonthlyVal, 1));
+    return padTop + plotHeight * (1 - ratio);
+  };
+
+  // Buat koordinat titik
+  const incomePoints = monthlyData.map((d, i) => ({ x: getX(i), y: getY(d.income || 0) }));
+  const expensePoints = monthlyData.map((d, i) => ({ x: getX(i), y: getY(d.expense || 0) }));
+
+  // Path SVG untuk Income (Garis & Area Fill)
+  const incomePath = incomePoints.length
+    ? incomePoints.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`, '')
+    : '';
+
+  const incomeAreaPath = incomePoints.length
+    ? `${incomePath} L ${incomePoints[incomePoints.length - 1].x.toFixed(1)} ${(padTop + plotHeight).toFixed(1)} L ${incomePoints[0].x.toFixed(1)} ${(padTop + plotHeight).toFixed(1)} Z`
+    : '';
+
+  // Path SVG untuk Expense (Garis & Area Fill)
+  const expensePath = expensePoints.length
+    ? expensePoints.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`, '')
+    : '';
+
+  const expenseAreaPath = expensePoints.length
+    ? `${expensePath} L ${expensePoints[expensePoints.length - 1].x.toFixed(1)} ${(padTop + plotHeight).toFixed(1)} L ${expensePoints[0].x.toFixed(1)} ${(padTop + plotHeight).toFixed(1)} Z`
+    : '';
+
   return (
     <View style={styles.container}>
-      {/* ── 1. Monthly Cashflow Trend (Bar Chart SVG) ── */}
+      {/* ── 1. Monthly Cashflow Trend (Line Chart SVG) ── */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.headerIconBox}>
-            <BarChart3 size={16} color="#004C29" />
+            <TrendingUp size={16} color="#004C29" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>Monthly Cashflow Trend</Text>
-            <Text style={styles.cardSubtitle}>Arus Kas Masuk vs Keluar (6 Bulan Terakhir)</Text>
+            <Text style={styles.cardSubtitle}>Grafik Garis Arus Kas Masuk vs Keluar (6 Bulan)</Text>
           </View>
         </View>
 
         {/* Legend */}
         <View style={styles.legendRow}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#004C29' }]} />
-            <Text style={styles.legendText}>Income</Text>
+            <View style={[styles.legendLine, { backgroundColor: '#004C29' }]} />
+            <Text style={styles.legendText}>Income (Pemasukan)</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
-            <Text style={styles.legendText}>Expense</Text>
+            <View style={[styles.legendLine, { backgroundColor: '#dc2626' }]} />
+            <Text style={styles.legendText}>Expense (Pengeluaran)</Text>
           </View>
         </View>
 
-        {/* SVG Grouped Bar Chart */}
+        {/* SVG Multi-Line Chart */}
         <View style={styles.chartWrapper}>
           {monthlyData.length === 0 ? (
             <Text style={styles.emptyChartText}>Belum ada data bulanan</Text>
           ) : (
-            <View style={styles.barsContainer}>
-              {monthlyData.map((item, index) => {
-                const incomeHeightPct = Math.min((item.income / maxMonthlyVal) * 100, 100);
-                const expenseHeightPct = Math.min((item.expense / maxMonthlyVal) * 100, 100);
+            <Svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" height={svgHeight}>
+              <Defs>
+                {/* Gradien Area Income */}
+                <LinearGradient id="incomeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0%" stopColor="#004C29" stopOpacity="0.25" />
+                  <Stop offset="100%" stopColor="#004C29" stopOpacity="0.0" />
+                </LinearGradient>
 
+                {/* Gradien Area Expense */}
+                <LinearGradient id="expenseAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0%" stopColor="#dc2626" stopOpacity="0.18" />
+                  <Stop offset="100%" stopColor="#dc2626" stopOpacity="0.0" />
+                </LinearGradient>
+              </Defs>
+
+              {/* Grid Lines Horizontal */}
+              {[0, 0.5, 1].map((ratio, idx) => {
+                const y = padTop + plotHeight * ratio;
                 return (
-                  <View key={index} style={styles.barGroup}>
-                    <View style={styles.barsTrack}>
-                      {/* Income Bar */}
-                      <View
-                        style={[
-                          styles.barFill,
-                          {
-                            height: `${Math.max(incomeHeightPct, 4)}%`,
-                            backgroundColor: '#004C29',
-                          },
-                        ]}
-                      />
-                      {/* Expense Bar */}
-                      <View
-                        style={[
-                          styles.barFill,
-                          {
-                            height: `${Math.max(expenseHeightPct, 4)}%`,
-                            backgroundColor: '#dc2626',
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.barLabel}>{item.month}</Text>
-                  </View>
+                  <Line
+                    key={idx}
+                    x1={padLeft}
+                    y1={y}
+                    x2={svgWidth - padRight}
+                    y2={y}
+                    stroke="#f1f5f9"
+                    strokeWidth="1"
+                    strokeDasharray={idx === 1 ? '4,4' : undefined}
+                  />
                 );
               })}
-            </View>
+
+              {/* Area Fill Income */}
+              {incomeAreaPath ? <Path d={incomeAreaPath} fill="url(#incomeAreaGrad)" /> : null}
+
+              {/* Area Fill Expense */}
+              {expenseAreaPath ? <Path d={expenseAreaPath} fill="url(#expenseAreaGrad)" /> : null}
+
+              {/* Line Expense (Merah) */}
+              {expensePath ? (
+                <Path
+                  d={expensePath}
+                  fill="none"
+                  stroke="#dc2626"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : null}
+
+              {/* Line Income (Hijau Emerald) */}
+              {incomePath ? (
+                <Path
+                  d={incomePath}
+                  fill="none"
+                  stroke="#004C29"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : null}
+
+              {/* Data Points Expense */}
+              {expensePoints.map((pt, i) => (
+                <Circle
+                  key={`exp-pt-${i}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="4"
+                  fill="#dc2626"
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                />
+              ))}
+
+              {/* Data Points Income */}
+              {incomePoints.map((pt, i) => (
+                <Circle
+                  key={`inc-pt-${i}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="4.5"
+                  fill="#004C29"
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                />
+              ))}
+
+              {/* X Axis Month Labels */}
+              {monthlyData.map((d, i) => (
+                <SvgText
+                  key={`label-${i}`}
+                  x={getX(i)}
+                  y={svgHeight - 10}
+                  fontSize="10"
+                  fontWeight="600"
+                  fill="#94a3b8"
+                  textAnchor="middle"
+                >
+                  {d.month}
+                </SvgText>
+              ))}
+            </Svg>
           )}
         </View>
       </View>
@@ -167,7 +286,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(22, 163, 74, 0.12)',
+    backgroundColor: '#e6f3ec',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -185,17 +304,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 14,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  legendLine: {
+    width: 14,
+    height: 3,
+    borderRadius: 1.5,
   },
   legendText: {
     fontSize: 11,
@@ -203,39 +322,9 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   chartWrapper: {
-    height: 150,
+    height: 155,
     justifyContent: 'center',
-  },
-  barsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 120,
-    paddingTop: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  barGroup: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: '100%',
-  },
-  barsTrack: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-    height: 100,
-  },
-  barFill: {
-    width: 10,
-    borderRadius: 4,
-  },
-  barLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#94a3b8',
-    marginTop: 6,
   },
   categoryList: {
     gap: 12,

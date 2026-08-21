@@ -37,7 +37,9 @@ interface DashboardScreenProps {
   user: any;
   onLogout: () => void;
   activeWorkspaceId?: string;
+  activeWorkspace?: any;
   onWorkspaceChange?: (wsId: string) => void;
+  onOpenWorkspaceModal?: () => void;
   onNavigateToTransactions?: (openAddModal?: boolean) => void;
 }
 
@@ -54,7 +56,9 @@ function parseThousands(formatted: string): number {
 export default function DashboardScreen({
   user,
   activeWorkspaceId,
+  activeWorkspace: activeWorkspaceProp,
   onWorkspaceChange,
+  onOpenWorkspaceModal,
   onNavigateToTransactions,
 }: DashboardScreenProps) {
   const queryClient = useQueryClient();
@@ -69,6 +73,7 @@ export default function DashboardScreen({
 
   const workspaces = workspacesData?.workspaces || [];
   const activeWorkspace =
+    activeWorkspaceProp ||
     selectedWorkspace ||
     workspaces.find((w: any) => w.id === activeWorkspaceId) ||
     workspaces[0] ||
@@ -207,11 +212,7 @@ export default function DashboardScreen({
 
   const formatRupiah = (val: number) => {
     if (!showAmount) return '••••••••';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      maximumFractionDigits: 0,
-    }).format(val);
+    return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(val || 0));
   };
 
   const totalWalletBalance = wallets.reduce((acc, w) => acc + (w.currentBalance || 0), 0);
@@ -231,7 +232,7 @@ export default function DashboardScreen({
       <AppHeader
         user={user}
         activeWorkspace={activeWorkspace}
-        onOpenWorkspaceModal={() => setWsModalVisible(true)}
+        onOpenWorkspaceModal={onOpenWorkspaceModal || (() => setWsModalVisible(true))}
         showAmount={showAmount}
         onToggleShowAmount={() => setShowAmount(!showAmount)}
         onOpenAddModal={() => {

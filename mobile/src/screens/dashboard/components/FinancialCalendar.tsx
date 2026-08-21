@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: 'rgba(22, 163, 74, 0.12)',
+    backgroundColor: '#e6f3ec',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -448,11 +448,11 @@ const styles = StyleSheet.create({
   dayCellToday: {
     borderColor: '#004C29',
     borderWidth: 1.5,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#e6f3ec',
   },
   dayCellSurplus: {
-    borderColor: '#bbf7d0',
-    backgroundColor: '#f0fdf4',
+    borderColor: '#b2dec6',
+    backgroundColor: '#e6f3ec',
   },
   dayCellDeficit: {
     borderColor: '#fecaca',
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     height: 12,
   },
   flowPillGreen: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#e6f3ec',
   },
   flowPillRed: {
     backgroundColor: '#fee2e2',
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   flowPillTextGreen: {
-    color: '#15803d',
+    color: '#004C29',
   },
   flowPillTextRed: {
     color: '#b91c1c',

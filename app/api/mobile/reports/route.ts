@@ -87,12 +87,12 @@ export async function GET(req: NextRequest) {
       incomeCount,
       expenseCount,
       totalTransactions: incomeCount + expenseCount,
-      avgIncome: Number(incomeAgg._avg.amount ?? 0),
-      avgExpense: Number(expenseAgg._avg.amount ?? 0),
-      maxIncome: Number(incomeAgg._max.amount ?? 0),
-      maxExpense: Number(expenseAgg._max.amount ?? 0),
-      dailyAvgExpense: totalExpense / daySpan,
-      dailyAvgIncome: totalIncome / daySpan,
+      avgIncome: Math.round(Number(incomeAgg._avg.amount ?? 0)),
+      avgExpense: Math.round(Number(expenseAgg._avg.amount ?? 0)),
+      maxIncome: Math.round(Number(incomeAgg._max.amount ?? 0)),
+      maxExpense: Math.round(Number(expenseAgg._max.amount ?? 0)),
+      dailyAvgExpense: Math.round(totalExpense / daySpan),
+      dailyAvgIncome: Math.round(totalIncome / daySpan),
       daySpan,
     };
 

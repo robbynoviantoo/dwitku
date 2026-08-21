@@ -3,13 +3,12 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
   RefreshControl,
-  Modal,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../services/api';
@@ -18,7 +17,7 @@ import { AppHeader } from '../components/AppHeader';
 // Modular Subcomponents
 import { TransactionsHeader } from './transactions/components/TransactionsHeader';
 import { TransactionsSummaryBar } from './transactions/components/TransactionsSummaryBar';
-import { TransactionsFilterBar } from './transactions/components/TransactionsFilterBar';
+import { TransactionsFilterPanel } from './transactions/components/TransactionsFilterPanel';
 import { TransactionCardItem } from './transactions/components/TransactionCardItem';
 import { TransactionsPagination } from './transactions/components/TransactionsPagination';
 import { TransactionFormModal } from '../components/TransactionFormModal';
@@ -41,18 +40,20 @@ export default function TransactionsScreen({
 }: TransactionsScreenProps) {
   const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState<'ALL' | 'EXPENSE' | 'INCOME' | 'TRANSFER'>('ALL');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  const [selectedWalletId, setSelectedWalletId] = useState<string | undefined>();
+  const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showAmount, setShowAmount] = useState(true);
   const [page, setPage] = useState(1);
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [selectedEditTx, setSelectedEditTx] = useState<any | null>(null);
   const [scanModalVisible, setScanModalVisible] = useState(false);
   const [scanPrefill, setScanPrefill] = useState<ScanResultData | null>(null);
   const limit = 10;
 
-  // Auto-open Add Transaction Modal when triggered externally (e.g. from Dashboard Header + button)
+  // Auto-open Add Transaction Modal when triggered externally
   useEffect(() => {
     if (openAddTrigger && openAddTrigger > 0) {
       setSelectedEditTx(null);
@@ -64,7 +65,7 @@ export default function TransactionsScreen({
   // Reset to page 1 when filter or search changes
   useEffect(() => {
     setPage(1);
-  }, [filterType, debouncedSearch]);
+  }, [filterType, selectedCategoryId, selectedWalletId, dateRange.startDate, dateRange.endDate, debouncedSearch]);
 
   // Debounce search query
   useEffect(() => {
@@ -74,26 +75,52 @@ export default function TransactionsScreen({
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Server-side TanStack query with explicit 10 items limit & offset
+  // Reset all filters to default
+  const handleResetFilters = () => {
+    setFilterType('ALL');
+    setSelectedCategoryId(undefined);
+    setSelectedWalletId(undefined);
+    setDateRange({ startDate: '', endDate: '' });
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setPage(1);
+  };
+
+  // Server-side TanStack query with all active filters
   const {
     data,
     isLoading,
     isRefetching,
     refetch,
   } = useQuery({
-    queryKey: ['transactions', activeWorkspaceId, filterType, debouncedSearch, page],
+    queryKey: [
+      'transactions',
+      activeWorkspaceId,
+      filterType,
+      selectedCategoryId,
+      selectedWalletId,
+      dateRange.startDate,
+      dateRange.endDate,
+      debouncedSearch,
+      page,
+    ],
     queryFn: () => {
       const typeParam = filterType !== 'ALL' ? `&type=${filterType}` : '';
+      const catParam = selectedCategoryId ? `&categoryId=${selectedCategoryId}` : '';
+      const walletParam = selectedWalletId ? `&walletId=${selectedWalletId}` : '';
+      const dateFromParam = dateRange.startDate ? `&dateFrom=${dateRange.startDate}` : '';
+      const dateToParam = dateRange.endDate ? `&dateTo=${dateRange.endDate}` : '';
       const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
       const offset = (page - 1) * limit;
+
       return apiRequest(
-        `/transactions?workspaceId=${activeWorkspaceId}&limit=${limit}&offset=${offset}${typeParam}${searchParam}`
+        `/transactions?workspaceId=${activeWorkspaceId}&limit=${limit}&offset=${offset}${typeParam}${catParam}${walletParam}${dateFromParam}${dateToParam}${searchParam}`
       );
     },
     enabled: !!activeWorkspaceId,
   });
 
-  // Query Wallets for form selection
+  // Query Wallets for form & filter selection
   const { data: walletsData } = useQuery({
     queryKey: ['wallets', activeWorkspaceId],
     queryFn: () => apiRequest(`/wallets?workspaceId=${activeWorkspaceId}`),
@@ -102,7 +129,6 @@ export default function TransactionsScreen({
 
   const rawTransactions = data?.transactions || [];
   const totalCount = data?.totalCount !== undefined ? data.totalCount : rawTransactions.length;
-  // Pastikan hanya 10 data yang dirender di layar
   const transactions = rawTransactions.length > limit ? rawTransactions.slice((page - 1) * limit, page * limit) : rawTransactions;
   const totalPages = data?.totalPages || Math.ceil(totalCount / limit) || 1;
   const summary = data?.summary || { totalIncome: 0, totalExpense: 0, balance: 0 };
@@ -131,70 +157,89 @@ export default function TransactionsScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ── Top Header Konsisten ── */}
-      <AppHeader
-        user={user}
-        activeWorkspace={activeWorkspace}
-        onOpenWorkspaceModal={onOpenWorkspaceModal}
-        showAmount={showAmount}
-        onToggleShowAmount={() => setShowAmount(!showAmount)}
+      {/* ── 1. FIXED TOP HEADER (FREEZE / STICKY DI ATAS) ── */}
+      <View style={styles.frozenHeader}>
+        <AppHeader
+          user={user}
+          activeWorkspace={activeWorkspace}
+          onOpenWorkspaceModal={onOpenWorkspaceModal}
+          showAmount={showAmount}
+          onToggleShowAmount={() => setShowAmount(!showAmount)}
+        />
+
+        <View style={styles.frozenHeaderContent}>
+          {/* Header Title & Actions (+ Add + Scan) */}
+          <TransactionsHeader
+            totalCount={totalCount}
+            onAddPress={() => setAddModalVisible(true)}
+            onScanPress={() => setScanModalVisible(true)}
+            onExportPress={() => {}}
+          />
+
+          {/* Summary 3 Cards (Income, Expense, Selisih) */}
+          <TransactionsSummaryBar summary={summary} showAmount={showAmount} />
+
+          {/* Full-featured Filter Panel (Search + Type, Cat, Wallet, Date) */}
+          <TransactionsFilterPanel
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onClearSearch={() => setSearchQuery('')}
+            filterType={filterType}
+            onFilterTypeChange={setFilterType}
+            selectedCategoryId={selectedCategoryId}
+            onCategoryChange={setSelectedCategoryId}
+            selectedWalletId={selectedWalletId}
+            onWalletChange={setSelectedWalletId}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            categories={categories}
+            wallets={wallets}
+            onReset={handleResetFilters}
+          />
+        </View>
+      </View>
+
+      {/* ── 2. SCROLLABLE TRANSACTION LIST (Hanya List yang Bergerak Saat Di-scroll) ── */}
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={['#004C29']}
+          />
+        }
+        ListEmptyComponent={
+          isLoading && !data ? (
+            <ActivityIndicator color="#004C29" style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Tidak ada transaksi ditemukan</Text>
+            </View>
+          )
+        }
+        renderItem={({ item }) => (
+          <TransactionCardItem
+            tx={item}
+            showAmount={showAmount}
+            onEdit={(itemEdit) => setSelectedEditTx(itemEdit)}
+            onDelete={handleDelete}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
       />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={['#004C29']} />}
-      >
-        {/* 1. Header Title & Actions (+ Add + Scan) */}
-        <TransactionsHeader
-          totalCount={totalCount}
-          onAddPress={() => setAddModalVisible(true)}
-          onScanPress={() => setScanModalVisible(true)}
-          onExportPress={() => {}}
-        />
-
-        {/* 2. Summary 3 Cards (Income, Expense, Selisih) */}
-        <TransactionsSummaryBar summary={summary} showAmount={showAmount} />
-
-        {/* 3. Search & Filter Bar */}
-        <TransactionsFilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onClearSearch={() => setSearchQuery('')}
-          filterType={filterType}
-          onOpenFilterModal={() => setFilterModalVisible(true)}
-        />
-
-        {/* 4. List 10 Transactions */}
-        {isLoading && !data ? (
-          <ActivityIndicator color="#004C29" style={{ marginTop: 40 }} />
-        ) : transactions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Tidak ada transaksi ditemukan</Text>
-          </View>
-        ) : (
-          <View style={styles.txListContainer}>
-            {transactions.map((tx: any) => (
-              <TransactionCardItem
-                key={tx.id}
-                tx={tx}
-                showAmount={showAmount}
-                onEdit={(item) => setSelectedEditTx(item)}
-                onDelete={handleDelete}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
-
-      {/* 5. Fixed Center Floating Pagination Bar (Melayang di atas Floating Tab) */}
+      {/* ── 3. FIXED BOTTOM FLOATING PAGINATION BAR ── */}
       <TransactionsPagination
         page={page}
         totalPages={totalPages}
         onPageChange={(newPage) => setPage(newPage)}
       />
 
-      {/* ── Modal Add / Edit Transaction (Persis Screenshot) ── */}
+      {/* ── Modal Add / Edit Transaction ── */}
       <TransactionFormModal
         visible={addModalVisible || !!selectedEditTx}
         transaction={selectedEditTx}
@@ -219,48 +264,12 @@ export default function TransactionsScreen({
         visible={scanModalVisible}
         workspaceId={activeWorkspaceId}
         onClose={() => setScanModalVisible(false)}
-        onSuccess={(data) => {
-          setScanPrefill(data);
+        onSuccess={(dataScanned) => {
+          setScanPrefill(dataScanned);
           setScanModalVisible(false);
           setAddModalVisible(true);
         }}
       />
-
-      {/* ── Modal Filter Tipe Transaksi ── */}
-      <Modal visible={filterModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Filter Transaksi</Text>
-            <View style={{ gap: 8, marginVertical: 14 }}>
-              {[
-                { key: 'ALL', label: 'Semua Tipe' },
-                { key: 'EXPENSE', label: 'Pengeluaran (Expense)' },
-                { key: 'INCOME', label: 'Pemasukan (Income)' },
-                { key: 'TRANSFER', label: 'Pindah Saldo (Transfer)' },
-              ].map((f) => {
-                const isSelected = filterType === f.key;
-                return (
-                  <TouchableOpacity
-                    key={f.key}
-                    style={[styles.filterOptBtn, isSelected && styles.filterOptBtnActive]}
-                    onPress={() => {
-                      setFilterType(f.key as any);
-                      setFilterModalVisible(false);
-                    }}
-                  >
-                    <Text style={[styles.filterOptText, isSelected && styles.filterOptTextActive]}>
-                      {f.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setFilterModalVisible(false)}>
-              <Text style={styles.modalCloseText}>Tutup</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -270,71 +279,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 130, // Spasi lega agar tidak terhalang floating bottom tab
-    gap: 12,
+  frozenHeader: {
+    backgroundColor: '#f8fafc',
+    zIndex: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
-  txListContainer: {
-    gap: 10,
+  frozenHeaderContent: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 10,
+    gap: 8,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 140, // Ruang aman di atas floating bottom bar & pagination
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 50,
   },
   emptyText: {
     fontSize: 12.5,
     color: '#94a3b8',
     fontWeight: '500',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  filterOptBtn: {
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  filterOptBtnActive: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#004C29',
-  },
-  filterOptText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  filterOptTextActive: {
-    color: '#004C29',
-    fontWeight: 'bold',
-  },
-  modalCloseBtn: {
-    padding: 10,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  modalCloseText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#64748b',
   },
 });

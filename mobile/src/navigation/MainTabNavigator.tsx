@@ -18,7 +18,9 @@ import {
   Check,
   X,
   Sparkles,
+  Plus,
 } from 'lucide-react-native';
+import { CreateWorkspaceModal } from '../components/CreateWorkspaceModal';
 
 const LAST_WORKSPACE_KEY = 'dwitku_last_workspace_id';
 
@@ -32,6 +34,7 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
   const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'wallets' | 'reports' | 'settings'>('dashboard');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [wsModalVisible, setWsModalVisible] = useState(false);
+  const [createWsModalVisible, setCreateWsModalVisible] = useState(false);
 
   const { data: wsData } = useQuery({
     queryKey: ['workspaces'],
@@ -96,7 +99,9 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
             user={user}
             onLogout={onLogout}
             activeWorkspaceId={activeWorkspaceId}
+            activeWorkspace={activeWorkspace}
             onWorkspaceChange={handleWorkspaceChange}
+            onOpenWorkspaceModal={() => setWsModalVisible(true)}
             onNavigateToTransactions={handleNavigateToTransactions}
           />
         </View>
@@ -193,9 +198,35 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
                 );
               })}
             </ScrollView>
+
+            {/* Tombol Tambah Workspace Baru */}
+            <TouchableOpacity
+              style={styles.addWsBtn}
+              onPress={() => {
+                setWsModalVisible(false);
+                setCreateWsModalVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Plus size={16} color="#004C29" />
+              <Text style={styles.addWsBtnText}>Buat Workspace Baru</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      {/* Modal Form Buat Workspace Baru */}
+      <CreateWorkspaceModal
+        visible={createWsModalVisible}
+        onClose={() => setCreateWsModalVisible(false)}
+        onSuccess={(newWs) => {
+          setCreateWsModalVisible(false);
+          queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+          if (newWs?.id) {
+            handleWorkspaceChange(newWs.id);
+          }
+        }}
+      />
 
       {/* Floating Modern Bottom Navigation Bar */}
       <View style={styles.floatingNavWrapper}>
@@ -349,6 +380,11 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     paddingHorizontal: 6,
     alignItems: 'center',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
@@ -465,5 +501,23 @@ const styles = StyleSheet.create({
   wsRadioActive: {
     backgroundColor: '#004C29',
     borderColor: '#004C29',
+  },
+  addWsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#e6f3ec',
+    borderWidth: 1.5,
+    borderColor: '#b2dec6',
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  addWsBtnText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#004C29',
   },
 });

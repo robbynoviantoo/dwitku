@@ -18,7 +18,7 @@ export function TransactionsSummaryBar({ summary, showAmount }: TransactionsSumm
       style: 'currency',
       currency: 'IDR',
       maximumFractionDigits: 0,
-    }).format(val);
+    }).format(Math.round(val || 0));
   };
 
   return (

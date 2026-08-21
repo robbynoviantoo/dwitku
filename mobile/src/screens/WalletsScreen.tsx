@@ -56,7 +56,7 @@ export default function WalletsScreen({
   const totalExpense = wallets.reduce((acc: number, w: any) => acc + (w.totalExpense || 0), 0);
 
   const formatRupiah = (val: number) => {
-    return 'Rp ' + new Intl.NumberFormat('id-ID').format(val || 0);
+    return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(val || 0));
   };
 
   // Reorder Handler (Move item up / down and persist to API)

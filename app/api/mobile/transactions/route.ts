@@ -57,8 +57,31 @@ export async function GET(req: NextRequest) {
       workspaceId,
     };
 
+    const categoryId = searchParams.get("categoryId");
+    const walletId = searchParams.get("walletId");
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
+
     if (type && type !== "ALL") {
       whereClause.type = type;
+    }
+
+    if (categoryId && categoryId !== "ALL") {
+      whereClause.categoryId = categoryId;
+    }
+
+    if (walletId && walletId !== "ALL") {
+      whereClause.OR = [
+        { walletId: walletId },
+        { toWalletId: walletId },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      whereClause.date = {
+        ...(dateFrom ? { gte: new Date(dateFrom + "T00:00:00") } : {}),
+        ...(dateTo ? { lte: new Date(dateTo + "T23:59:59") } : {}),
+      };
     }
 
     if (search) {

@@ -79,7 +79,7 @@ export default function ReportsScreen({
   });
 
   const formatRupiah = (val: number) => {
-    return 'Rp ' + new Intl.NumberFormat('id-ID').format(val || 0);
+    return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(val || 0));
   };
 
   // Fallback calculations directly from transactions
