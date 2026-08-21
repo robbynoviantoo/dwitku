@@ -110,7 +110,12 @@ export default function MainTabNavigator({ user, onLogout }: MainTabNavigatorPro
         </View>
 
         <View style={[styles.screenTab, activeTab === 'reports' ? styles.screenActive : styles.screenHidden]}>
-          <ReportsScreen activeWorkspaceId={activeWorkspaceId} />
+          <ReportsScreen
+            user={user}
+            activeWorkspaceId={activeWorkspaceId}
+            activeWorkspace={activeWorkspace}
+            onOpenWorkspaceModal={() => setWsModalVisible(true)}
+          />
         </View>
 
         <View style={[styles.screenTab, activeTab === 'settings' ? styles.screenActive : styles.screenHidden]}>

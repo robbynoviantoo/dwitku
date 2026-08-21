@@ -4,124 +4,198 @@ import {
   Text,
   View,
   ScrollView,
+  RefreshControl,
   ActivityIndicator,
-  SafeAreaView,
-  Alert,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../services/api';
-import { PieChart, TrendingUp, TrendingDown, Wallet } from 'lucide-react-native';
+import { AppHeader } from '../components/AppHeader';
+import {
+  BarChart2,
+  Calendar,
+  ChevronDown,
+  Check,
+} from 'lucide-react-native';
+import { ReportsSummaryCards } from './reports/components/ReportsSummaryCards';
+import { ReportsChartsSection } from './reports/components/ReportsChartsSection';
+import { ReportsDeepInsights } from './reports/components/ReportsDeepInsights';
 
 interface ReportsScreenProps {
+  user?: any;
   activeWorkspaceId: string;
+  activeWorkspace?: any;
+  onOpenWorkspaceModal?: () => void;
 }
 
-export default function ReportsScreen({ activeWorkspaceId }: ReportsScreenProps) {
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['reports', activeWorkspaceId],
-    queryFn: () => apiRequest(`/reports?workspaceId=${activeWorkspaceId}`),
+const DATE_PERIODS = [
+  { id: 'ALL', label: 'All Time', days: null },
+  { id: 'THIS_MONTH', label: 'This Month', days: 30 },
+  { id: 'LAST_30_DAYS', label: 'Last 30 Days', days: 30 },
+  { id: 'LAST_3_MONTHS', label: 'Last 3 Months', days: 90 },
+  { id: 'THIS_YEAR', label: 'This Year', days: 365 },
+];
+
+export default function ReportsScreen({
+  user,
+  activeWorkspaceId,
+  activeWorkspace,
+  onOpenWorkspaceModal,
+}: ReportsScreenProps) {
+  const [showAmount, setShowAmount] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState(DATE_PERIODS[0]);
+  const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
+
+  // Hitung rentang tanggal berdasarkan period yang dipilih
+  const getDateRangeParams = () => {
+    if (!selectedPeriod.days) return '';
+    const now = new Date();
+    const start = new Date();
+    start.setDate(now.getDate() - selectedPeriod.days);
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = now.toISOString().split('T')[0];
+    return `&dateFrom=${startStr}&dateTo=${endStr}`;
+  };
+
+  // TanStack Query Reports
+  const { data, isLoading, isRefetching, refetch } = useQuery({
+    queryKey: ['reports', activeWorkspaceId, selectedPeriod.id],
+    queryFn: () =>
+      apiRequest(`/reports?workspaceId=${activeWorkspaceId}${getDateRangeParams()}`),
     enabled: !!activeWorkspaceId,
   });
 
   const formatRupiah = (val: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      maximumFractionDigits: 0,
-    }).format(val);
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(val || 0);
+  };
+
+  const summary = data?.summary || {
+    totalIncome: 0,
+    totalExpense: 0,
+    netCashflow: 0,
+    savingsRate: 0,
+    incomeCount: 0,
+    expenseCount: 0,
+    totalTransactions: 0,
+    avgIncome: 0,
+    avgExpense: 0,
+    dailyAvgExpense: 0,
+    dailyAvgIncome: 0,
+    daySpan: 30,
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Laporan Keuangan</Text>
-        <Text style={styles.headerSubtitle}>Ringkasan & rincian per kategori transaksi</Text>
-      </View>
+    <View style={styles.container}>
+      {/* 1. Reusable Unified App Header */}
+      <AppHeader
+        user={user}
+        activeWorkspace={activeWorkspace}
+        onOpenWorkspaceModal={onOpenWorkspaceModal}
+        showAmount={showAmount}
+        onToggleShowAmount={() => setShowAmount(!showAmount)}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {loading && !data ? (
-          <ActivityIndicator color="#004C29" style={{ marginTop: 40 }} />
-        ) : !data ? (
-          <View style={styles.emptyContainer}>
-            <PieChart size={44} color="#3f3f46" />
-            <Text style={styles.emptyText}>Tidak ada data laporan</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={['#004C29']}
+          />
+        }
+      >
+        {/* 2. Page Title Header: "Financial Reports" & Subtitle Workspace */}
+        <View style={styles.pageHeader}>
+          <View style={styles.pageTitleRow}>
+            <BarChart2 size={20} color="#004C29" />
+            <Text style={styles.pageTitle}>Financial Reports</Text>
           </View>
-        ) : (
-          <>
-            {/* Net Summary Card */}
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryHeader}>
-                <Wallet size={16} color="#004C29" />
-                <Text style={styles.summaryTitle}>Saldo Net Keseluruhan</Text>
-              </View>
-              <Text style={styles.summaryValue}>{formatRupiah(data.summary?.netBalance || 0)}</Text>
-              <View style={styles.statGrid}>
-                <View style={styles.statBox}>
-                  <View style={styles.statBadgeRow}>
-                    <TrendingUp size={14} color="#004C29" />
-                    <Text style={styles.statLabel}>Pemasukan</Text>
-                  </View>
-                  <Text style={styles.statValGreen}>{formatRupiah(data.summary?.totalIncome || 0)}</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <View style={styles.statBadgeRow}>
-                    <TrendingDown size={14} color="#dc2626" />
-                    <Text style={styles.statLabel}>Pengeluaran</Text>
-                  </View>
-                  <Text style={styles.statValRed}>{formatRupiah(data.summary?.totalExpense || 0)}</Text>
-                </View>
-              </View>
-            </View>
+          <Text style={styles.pageSubtitle}>
+            Workspace "{activeWorkspace?.name || 'Utama'}"
+          </Text>
 
-            {/* Category Breakdown */}
-            <Text style={styles.sectionTitle}>Rincian Per Kategori</Text>
-            {data.categoryReport?.length === 0 ? (
-              <Text style={styles.emptyText}>Belum ada transaksi recorded</Text>
-            ) : (
-              data.categoryReport?.map((cat: any, idx: number) => {
-                const total = cat.type === 'INCOME' ? data.summary.totalIncome : data.summary.totalExpense;
-                const percentage = total > 0 ? Math.round((cat.amount / total) * 100) : 0;
-                const isIncome = cat.type === 'INCOME';
-                return (
-                  <View key={idx} style={styles.catReportCard}>
-                    <View style={styles.catHeader}>
-                      <Text style={styles.catEmoji}>{cat.emoji}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.catName}>{cat.name}</Text>
-                        <Text style={styles.catType}>{isIncome ? 'Pemasukan' : 'Pengeluaran'}</Text>
-                      </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text
-                          style={[
-                            styles.catAmount,
-                            { color: isIncome ? '#004C29' : '#dc2626' },
-                          ]}
-                        >
-                          {formatRupiah(cat.amount)}
-                        </Text>
-                        <Text style={styles.catPercent}>{percentage}% dari total</Text>
-                      </View>
-                    </View>
-                    {/* Progress Bar */}
-                    <View style={styles.progressBarBg}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width: `${Math.min(percentage, 100)}%`,
-                            backgroundColor: isIncome ? '#004C29' : '#dc2626',
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </>
+          {/* Date Period Filter Selector (All Time / This Month / etc) */}
+          <TouchableOpacity
+            style={styles.periodSelector}
+            onPress={() => setPeriodPickerOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Calendar size={15} color="#64748b" />
+            <Text style={styles.periodSelectorText}>{selectedPeriod.label}</Text>
+            <ChevronDown size={15} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
+
+        {isLoading && !data ? (
+          <ActivityIndicator color="#004C29" style={{ marginTop: 40 }} />
+        ) : (
+          <View style={styles.reportContent}>
+            {/* 3. Summary Cards: Total Income, Total Expense, Net Cashflow, Savings Rate & 4 Minis */}
+            <ReportsSummaryCards
+              summary={summary}
+              showAmount={showAmount}
+              formatRupiah={formatRupiah}
+            />
+
+            {/* 4. Charts: Monthly Cashflow Trend & Category Breakdown Progress */}
+            <ReportsChartsSection
+              monthlyData={data?.monthlyTrend || []}
+              categoryData={data?.categoryBreakdown || []}
+              showAmount={showAmount}
+              formatRupiah={formatRupiah}
+            />
+
+            {/* 5. Deep Insights: Top 5 Largest Expenses & Expense by Wallet */}
+            <ReportsDeepInsights
+              topTransactions={data?.topTransactions || []}
+              walletDistribution={data?.walletDistribution || []}
+              showAmount={showAmount}
+              formatRupiah={formatRupiah}
+            />
+          </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Modal Filter Rentang Waktu (Period Picker) ── */}
+      <Modal visible={periodPickerOpen} transparent animationType="fade">
+        <View style={styles.pickerModalOverlay}>
+          <View style={styles.pickerModalCard}>
+            <Text style={styles.pickerModalTitle}>Pilih Rentang Waktu</Text>
+            <View style={{ marginVertical: 10 }}>
+              {DATE_PERIODS.map((period) => {
+                const isActive = selectedPeriod.id === period.id;
+                return (
+                  <TouchableOpacity
+                    key={period.id}
+                    style={[styles.periodItem, isActive && styles.periodItemActive]}
+                    onPress={() => {
+                      setSelectedPeriod(period);
+                      setPeriodPickerOpen(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.periodItemText, isActive && styles.periodItemTextActive]}>
+                      {period.label}
+                    </Text>
+                    {isActive && <Check size={16} color="#004C29" strokeWidth={3} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              style={styles.pickerCloseBtn}
+              onPress={() => setPeriodPickerOpen(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.pickerCloseText}>Batal</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -130,145 +204,103 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-  },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 110,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
+  pageHeader: {
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  emptyText: {
-    color: '#94a3b8',
-    marginTop: 10,
-    fontSize: 13,
-  },
-  summaryCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 16,
-  },
-  summaryHeader: {
+  pageTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  summaryTitle: {
-    color: '#64748b',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  summaryValue: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#0f172a',
-    marginVertical: 6,
-  },
-  statGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-  },
-  statBox: {
-    flex: 1,
-  },
-  statBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#64748b',
-  },
-  statValGreen: {
-    fontSize: 13.5,
-    fontWeight: 'bold',
-    color: '#004C29',
-    marginTop: 2,
-  },
-  statValRed: {
-    fontSize: 13.5,
-    fontWeight: 'bold',
-    color: '#dc2626',
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0f172a',
-    marginBottom: 10,
-  },
-  catReportCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  catHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  catEmoji: {
+  pageTitle: {
     fontSize: 18,
-    marginRight: 10,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    letterSpacing: -0.3,
   },
-  catName: {
-    fontSize: 13.5,
+  pageSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  periodSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    gap: 8,
+    alignSelf: 'stretch',
+  },
+  periodSelectorText: {
+    flex: 1,
+    fontSize: 12.5,
     fontWeight: '600',
+    color: '#334155',
+  },
+  reportContent: {
+    paddingHorizontal: 16,
+  },
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  pickerModalCard: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 20,
+  },
+  pickerModalTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
     color: '#0f172a',
   },
-  catType: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 1,
+  periodItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
-  catAmount: {
-    fontSize: 13.5,
+  periodItemActive: {
+    borderColor: '#004C29',
+    backgroundColor: '#f0fdf4',
+  },
+  periodItemText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  periodItemTextActive: {
+    color: '#004C29',
     fontWeight: 'bold',
   },
-  catPercent: {
-    fontSize: 10,
-    color: '#94a3b8',
-    marginTop: 2,
+  pickerCloseBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginTop: 4,
   },
-  progressBarBg: {
-    height: 5,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 3,
+  pickerCloseText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#64748b',
   },
 });
