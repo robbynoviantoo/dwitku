@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/components/providers/language-provider";
 import { WalletLogo } from "@/components/ui/wallet-logo";
 import { WalletWithBalance } from "@/app/actions/wallet";
+export { DateRangePicker, type DateRange } from "@/components/ui/date-range-picker";
 
 export type CategoryItem = {
   id: string;

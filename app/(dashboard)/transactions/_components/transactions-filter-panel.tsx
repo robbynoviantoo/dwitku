@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Search, SlidersHorizontal, X, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
-import { CalendarPicker } from "@/components/ui/calendar-picker";
+import { DateRangePicker, DateRange } from "@/components/ui/date-range-picker";
 import { CategorySelect, WalletFilterSelect, TypeSelect, CategoryItem } from "./transactions-filter-selects";
 import { WalletWithBalance } from "@/app/actions/wallet";
 import { TransactionFilter } from "@/app/actions/transaction";
@@ -132,13 +132,20 @@ export function TransactionsFilterPanel({
           {/* Rentang Tanggal */}
           <div>
             <label className="block text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 mb-1">
-              {t("transactions.date")}
+              {t("transactions.dateRange")}
             </label>
-            <CalendarPicker
-              value={filter.dateFrom ?? ""}
-              onChange={(date) => onFilterChange({ dateFrom: date || undefined, dateTo: date || undefined })}
-              placeholder={t("transactions.selectDate")}
-              allowClear
+            <DateRangePicker
+              value={{
+                startDate: filter.dateFrom ?? "",
+                endDate: filter.dateTo ?? "",
+              }}
+              onChange={(range: DateRange) =>
+                onFilterChange({
+                  dateFrom: range.startDate || undefined,
+                  dateTo: range.endDate || undefined,
+                })
+              }
+              align="right"
             />
           </div>
         </div>
