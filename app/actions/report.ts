@@ -329,6 +329,9 @@ export async function getCalendarTransactions(
     const transactions = await prisma.transaction.findMany({
         where: {
             workspaceId,
+            type: {
+                in: [TransactionType.INCOME, TransactionType.EXPENSE],
+            },
             date: {
                 gte: start,
                 lte: end,
@@ -345,6 +348,10 @@ export async function getCalendarTransactions(
     let totalExpense = 0;
 
     for (const tx of transactions) {
+        if (tx.type !== TransactionType.INCOME && tx.type !== TransactionType.EXPENSE) {
+            continue;
+        }
+
         const dateKey = format(tx.date, "yyyy-MM-dd");
         const dayNum = tx.date.getDate();
         const amountNum = Number(tx.amount);
@@ -363,7 +370,7 @@ export async function getCalendarTransactions(
         if (tx.type === TransactionType.INCOME) {
             days[dateKey].income += amountNum;
             totalIncome += amountNum;
-        } else {
+        } else if (tx.type === TransactionType.EXPENSE) {
             days[dateKey].expense += amountNum;
             totalExpense += amountNum;
         }

@@ -50,10 +50,13 @@ export async function GET(req: NextRequest) {
     const start = startOfMonth(targetDate);
     const end = endOfMonth(targetDate);
 
-    // Ambil SEMUA transaksi pada bulan tersebut (tanpa filter walletId / limit)
+    // Ambil SEMUA transaksi pemasukan & pengeluaran pada bulan tersebut (tanpa transfer)
     const transactions = await prisma.transaction.findMany({
       where: {
         workspaceId,
+        type: {
+          in: [TransactionType.INCOME, TransactionType.EXPENSE],
+        },
         date: {
           gte: start,
           lte: end,
@@ -80,6 +83,10 @@ export async function GET(req: NextRequest) {
     let totalExpense = 0;
 
     for (const tx of transactions) {
+      if (tx.type !== TransactionType.INCOME && tx.type !== TransactionType.EXPENSE) {
+        continue;
+      }
+
       const dateKey = format(tx.date, "yyyy-MM-dd");
       const dayNum = tx.date.getDate();
       const amountNum = Number(tx.amount);

@@ -238,31 +238,36 @@ export function DashboardCalendar({ workspaceId, currency }: DashboardCalendarPr
       </div>
 
       {/* Selected Day Transaction Breakdown Modal Dialog */}
-      {selectedDay && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-            onClick={() => setSelectedDay(null)}
-          />
+      {selectedDay && typeof document !== "undefined" && (() => {
+        const validTransactions = selectedDay.transactions.filter(
+          (tx) => tx.type === "INCOME" || tx.type === "EXPENSE"
+        );
 
-          {/* Modal Container */}
-          <div className="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-200 max-h-[85vh]">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/50 shrink-0">
-              <div>
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <span>
-                    {format(new Date(selectedDay.date + "T00:00:00"), "d MMMM yyyy", {
-                      locale: activeDateLocale,
-                    })}
-                  </span>
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {selectedDay.transactions.length} {t("calendar.recordedTransactions")}
-                </p>
-              </div>
+        return createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              onClick={() => setSelectedDay(null)}
+            />
+
+            {/* Modal Container */}
+            <div className="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-200 max-h-[85vh]">
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/50 shrink-0">
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span>
+                      {format(new Date(selectedDay.date + "T00:00:00"), "d MMMM yyyy", {
+                        locale: activeDateLocale,
+                      })}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {validTransactions.length} {t("calendar.recordedTransactions")}
+                  </p>
+                </div>
 
               <div className="flex items-center gap-2">
                 <span
@@ -308,7 +313,7 @@ export function DashboardCalendar({ workspaceId, currency }: DashboardCalendarPr
 
             {/* Transaction List */}
             <div className="p-3 divide-y divide-zinc-100 dark:divide-zinc-800/80 overflow-y-auto flex-1 overscroll-contain">
-              {selectedDay.transactions.map((tx) => {
+              {validTransactions.map((tx) => {
                 const isIncome = tx.type === "INCOME";
                 return (
                   <div
@@ -369,7 +374,8 @@ export function DashboardCalendar({ workspaceId, currency }: DashboardCalendarPr
           </div>
         </div>,
         document.body
-      )}
+      );
+      })()}
     </div>
   );
 }
